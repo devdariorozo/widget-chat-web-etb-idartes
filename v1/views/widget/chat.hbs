@@ -1,0 +1,176 @@
+{{!-- ! ================================================================================================================================================ --}}
+{{!-- !                                                          VISTA CHAT WEB                                                                     --}}
+{{!-- ! ================================================================================================================================================ --}}
+{{!-- @author Ramón Dario Rozo Torres (24 de Enero de 2025) --}}
+{{!-- @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025) --}}
+{{!-- @version 1.0.0 --}}
+{{!-- v1/views/widget/chatWeb.hbs --}}
+
+{{!-- ! HBS --}}
+<!DOCTYPE html>
+<html class="loading" lang="en" data-textdirection="ltr">
+
+{{!-- * HEAD --}}
+<head>
+    {{!-- todo: metadatos --}}
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <meta name="description" content="Sistema de WhatsApp no oficial">
+    <meta name="keywords" content="Sistema, WhatsApp, no oficial">
+    <meta name="author" content="Ramón Dario Rozo Torres">
+
+    {{!-- todo: title --}}
+    <title>Chat Web</title>
+
+    {{!-- todo: favicon --}}
+    <link rel="apple-touch-icon" href="/images/imagen-corporativa/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/images/imagen-corporativa/favicon.png">
+
+    {{!-- todo: icons --}}
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+     {{!-- todo: css --}}
+    <link rel="stylesheet" type="text/css" href="/css/vendors.min.css">
+
+    {{!-- todo: plugins css --}}
+    <link rel="stylesheet" type="text/css" href="/libs/sweetalert2/sweetalert2.min.css">
+    <link href="/libs/select2/select2.min.css" rel="stylesheet"  type="text/css">
+    <link href="/libs/select2/select2-materialize.css" rel="stylesheet"  type="text/css">
+    <link href="/libs/dropify/dropify.min.css" rel="stylesheet"  type="text/css">
+
+    {{!-- todo: materialize css --}}
+    <link rel="stylesheet" type="text/css" href="/css/materialize.css">
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
+
+    {{!-- todo: customer styles --}}
+    <link rel="stylesheet" type="text/css" href="/css/app.css">
+    <link rel="stylesheet" type="text/css" href="/css/widget/chat.css">
+</head>
+
+{{!-- * BODY --}}
+<body class="vertical-layout page-header-light vertical-menu-collapsible vertical-menu-nav-dark preload-transitions 2-columns" data-open="click" data-menu="vertical-menu-nav-dark" data-col="2-columns">
+
+    {{!-- todo: control notificaciones --}}
+    <div id="controlNotificaciones" class="controlNotificaciones">
+        {{!-- Contenido de notificaciones --}}
+    </div>
+
+    {{!-- todo: main --}}
+    <div id="main">
+        {{!-- todo: conversación --}}
+        <div id="conversacion">
+            {{!-- <div class="mensaje-recibido">
+                <div class="texto">¡Absolutamente, estamos ante algo supremamente importante y que merece ser tratado con la debida seriedad!</div>
+            </div>
+
+            <div class="mensaje-enviado">
+                <div class="texto">¡Claro que sí!</div>
+            </div>
+
+            <div class="mensaje-recibido">
+                <div class="texto">ok!</div>
+            </div>
+
+            <div class="mensaje-enviado">
+                <div class="texto"><p class="saludoChat"><strong>Bienvenida@ al sistema.</strong></p></div>
+            </div> --}}
+        </div>
+    
+        {{!-- todo: modal términos y condiciones --}}
+        <div id="modalTerminos" class="modal modal-fixed-footer">
+            <div class="modal-content">
+                <h5 class="modal-title">AUTORIZACIÓN DE TRATAMIENTO DE DATOS PERSONALES</h5>
+                <div class="modal-body">
+                    <p>
+                        Autorizo expresamente, de manera libre y voluntaria, a la REGISTRADURÍA NACIONAL DEL ESTADO CIVIL (RNEC) para recopilar, almacenar, transmitir a sus contratistas, procesar y disponer de los datos que sean suministrados por mí, así como para tratar dichos datos de manera total o parcial, de conformidad con las actividades que requieran ser desarrolladas en el marco del proceso de inscripción de la cédula de ciudadanía para el cambio de puesto de votación con miras a las elecciones de Congreso y Presidente y Vicepresidente de la República en el 2026.
+                    </p>
+                    <p>
+                        Entiendo que es posible que dentro del proceso de uso del chatbot se entregue información sensible de conformidad con lo dispuesto por la ley, por lo cual, autorizo expresamente su tratamiento y manifiesto que tengo derecho a contestar o no las preguntas que me formulen y a entregar o no los datos solicitados. Así mismo declaro que he sido informado respecto de la finalidad para la cual se recopila la información, especialmente relacionada con las gestiones requeridas para realizar el proceso de inscripción de cédulas, que, sin ser exclusivas, incluyen:
+                    </p>
+                    <ol>
+                        <li>La autorización de tratamiento de datos personales.</li>
+                        <li>La autorización de ser contactado a través de medios electrónicos o llamada telefónica.</li>
+                    </ol>
+                    <p>
+                        Entiendo que, en mi calidad de titular de los datos personales, estoy autorizando a la REGISTRADURÍA NACIONAL DEL ESTADO CIVIL (RNEC) para utilizar mis datos personales, de conformidad con la Ley 1581 de 2012 <i>"Por la cual se dictan disposiciones generales para la protección de datos personales"</i>; y el Decreto 1074 de 2015. Así mismo he sido informado de los derechos que me asisten como titular de los datos personales que suministro voluntariamente, que sin ser excluyentes, incluyen los listados a continuación:
+                    </p>
+                    <ol type="A">
+                        <li>Conocer, actualizar y rectificar sus datos personales frente a los Responsables del Tratamiento o Encargados del Tratamiento. Este derecho se podrá ejercer, entre otros frente a datos parciales, inexactos, incompletos, fraccionados, que induzcan a error, o aquellos cuyo Tratamiento esté expresamente prohibido o no haya sido autorizado.</li>
+                        <li>Solicitar prueba de la autorización otorgada al Responsable del Tratamiento salvo cuando expresamente se exceptúe como requisito para el Tratamiento.</li>
+                        <li>Ser informado por el Responsable del Tratamiento o el Encargado del Tratamiento, previa solicitud, respecto del uso que le ha dado a sus datos personales.</li>
+                        <li>Presentar ante las autoridades quejas por infracciones a lo dispuesto en la presente ley y las demás normas que la modifiquen, adicionen o complementen.</li>
+                        <li>Revocar la autorización y/o solicitar la supresión del dato cuando en el Tratamiento no se respeten los principios, derechos y garantías constitucionales y legales. La revocatoria y/o supresión procederá cuando la autoridad nacional haya determinado que en el Tratamiento el Responsable o Encargado han incurrido en conductas contrarias a esta ley y a la Constitución.</li>
+                        <li>Acceder en forma gratuita a sus datos personales que hayan sido objeto de Tratamiento.</li>
+                    </ol>
+                    <p>
+                        Entiendo que, la REGISTRADURÍA NACIONAL DEL ESTADO CIVIL en calidad de Responsable del tratamiento de los datos personales, ha dispuesto canales de comunicación para cualquier duda o reclamación que surja en mi calidad de titular sobre los datos personales que he suministrado voluntariamente, en la página web de entidad <a href="https://www.registraduria.gov.co/" target="_blank" style="color:#4fc3f7;">https://www.registraduria.gov.co/</a>
+                    </p>
+                    <p>
+                        De conformidad con lo anterior, con el diligenciamiento del presente formulario autorizo de manera libre, expresa e inequívoca a la REGISTRADURÍA NACIONAL DEL ESTADO CIVIL (RNEC), para que realice la recolección, transmisión y tratamiento de mis datos personales, en las actividades requeridas para llevar a cabo las actividades enunciadas en la presente autorización.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="modal-action modal-close waves-effect waves-green btn-flat">Cerrar</a>
+            </div>
+        </div>
+        
+        {{!-- todo: Contenido del formulario --}}
+        <div id="contentFormTexto">
+            <div class="row">
+                {{!-- todo: Mensaje --}}
+                <div id="div_mensaje" class="input-field col s12">
+                    <textarea id="txt_mensaje" name="txt_mensaje" class="materialize-textarea campo-formulario" rows="10" maxlength="1000" data-length="1000" autocomplete="off"></textarea>
+                    <label for="txt_mensaje">Mensaje</label>
+                </div>
+            </div>
+
+            {{!-- todo: Botones --}}
+            <div class="center">
+                <button id="btnEnviar" class="btn waves-effect waves-light blue darken-1 mb-0">
+                    <i class="material-icons left">send</i>Enviar
+                </button>
+            </div>
+        </div>
+
+        {{!-- todo: Contenido de adjuntos --}}
+        <div id="contentAdjuntos" class="hide">
+            <div id="file-upload" class="section">
+                <div class="row section">
+                    <div class="col s12 m4 l3">
+                    </div>
+                    <div class="col s12 m8 l9">
+                        <input type="file" class="dropify" id="input-file-now" multiple accept=".pdf,.xls,.xlsx,.jpg,.png,.doc,.docx" data-max-file-size="5M" />
+                    </div>
+                </div>
+                <div id="file-list"></div>
+            </div>
+
+            {{!-- todo: Botones --}}
+            <div class="center">
+                <button id="btnAdjuntar" class="btn waves-effect waves-light blue darken-1 mb-0">
+                    <i class="material-icons left">attach_file</i>Adjuntar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {{!-- todo: js --}}
+    <script src="/js/vendors.min.js"></script>
+
+    {{!-- todo: plugins js --}}
+    <script src="/libs/sweetalert2/sweetalert2.min.js"></script>
+    <script src="/libs/select2/select2.full.min.js"></script>
+    <script src="/libs/select2/select2-materialize.js"></script>
+    <script src="/libs/select2/select2Esp.js"></script>
+    <script src="/libs/dropify/dropify.min.js"></script>
+    <script src="/js/plugins.js"></script>
+    <script src="/js/search.js"></script>
+
+    {{!-- todo: customer scripts --}}
+    <script src="/js/app.js"></script>
+    <script src="/js/widget/chat.js"></script>
+</body>
+
+</html>
