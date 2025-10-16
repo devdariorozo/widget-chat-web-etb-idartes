@@ -7,8 +7,8 @@
 // v1/widget/chatWeb.js
 
 // ! VARIABLES GLOBALES
-const APP_URL = 'https://idcexteriorchatbot.mysoul.software';
-// const APP_URL = 'http://localhost:5005';
+// const APP_URL = '????';
+const APP_URL = 'http://localhost:5006';
 let chatWeb = '';
 let idChatWeb = '';
 let chatCreado = false; // Variable para rastrear si el chat ya ha sido creado
@@ -38,8 +38,8 @@ function inicializarWidgetChat() {
           </div>
           <div class='bar-box bar-box2'>
             <div class="tituloChatWeb">
-              <span id="nombreChatWeb">IDC EXTERIOR CHATBOT</span>
-              <span id="versionChatWeb">V 3.0.3</span>
+              <span id="nombreChatWeb">ETB IDARTES</span>
+              <span id="versionChatWeb">V 1.0.0</span>
             </div>
             <div id="estadoChatWeb">
               <i class="material-icons">brightness_1</i> Online
