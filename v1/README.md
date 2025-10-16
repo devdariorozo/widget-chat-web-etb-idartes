@@ -1,4 +1,4 @@
-# widget-chat-web-etb-ideartes
+# widget-chat-web-etb-idarted
 
 **Autor:** Ramón Dario Rozo Torres
 **Última Modificación:** Ramón Dario Rozo Torres
@@ -6,7 +6,7 @@
 
 ## Descripción
 
-Widget chat web para la empresa ETB IDEARTES.
+Widget chat web para la empresa ETB IDARTED.
 
 ## 📦 Información Técnica
 
