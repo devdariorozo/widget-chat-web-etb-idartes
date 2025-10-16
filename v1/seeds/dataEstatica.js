@@ -28,19 +28,21 @@ const estadoGestion = {
 // * ARBOL
 const arbol = {
     saludo: 'Saludo',
-    despedida: 'Despedida',
-    instrucciones: 'Instrucciones',
-    inicio: 'Inicio',
-    solicitarFormularioInicial: 'Solicitar Formulario Inicial',
-    procesarFormularioInicial: 'Procesar Formulario Inicial',
-    interaccionAISoul: 'Interaccion AI Soul',
-    condicionAdjuntos: 'Condicion Adjuntos',
-    confirmarAdjuntos: 'Confirmar Adjuntos',
+    solicitarNombresApellidos: 'Solicitar Nombres Apellidos',
+    solicitarGenero: 'Solicitar Genero',
+    solicitarCorreoElectronico: 'Solicitar Correo Electrónico',
+    solicitarNumeroTelefono: 'Solicitar Numero Telefono',
+    solicitarLocalidad: 'Solicitar Localidad',
+    solicitarEnQuePodemosAyudarle: 'Solicitar En Que Podemos Ayudarle',
+    solicitarRangoEdad: 'Solicitar Rango Edad',
+    solicitarAutorizacionTratamientoDatos: 'Solicitar Autorizacion Tratamiento Datos',
+    solicitarPasoAsesor: 'Solicitar Paso Asesor',
     alertaNoEntiendo: 'Alerta No Entiendo',
-    errorApi: 'Error API',
     clienteDesiste: 'Cliente Desiste',
+    errorApi: 'Error API',
     alertaInactividad: 'Alerta Inactividad',
-    cerradoPorInactividad: 'Cerrado Por Inactividad'
+    cerradoPorInactividad: 'Cerrado Por Inactividad',
+    despedida: 'Despedida'
 };
 
 // * CONTROL DE ARBOL
@@ -56,15 +58,6 @@ const controlApi = {
 const saludo = `<p class="saludoChat">
                     🙋‍♂️ Hola, saludo pendiente por definir...
                 </p>`;
-
-// TODO: MENSAJE DE DESPEDIDA
-const despedida = `<p class="despedidaChat">🌟 ¡Gracias por haber utilizado nuestro servicio!<br/><br/>
-                    😊 Esperamos haberle ayudado.<br/>
-                    <b>¡Estamos para servirle!</b> 👋</p>`
-
-// TODO: MENSAJE DE INSTRUCCIONES
-const instrucciones = `<p class="instruccionesArbol">Hola,<br/><br/>
-                        📝 <b>En el momento que desee volver a empezar, por favor escriba <b>inicio</b> o <b>INICIO</b> para regresar al menú principal🔄</b></p>`;
 
 // TODO: MENSAJE SOLICITANDO NOMBRES Y APELLIDOS
 const solicitarNombresApellidos = `  <p class="solicitarNombresApellidosArbol">👉 <b>Nombres y Apellidos.</b><br/><br/>
@@ -108,13 +101,13 @@ const solicitarRangoEdad = `  <p class="solicitarRangoEdadArbol">👉 <b>Rango d
                                 <b>2.</b> 12 a 18 años<br/>
                                 <b>3.</b> 19 a 29 años<br/>
                                 <b>4.</b> 30 a 50 años<br/>
-                                <b>10.</b> Más de 50 años<br/><br/>
+                                <b>5.</b> Más de 50 años<br/><br/>
                                 
                                 <i>Por favor, seleccione una opción para continuar.</i>
                             </p>`;
 
 // TODO: MENSAJE SOLICITANDO AUTORIZACION DE TRATAMIENTO DE DATOS
-const solicitarAutorizacionTratamientoDatos = `  <p class="solicitarAutorizacionTratamientoDatosArbol">👉 <b>Autorización de Tratamiento de Datos.</b><br/><br/>
+const solicitarAutorizacionTratamientoDatos = `  <p class="solicitarAutorizacionTratamientoDatosArbol">👉 <b>Autorización Tratamiento de Datos.</b><br/><br/>
 
                                                     Idartes tratará su información con fines exclusivos para el trámite del servicio; en cumplimiento de lo establecido en la Ley 1581 de 2012 y demás normas, sobre el tratamiento de datos.<br/><br/>
 
@@ -124,29 +117,29 @@ const solicitarAutorizacionTratamientoDatos = `  <p class="solicitarAutorizacion
                                                     <i>Por favor, seleccione una opción para continuar.</i>
                                                 </p>`;
 
-// TODO: MENSAJE SOLICITANDO TIPO DE DOCUMENTO
-const solicitarTipoDocumento = `  <p class="solicitarTipoDocumentoArbol">👉 <b>Tipo de Documento.</b><br/><br/>
-                                        <i>Por favor, ingrese su tipo de documento.</i>
-                                    </p>`;
+// TODO: MENSAJE SOLICITANDO PASO ASESOR
+const solicitarPasoAsesor = `  <p class="solicitarPasoAsesorArbol">👉 <b>Paso Asesor.</b><br/><br/>
+                                <i>En este momento le estaremos asignando un asesor para atenderle.</i>
+                            </p>`;
 
-// TODO: MENSAJE SOLICITANDO CONDICION DE ADJUNTOS
-const condicionAdjuntos = `<p class="condicionAdjuntosArbol">📝 <b>Adjuntar documentos:</b> <br/><br/>
-                            📢 <i>No es obligatorio.</i><br/><br/>
-                            ⚠️ <i>Se permite un máximo de 5 archivos.</i><br/>
-                            ⚠️ <i>Los documentos deben ser archivos tipo .pdf .xls .xlsx .jpg .png .doc .docx únicamente y no deben superar los 5 MB.</i><br/><br/>
-                            1. Adjuntar documentos <br/>
-                            2. Continuar.</p>`;
+// // TODO: MENSAJE SOLICITANDO CONDICION DE ADJUNTOS
+// const condicionAdjuntos = `<p class="condicionAdjuntosArbol">📝 <b>Adjuntar documentos:</b> <br/><br/>
+//                             📢 <i>No es obligatorio.</i><br/><br/>
+//                             ⚠️ <i>Se permite un máximo de 5 archivos.</i><br/>
+//                             ⚠️ <i>Los documentos deben ser archivos tipo .pdf .xls .xlsx .jpg .png .doc .docx únicamente y no deben superar los 5 MB.</i><br/><br/>
+//                             1. Adjuntar documentos <br/>
+//                             2. Continuar.</p>`;
 
-// TODO: MENSAJE DE CONFIRMAR ADJUNTOS
-const confirmarAdjuntos = `<p class="confirmarAdjuntosArbol">📝 <b>Por favor, adjuntar los archivos.</b></p>`;
+// // TODO: MENSAJE DE CONFIRMAR ADJUNTOS
+// const confirmarAdjuntos = `<p class="confirmarAdjuntosArbol">📝 <b>Por favor, adjuntar los archivos.</b></p>`;
 
 // TODO: MENSAJE DE ALERTA DE NO ENTIENDO
 const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
                             ⚠️ <i>Por favor, asegúrese de seguir las instrucciones y proporcione una respuesta válida.</i></p>`;
-// // TODO: MENSAJE DE ALERTA DE NO ENTIENDO
-// const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
-//                             ⚠️ <i>Por favor, asegúrese de seguir las instrucciones y proporcione una respuesta válida.</i><br/><br/>
-//                             ⚠️ <i>En el momento que desee volver, por favor escriba <b>inicio</b> o <b>INICIO</b> para volver a empezar 🔄.</i></p>`;
+
+// TODO: MENSAJE DE CLIENTE DESISTE
+const clienteDesiste = `<p class="clienteDesisteArbol">⚠️ <b>Hemos notado que ha decidido no continuar con la atención en nuestro sistema.</b><br/><br/>
+                           👉 <i>Si necesita asistencia no dude en contactarnos nuevamente.</i></p>`;
 
 // TODO: MENSAJE DE ALERTA DE ERROR API
 const alertaErrorAPI = `<p class="alertaErrorAPIArbol">⏳ <b>Estamos experimentando una incidencia técnica.</b><br/><br/>
@@ -157,9 +150,10 @@ const novedadIncidenciaTecnica = `<p class="novedadIncidenciaTecnicaArbol">🚨 
                                 🔄 Estamos experimentando una novedad o incidencia técnica.<br/>
                                 🕰️ Por favor, intente nuevamente más tarde. Agradecemos su paciencia.</p>`;
 
-// TODO: MENSAJE DE CLIENTE DESISTE
-const clienteDesiste = `<p class="clienteDesisteArbol">⚠️ <b>Hemos notado que ha decidido no continuar con la atención en nuestro sistema.</b><br/><br/>
-                           👉 <i>Si necesita asistencia no dude en contactarnos nuevamente.</i></p>`;
+// TODO: MENSAJE DE DESPEDIDA
+const despedida = `<p class="despedidaChat">🌟 ¡Gracias por haber utilizado nuestro servicio!<br/><br/>
+                    😊 Esperamos haberle ayudado.<br/>
+                    <b>¡Estamos para servirle!</b> 👋</p>`
 
 // TODO: MENSAJE POR CHAT DIFERENTE A ABIERTO
 const chatDiferenteAbierto = `<p class="chatDiferenteAbiertoArbol">⚠️ <b>Este chat está actualmente cerrado.</b><br/><br/>
@@ -197,7 +191,7 @@ const estadoRegistro = {
 };
 
 // * RESPONSABLE
-const responsable = 'Thomas Greg y Sons - IDC Exterior Chatbot';
+const responsable = 'Widget Chat Web ETB - IDARTES';
 
 // ! EXPORTACIONES ORGANIZADAS POR CATEGORÍAS
 module.exports = {
@@ -220,15 +214,20 @@ module.exports = {
     // * MENSAJES DEL SISTEMA
     mensajes: {
         saludo,
-        despedida,
-        instrucciones,
-        solicitarFormularioInicial,
-        condicionAdjuntos,
-        confirmarAdjuntos,
+        solicitarNombresApellidos,
+        solicitarGenero,
+        solicitarCorreoElectronico,
+        solicitarNumeroTelefono,
+        solicitarLocalidad,
+        solicitarEnQuePodemosAyudarle,
+        solicitarRangoEdad,
+        solicitarAutorizacionTratamientoDatos,
+        solicitarPasoAsesor,
         alertaNoEntiendo,
+        clienteDesiste,
         alertaErrorAPI,
         novedadIncidenciaTecnica,
-        clienteDesiste,
+        despedida,
         chatDiferenteAbierto
     }
 };

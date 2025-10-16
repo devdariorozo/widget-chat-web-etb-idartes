@@ -13,15 +13,15 @@
 
 
 -- ? ELIMINAR LA BASE DE DATOS SI EXISTE
-DROP DATABASE IF EXISTS `dbd_widget_chat_web_etb_idarted`;
+DROP DATABASE IF EXISTS `dbd_widget_chat_web_etb_idartes`;
 
 
 
 -- ? CREAR LA BASE DE DATOS
-CREATE DATABASE `dbd_widget_chat_web_etb_idarted`;
+CREATE DATABASE `dbd_widget_chat_web_etb_idartes`;
 
 
 -- ? USAR LA BASE DE DATOS
-USE `dbd_widget_chat_web_etb_idarted`;
+USE `dbd_widget_chat_web_etb_idartes`;
 
 

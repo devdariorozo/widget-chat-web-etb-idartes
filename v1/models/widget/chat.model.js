@@ -90,17 +90,14 @@ const filtrar = async (idChatWeb) => {
                 cht_control_api AS CONTROL_API,
                 cht_control_peticiones AS CONTROL_PETICIONES,
                 cht_resultado_api AS RESULTADO_API,
-                cht_nombres AS NOMBRES, 
-                cht_apellidos AS APELLIDOS,
-                cht_numero_cedula AS NUMERO_CEDULA,
-                cht_pais_residencia AS PAIS_RESIDENCIA,
-                cht_ciudad_residencia AS CIUDAD_RESIDENCIA,
-                cht_indicativo_pais AS INDICATIVO_PAIS,
-                cht_numero_celular AS NUMERO_CELULAR,
+                cht_nombres_apellidos AS NOMBRES_APELLIDOS, 
+                cht_genero AS GENERO,
                 cht_correo_electronico AS CORREO_ELECTRONICO,
-                cht_autorizacion_datos_personales AS AUTORIZACION_DATOS_PERSONALES,
-                cht_adjuntos AS ADJUNTOS,
-                cht_ruta_adjuntos AS RUTA_ADJUNTOS,
+                cht_telefono AS TELEFONO,
+                cht_localidad AS LOCALIDAD,
+                cht_en_que_podemos_ayudarle AS EN_QUE_PODEMOS_AYUDARLE,
+                cht_rango_edad AS RANGO_EDAD,
+                cht_autorizacion_tratamiento_datos AS AUTORIZACION_TRATAMIENTO_DATOS,
                 cht_descripcion AS DESCRIPCION,
                 cht_registro AS REGISTRO,
                 cht_actualizacion AS FECHA_ACTUALIZACION,
@@ -125,7 +122,7 @@ const filtrar = async (idChatWeb) => {
 };
 
 // * FORMULARIO INICIAL
-const formularioInicial = async (idChatWeb, pasoArbol, nombres, apellidos, numeroCedula, paisResidencia, ciudadResidencia, indicativoPais, numeroCelular, correoElectronico, autorizacionDatosPersonales, descripcion) => {
+const formularioInicial = async (idChatWeb, pasoArbol, nombresApellidos, genero, correoElectronico, telefono, localidad, enQuePodemosAyudarle, rangoEdad, autorizacionTratamientoDatos, descripcion) => {
     try {
         // todo: Sentencia SQL
         const query = `
@@ -133,22 +130,21 @@ const formularioInicial = async (idChatWeb, pasoArbol, nombres, apellidos, numer
                 tbl_chat
             SET
                 cht_arbol = ?,
-                cht_nombres = ?,
-                cht_apellidos = ?,
-                cht_numero_cedula = ?,
-                cht_pais_residencia = ?,
-                cht_ciudad_residencia = ?,
-                cht_indicativo_pais = ?,
-                cht_numero_celular = ?,
+                cht_nombres_apellidos = ?,
+                cht_genero = ?,
                 cht_correo_electronico = ?,
-                cht_autorizacion_datos_personales = ?,
+                cht_telefono = ?,
+                cht_localidad = ?,
+                cht_en_que_podemos_ayudarle = ?,
+                cht_rango_edad = ?,
+                cht_autorizacion_tratamiento_datos = ?,
                 cht_descripcion = ?
             WHERE
                 cht_remitente = ?;
         `;
 
         // todo: Ejecutar la sentencia y retornar respuesta
-        const result = await pool.query(query, [pasoArbol, nombres, apellidos, numeroCedula, paisResidencia, ciudadResidencia, indicativoPais, numeroCelular, correoElectronico, autorizacionDatosPersonales, descripcion, idChatWeb]);
+            const result = await pool.query(query, [pasoArbol, nombresApellidos, genero, correoElectronico, telefono, localidad, enQuePodemosAyudarle, rangoEdad, autorizacionTratamientoDatos, descripcion, idChatWeb]);
 
         // todo: Obtener el id del chat
         const queryIdChat = `
@@ -248,17 +244,14 @@ const monitor = async (fechaInicial, fechaFinal, opcionControlApi, numeroLimite,
                 cht_control_api AS CONTROL_API,
                 cht_control_peticiones AS CONTROL_PETICIONES,
                 cht_resultado_api AS RESULTADO_API,
-                cht_nombres AS NOMBRES,
-                cht_apellidos AS APELLIDOS,
-                cht_numero_cedula AS NUMERO_CEDULA,
-                cht_pais_residencia AS PAIS_RESIDENCIA,
-                cht_ciudad_residencia AS CIUDAD_RESIDENCIA,
-                cht_indicativo_pais AS INDICATIVO_PAIS,
-                cht_numero_celular AS NUMERO_CELULAR,
+                cht_nombres_apellidos AS NOMBRES_APELLIDOS,
+                cht_genero AS GENERO,
                 cht_correo_electronico AS CORREO_ELECTRONICO,
-                cht_autorizacion_datos_personales AS AUTORIZACION_DATOS_PERSONALES,
-                cht_adjuntos AS ADJUNTOS,
-                cht_ruta_adjuntos AS RUTA_ADJUNTOS,
+                cht_telefono AS TELEFONO,
+                cht_localidad AS LOCALIDAD,
+                cht_en_que_podemos_ayudarle AS EN_QUE_PODEMOS_AYUDARLE,
+                cht_rango_edad AS RANGO_EDAD,
+                cht_autorizacion_tratamiento_datos AS AUTORIZACION_TRATAMIENTO_DATOS,
                 cht_descripcion AS DESCRIPCION,
                 cht_registro AS REGISTRO,
                 cht_actualizacion AS FECHA_ACTUALIZACION,
@@ -349,6 +342,12 @@ const listarArchivosAdjuntos = async (idChat) => {
 // * ACTUALIZAR
 const actualizar = async (idChat, pasoArbol, chatData) => {
     try {
+        // todo: Asegurar que resultadoApi sea una cadena JSON válida
+        let resultadoApiString = chatData.resultadoApi;
+        if (typeof chatData.resultadoApi === 'object' && chatData.resultadoApi !== null) {
+            resultadoApiString = JSON.stringify(chatData.resultadoApi);
+        }
+
         // todo: Sentencia SQL
         const query = `
             UPDATE
@@ -358,17 +357,14 @@ const actualizar = async (idChat, pasoArbol, chatData) => {
                 cht_control_api = ?,
                 cht_control_peticiones = ?,
                 cht_resultado_api = ?,
-                cht_nombres = ?,
-                cht_apellidos = ?,
-                cht_numero_cedula = ?,
-                cht_pais_residencia = ?,
-                cht_ciudad_residencia = ?,
-                cht_indicativo_pais = ?,
-                cht_numero_celular = ?,
+                cht_nombres_apellidos = ?,
+                cht_genero = ?,
                 cht_correo_electronico = ?,
-                cht_autorizacion_datos_personales = ?,
-                cht_adjuntos = ?,
-                cht_ruta_adjuntos = ?,
+                cht_telefono = ?,
+                cht_localidad = ?,
+                cht_en_que_podemos_ayudarle = ?,
+                cht_rango_edad = ?,
+                cht_autorizacion_tratamiento_datos = ?,
                 cht_descripcion = ?,
                 cht_registro = ?,
                 cht_responsable = ?
@@ -381,18 +377,15 @@ const actualizar = async (idChat, pasoArbol, chatData) => {
             pasoArbol,
             chatData.controlApi,
             chatData.controlPeticiones,
-            chatData.resultadoApi,
-            chatData.nombres,
-            chatData.apellidos,
-            chatData.numeroCedula,
-            chatData.paisResidencia,
-            chatData.ciudadResidencia,
-            chatData.indicativoPais,
-            chatData.numeroCelular,
+            resultadoApiString,
+            chatData.nombresApellidos,
+            chatData.genero,
             chatData.correoElectronico,
-            chatData.autorizacionDatosPersonales,
-            chatData.adjuntos,
-            chatData.rutaAdjuntos,
+            chatData.telefono,
+            chatData.localidad,
+            chatData.enQuePodemosAyudarle,
+            chatData.rangoEdad,
+            chatData.autorizacionTratamientoDatos,
             chatData.descripcion,
             chatData.estadoRegistro,
             chatData.responsable,
@@ -504,8 +497,18 @@ const listarChatsAbiertosAntiguos = async (tiempoLimiteHoras, fechaActual) => {
                 cht_remitente AS REMITENTE,
                 cht_fecha AS FECHA_REGISTRO,
                 cht_arbol AS ARBOL,
-                cht_nombres AS NOMBRES,
-                cht_apellidos AS APELLIDOS,
+                cht_nombres_apellidos AS NOMBRES_APELLIDOS,
+                cht_genero AS GENERO,
+                cht_correo_electronico AS CORREO_ELECTRONICO,
+                cht_telefono AS TELEFONO,
+                cht_localidad AS LOCALIDAD,
+                cht_en_que_podemos_ayudarle AS EN_QUE_PODEMOS_AYUDARLE,
+                cht_rango_edad AS RANGO_EDAD,
+                cht_autorizacion_tratamiento_datos AS AUTORIZACION_TRATAMIENTO_DATOS,
+                cht_descripcion AS DESCRIPCION,
+                cht_registro AS REGISTRO,
+                cht_actualizacion AS FECHA_ACTUALIZACION,
+                cht_responsable AS RESPONSABLE,
                 TIMESTAMPDIFF(HOUR, cht_fecha, ?) AS HORAS_TRANSCURRIDAS
             FROM
                 tbl_chat

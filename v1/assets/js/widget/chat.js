@@ -1,8 +1,7 @@
 // ! ================================================================================================================================================
 // !                                                      CHAT WEB
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres (24 de Enero de 2025)
-// @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
+// @author Ramón Dario Rozo Torres
 // @version 1.0.0
 // v1/assets/js/widget/chat.js
 
@@ -214,7 +213,11 @@ $(document).ready(function(){
                             await desplazarScrollVentana();
                             await desplazarScrollConversacion();
                         }
-                        txtMensaje.focus();
+                        
+                        // Dar focus con un pequeño delay para asegurar que el DOM se actualice
+                        setTimeout(() => {
+                            txtMensaje.focus();
+                        }, 100);
                     } else {
                         console.log('❌ Error en v1/assets/js/widget/chat.js → btnAdjuntar.enviarArchivos ', data.message);
                     }
@@ -273,14 +276,18 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         agregarEtiquetasRemitente();
 
         // todo: Dar el foco al campo de mensaje
-        txtMensaje.focus();
+        setTimeout(() => {
+            txtMensaje.focus();
+        }, 100);
 
         // todo: Enviar mensajes
         btnEnviar.addEventListener('click', async () => {
             // Validar si el mensaje está vacío
             const mensaje = txtMensaje.value.trim();
             if (mensaje === '') {
-                txtMensaje.focus();
+                setTimeout(() => {
+                    txtMensaje.focus();
+                }, 100);
                 return;
             }
         
@@ -524,8 +531,12 @@ const observadorFormulario = new MutationObserver((mutations) => {
                                     if (window.M && M.textareaAutoResize) {
                                         M.textareaAutoResize(txtMensaje);
                                     }
-                                    txtMensaje.focus();
                                     txtMensaje.readOnly = false;
+                                    
+                                    // Dar focus con un pequeño delay para asegurar que el DOM se actualice
+                                    setTimeout(() => {
+                                        txtMensaje.focus();
+                                    }, 100);
                                 } else if (resultFormulario.status === 429) {
                                     // DETENER EL INTERVALO SI HAY ERROR 429 (Rate Limit)
                                     // No reintentar porque el servidor está limitando intencionalmente
@@ -662,7 +673,11 @@ function eliminarTypingIndicator() {
             
             txtMensaje.readOnly = false;
             contentFormTexto.classList.remove('hide');
-            txtMensaje.focus();
+            
+            // Dar focus con un pequeño delay para asegurar que el DOM se actualice
+            setTimeout(() => {
+                txtMensaje.focus();
+            }, 100);
         }
     }
 }
@@ -797,7 +812,11 @@ function reactivarChatDespuesDeError429() {
     if (txtMensaje && contentFormTexto) {
         txtMensaje.readOnly = false;
         contentFormTexto.classList.remove('hide');
-        txtMensaje.focus();
+        
+        // Dar focus con un pequeño delay para asegurar que el DOM se actualice
+        setTimeout(() => {
+            txtMensaje.focus();
+        }, 100);
         console.log('👁️ Formulario reactivado después del error 429');
     }
     
@@ -1031,6 +1050,11 @@ async function listarMensajeNoLeido() {
             
             // Mostrar el formulario de texto por defecto
             contentFormTexto.classList.remove('hide');
+            
+            // Dar focus al textarea cuando se muestre el formulario
+            setTimeout(() => {
+                txtMensaje.focus();
+            }, 100);
 
             // Si el mensaje es de tipo Formulario
             if (mensaje.TIPO === 'Formulario') {
