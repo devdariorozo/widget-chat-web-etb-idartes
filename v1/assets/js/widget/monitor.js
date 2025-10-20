@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     } catch (error) {
         // todo: notificamos
-        controlNotificaciones('error', 'Thomas Greg y Sons - IDC Exterior Chatbot', 'Error al listar las opciones de control API, por favor inténtelo de nuevo y/o comuníquese con nosotros.');
+        controlNotificaciones('error', 'ETB - IDARTES', 'Error al listar las opciones de control API, por favor inténtelo de nuevo y/o comuníquese con nosotros.');
     }
 
     // * CONFIGURACION DATATABLE CON PAGUINACION EN EL SERVIDOR
@@ -96,35 +96,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         ordering: false,
         searching: false,
         columns: [
-            { data: "ID_CHAT" }, //0
-            { data: "FECHA_REGISTRO" }, //1
+            { data: "ID_CHAT" }, //0 - MOSTRAR
+            { data: "FECHA_REGISTRO" }, //1 - MOSTRAR
             { data: "TIPO" }, //2
             { data: "REMITENTE" }, //3
             { data: "ESTADO" }, //4
-            { data: "GESTION" }, //5
-            { data: "ARBOL" }, //6
-            { data: "CONTROL_API" }, //7
-            { data: "CONTROL_PETICIONES" }, //8
+            { data: "GESTION" }, //5 - MOSTRAR
+            { data: "ARBOL" }, //6 - MOSTRAR
+            { data: "CONTROL_API" }, //7 - MOSTRAR
+            { data: "CONTROL_PETICIONES" }, //8 - MOSTRAR
             { data: "RESULTADO_API" }, //9
-            { data: "NOMBRES" }, //10
-            { data: "APELLIDOS" }, //11
-            { data: "NUMERO_CEDULA" }, //12
-            { data: "PAIS_RESIDENCIA" }, //13
-            { data: "CIUDAD_RESIDENCIA" }, //14
-            { data: "INDICATIVO_PAIS" }, //15
-            { data: "NUMERO_CELULAR" }, //16
-            { data: "CORREO_ELECTRONICO" }, //17
-            { data: "AUTORIZACION_DATOS_PERSONALES" }, //18
-            { data: "ADJUNTOS" }, //19
-            { data: "RUTA_ADJUNTOS" }, //20
-            { data: "DESCRIPCION" }, //21
-            { data: "REGISTRO" }, //22
-            { data: "FECHA_ACTUALIZACION" }, //23
-            { data: "RESPONSABLE" } //24
+            { data: "NOMBRES_APELLIDOS" }, //10
+            { data: "GENERO" }, //11
+            { data: "CORREO_ELECTRONICO" }, //12
+            { data: "TELEFONO" }, //13
+            { data: "LOCALIDAD" }, //14
+            { data: "EN_QUE_PODEMOS_AYUDARLE" }, //15
+            { data: "RANGO_EDAD" }, //16
+            { data: "AUTORIZACION_TRATAMIENTO_DATOS" }, //17
+            { data: "DESCRIPCION" }, //18 - MOSTRAR
+            { data: "REGISTRO" }, //19 - MOSTRAR
+            { data: "FECHA_ACTUALIZACION" }, //20
+            { data: "RESPONSABLE" } //21 - MOSTRAR
         ],
         columnDefs: [
             {
-                targets: [2, 3, 4, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], // Condiciono las columnas apiladas
+                targets: [2, 3, 4, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20], // Condiciono las columnas apiladas
                 className: 'none'
             },
         ],
@@ -133,7 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             {
                 extend: 'copyHtml5',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
                     modifier: {
                         page: 'all'  // Exportar todos los registros
                     }
@@ -143,24 +140,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             {
                 extend: 'excelHtml5',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
                     modifier: {
                         page: 'all' // Exportar todos los registros
                     }
                 },
-                filename: 'Reporte Widget Thomas Greg y Sons',
+                filename: 'Reporte Widget Chat Web ETB - IDARTES',
                 charset: 'utf-8'
             },
             {
                 extend: 'csvHtml5',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
                     modifier: {
                         page: 'all' // Exportar todos los registros
                     }
                 },
                 bom: true,
-                filename: 'Reporte Widget Thomas Greg y Sons',
+                filename: 'Reporte Widget Chat Web ETB - IDARTES',
                 charset: 'utf-8'
             },
             {
@@ -170,13 +167,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 fieldBoundary: '',
                 extension: '.txt',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
                     modifier: {
                         page: 'all' // Exportar todos los registros
                     }
                 },
                 bom: true,
-                filename: 'Reporte Widget Thomas Greg y Sons',
+                filename: 'Reporte Widget Chat Web ETB - IDARTES',
                 charset: 'utf-8'
             }
         ],
@@ -210,7 +207,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('content_form').classList.remove('hide');
         document.getElementById('content_preload').classList.add('hide');
         // Notificamos
-        controlNotificaciones('success', 'Thomas Greg y Sons - IDC Exterior Chatbot', 'Se listaron correctamente los registros en el sistema.');
+        controlNotificaciones('success', 'ETB - IDARTES', 'Se listaron correctamente los registros en el sistema.');
     });
 
 
@@ -219,7 +216,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // todo: alerta de confirmacion
         swal.fire({
             position: 'center',
-            title: 'Thomas Greg y Sons - IDC Exterior Chatbot',
+            title: 'ETB - IDARTES',
             html: `<i class="fas fa-hand-point-right"></i> Monitorear Chats?`,
             icon: 'info',
             showCancelButton: true,
@@ -239,7 +236,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.getElementById('content_preload').classList.remove('hide');
 
                 // todo: notificamos
-                controlNotificaciones('info', 'Thomas Greg y Sons - IDC Exterior Chatbot', 'Consultando registros, por favor espere...');
+                controlNotificaciones('info', 'ETB - IDARTES', 'Consultando registros, por favor espere...');
 
                 // todo: blindeje de campos
                 if (document.getElementById('txt_fechaInicial').value && document.getElementById('txt_fechaFinal').value && document.getElementById('txt_controlApi').value) {
@@ -255,7 +252,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     document.getElementById('content_preload').classList.add('hide');
                     document.getElementById('content_form').classList.remove('hide');
                     // todo: notificamos
-                    controlNotificaciones('warning', 'Thomas Greg y Sons - IDC Exterior Chatbot', 'Tienes campos incorrectos en el formulario...');
+                    controlNotificaciones('warning', 'ETB - IDARTES', 'Tienes campos incorrectos en el formulario...');
                     return;
                 }
 
@@ -389,7 +386,7 @@ async function listarRegistros(data, callback) {
             document.getElementById('total_error').textContent = await formatearNumeroMiles(result.data.filter(item => item.CONTROL_API === 'Error').length);
         } else {
             // todo: notificamos
-            controlNotificaciones('warning', 'Thomas Greg y Sons - IDC Exterior Chatbot', result.message);
+            controlNotificaciones('warning', 'ETB - IDARTES', result.message);
 
             // todo: Llamamos las funciones de validación
             valida_txt_fechaInicial();
@@ -398,7 +395,7 @@ async function listarRegistros(data, callback) {
         }
     } catch (error) {
         // todo: notificamos
-        controlNotificaciones('error', 'Thomas Greg y Sons - IDC Exterior Chatbot', 'Error al listar los registros, por favor inténtelo de nuevo y/o comuníquese con nosotros.');
+        controlNotificaciones('error', 'ETB - IDARTES', 'Error al listar los registros, por favor inténtelo de nuevo y/o comuníquese con nosotros.');
     }
 }
 

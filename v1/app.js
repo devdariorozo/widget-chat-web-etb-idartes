@@ -65,7 +65,7 @@ app.use(express.static(path.join(__dirname, 'uploads')));
 
 // ! MIDDLEWARES
 // * MIDDLEWARE MORGAN PARA REGISTRAR SOLICITUDES HTTP
-app.use(morgan('■ Thomas Greg y Sons :localdate → :method → :status • :url → :response-time ms'));
+app.use(morgan('■ ETB IDARTES :localdate → :method → :status • :url → :response-time ms'));
 
 // * MIDDLEWARE DE RATE LIMITING GENERAL
 // const { apiLimiter } = require('./middlewares/rateLimiter.js');
