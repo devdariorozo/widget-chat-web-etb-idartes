@@ -62,12 +62,12 @@ const crear = async (req, res) => {
 
                 // todo: Navegar arbol chat bot
                 const resultArbol = await modelArbolChatBot.arbolChatBot(remitente, contenido);
-                if (resultArbol) {
+                if (resultArbol !== undefined) {
                     // todo: Enviar respuesta
                     return res.json({
                         status: 200,
                         type: 'success',
-                        title: 'Thomas Greg y Sons - IDC Exterior Chatbot',
+                        title: dataEstatica.configuracion.responsable,
                         message: 'El mensaje se ha creado correctamente en el sistema.',
                     });
                 } else {
@@ -75,7 +75,7 @@ const crear = async (req, res) => {
                     return res.json({
                         status: 409,
                         type: 'warning',
-                        title: 'Thomas Greg y Sons - IDC Exterior Chatbot',
+                        title: dataEstatica.configuracion.responsable,
                         message: 'No se pudo crear el mensaje, por favor intenta de nuevo o comunícate con nosotros.',
                     });
                 }
@@ -110,7 +110,7 @@ const crearSoulChat = async (req, res) => {
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: 'Thomas Greg y Sons - IDC Exterior Chatbot',
+                title: dataEstatica.configuracion.responsable,
                 message: errors.array()[0].msg
             });
         }
@@ -132,7 +132,7 @@ const crearSoulChat = async (req, res) => {
         const responsable = dataEstatica.configuracion.responsable;
 
         // todo: Crear el registro
-        const result = await model.crear(idChat, remitente, estado, tipo, contenido, enlaces, lectura, descripcion, registro, responsable);
+        const result = await model.crearSoulChat(idChat, remitente, estado, tipo, contenido, enlaces, lectura, descripcion, registro, responsable);
 
         // todo: Enviar respuesta
         if (result) {

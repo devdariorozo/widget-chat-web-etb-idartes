@@ -1,17 +1,17 @@
 // ! ================================================================================================================================================
 // !                                                             ENRUTADOR DE CHAT WEB
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres (24 de Enero de 2025)
-// @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
+// @author Ramón Dario Rozo Torres
+// @lastModified Ramón Dario Rozo Torres  
 // @version 1.0.0
-// v1/routes.routes.js
+// v1/routes/widget/chat.routes.js
 
 // ! REQUIRES
 const express = require('express');
 const router = express.Router();
 const validator = require('../../validators/widget/chat.validator.js');
 const controller = require('../../controllers/widget/chat.controller.js');
-const { criticalEndpointsLimiter, formLimiter } = require('../../middlewares/rateLimiter.js');
+const { crearChatLimiter, formLimiter } = require('../../middlewares/rateLimiter.js');
 
 // ! RUTAS
 // * CHAT WEB
@@ -21,7 +21,7 @@ router.get('/web', (req, res) => {
 });
 
 // TODO: CREAR
-router.post('/crear', criticalEndpointsLimiter, validator.crear, controller.crear);
+router.post('/crear', crearChatLimiter, validator.crear, controller.crear);
 
 // TODO: ACTUALIZAR - RECIBE DATOS DE FORMULARIO INICIAL
 router.post('/formularioInicial', formLimiter, validator.formularioInicial, controller.formularioInicial);

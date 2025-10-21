@@ -1,10 +1,10 @@
 // ! ================================================================================================================================================
-// !                                                             ENRUTADOR DE CHAT WEB
+// !                                                             ENRUTADOR DE MENSAJE
 // ! ================================================================================================================================================
 // @author Ramón Dario Rozo Torres (24 de Enero de 2025)
 // @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
 // @version 1.0.0
-// v1/routes/widget/chatWeb.routes.js
+// v1/routes/widget/mensaje.routes.js
 
 // ! REQUIRES
 const express = require('express');
@@ -13,7 +13,7 @@ const validator = require('../../validators/widget/mensaje.validator.js');
 const controller = require('../../controllers/widget/mensaje.controller.js');
 const multer = require('multer');
 const path = require('path');
-const { chatLimiter, uploadLimiter, inactivityLimiter, apiLimiter } = require('../../middlewares/rateLimiter.js');
+const { crearMensajeLimiter, crearMensajeSoulChatLimiter } = require('../../middlewares/rateLimiter.js');
 
 // Configuración de multer para manejar archivos
 const storage = multer.diskStorage({
@@ -29,10 +29,10 @@ const upload = multer({ storage: storage });
 
 // ! RUTAS
 // TODO: CREAR MENSAJE
-router.post('/crear', chatLimiter, validator.crear, controller.crear);
+router.post('/crear', crearMensajeLimiter, validator.crear, controller.crear);
 
 // TODO: CREAR MENSAJE DESDE SOUL CHAT
-router.post('/crearSoulChat', chatLimiter, validator.crearSoulChat, controller.crearSoulChat);
+router.post('/crearSoulChat', crearMensajeSoulChatLimiter, validator.crearSoulChat, controller.crearSoulChat);
 
 // TODO: LISTAR MENSAJE NO LEÍDOS
 router.get('/listarNoLeido', validator.listarNoLeido, controller.listarNoLeido);

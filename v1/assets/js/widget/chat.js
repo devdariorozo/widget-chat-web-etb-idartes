@@ -2,6 +2,7 @@
 // !                                                      CHAT WEB
 // ! ================================================================================================================================================
 // @author Ramón Dario Rozo Torres
+// @lastModified Ramón Dario Rozo Torres
 // @version 1.0.0
 // v1/assets/js/widget/chat.js
 
@@ -22,6 +23,8 @@ let error429Manejado = false; // Para evitar manejar múltiples veces el mismo e
 let countdown429Interval = null; // Para controlar el countdown del error 429
 // Registro local de mensajes ya renderizados para evitar duplicados visuales
 const renderedMessageIds = new Set();
+// Control de estado para evitar múltiples envíos simultáneos
+let enviandoMensaje = false; // Flag para controlar si ya se está enviando un mensaje
 
 // ! EVENTOS DE ACTIVIDAD
 // Eventos que se disparan frecuentemente (necesitan debounce)
@@ -190,7 +193,7 @@ $(document).ready(function(){
                         // OCULTAR INMEDIATAMENTE EL FORMULARIO AL DETECTAR ERROR 429
                         const contentFormTexto = document.getElementById('contentFormTexto');
                         contentFormTexto.classList.add('hide');
-                        console.log('🚨 Formulario ocultado INMEDIATAMENTE por error 429 (vigilancia)');
+                        //console.log('🚨 Formulario ocultado INMEDIATAMENTE por error 429 (vigilancia)');
                         
                         manejarError429HTTP(errorData);
                         return { status: 429, message: 'Límite de API excedido' };
@@ -213,11 +216,7 @@ $(document).ready(function(){
                             await desplazarScrollVentana();
                             await desplazarScrollConversacion();
                         }
-                        
-                        // Dar focus con un pequeño delay para asegurar que el DOM se actualice
-                        setTimeout(() => {
-                            txtMensaje.focus();
-                        }, 100);
+                        txtMensaje.focus();
                     } else {
                         console.log('❌ Error en v1/assets/js/widget/chat.js → btnAdjuntar.enviarArchivos ', data.message);
                     }
@@ -239,7 +238,7 @@ $(document).ready(function(){
 window.addEventListener('message', function(event) {
     // Verificar si el mensaje contiene información de error 429
     if (event.data && event.data.type === 'error' && event.data.status === 429) {
-        console.log('🚫 Error 429 detectado desde iframe');
+        //console.log('🚫 Error 429 detectado desde iframe');
         if (!error429Manejado) {
             manejarError429Global(event.data.retryAfter);
         }
@@ -276,102 +275,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         agregarEtiquetasRemitente();
 
         // todo: Dar el foco al campo de mensaje
-        setTimeout(() => {
-            txtMensaje.focus();
-        }, 100);
+        txtMensaje.focus();
 
         // todo: Enviar mensajes
         btnEnviar.addEventListener('click', async () => {
-            // Validar si el mensaje está vacío
-            const mensaje = txtMensaje.value.trim();
-            if (mensaje === '') {
-                setTimeout(() => {
-                    txtMensaje.focus();
-                }, 100);
-                return;
-            }
-        
-            // El textarea se deshabilitará automáticamente cuando se muestre el typing indicator
-            
-            // Mostrar el typing indicator después de enviar el mensaje
-            // (se mostrará después del mensaje del usuario)
-        
-            // Función para enviar el mensaje
-            const enviarMensajeConReintento = async () => {
-                const resultEnviarMensaje = await enviarMensaje();
-
-                if (resultEnviarMensaje.status === 200) {
-                    clearInterval(reintentoInterval); // Detener el intervalo si el envío es exitoso
-                    
-                    const resultListar = await listarMensajeNoLeido();
-                    // Solo hacer scroll si hay mensajes nuevos
-                    if (resultListar && resultListar.mensajesNuevos) {
-                        await desplazarScrollVentana();
-                        await desplazarScrollConversacion();
-                    }
-                    
-                    // Limpiar el campo solo cuando el envío sea exitoso
-                    txtMensaje.value = '';
-                    txtMensaje.style.height = 'auto';
-                    if (window.M && M.textareaAutoResize) {
-                        M.textareaAutoResize(txtMensaje);
-                    }
-                    // El textarea se reactivará automáticamente cuando se elimine el typing indicator
-                } else if (resultEnviarMensaje.status === 409) {
-                    clearInterval(reintentoInterval); // Detener el intervalo si el envío es exitoso
-                    const resultListar = await listarMensajeNoLeido();
-                    // Solo hacer scroll si hay mensajes nuevos
-                    if (resultListar && resultListar.mensajesNuevos) {
-                        await desplazarScrollVentana();
-                        await desplazarScrollConversacion();
-                    }
-                    
-                    // Limpiar el campo solo cuando el envío sea exitoso (409 también es exitoso)
-                    txtMensaje.value = '';
-                    txtMensaje.style.height = 'auto';
-                    if (window.M && M.textareaAutoResize) {
-                        M.textareaAutoResize(txtMensaje);
-                    }
-                    // El textarea se reactivará automáticamente cuando se elimine el typing indicator
-                    
-                    // Hacer esto cada 3 segundos por maximo lo equivalente a 1 minutos
-                    let contador = 0;
-                    const maximo = 20; // 1 minuto (20 intervalos de 3 segundos)
-                    const intervaloListar = setInterval(async () => {
-                        contador++;
-                        
-                        if (contador >= maximo) {
-                            clearInterval(intervaloListar);
-                            return;
-                        }
-
-                        const resultListarIntervalo = await listarMensajeNoLeido();
-                        // Solo hacer scroll si hay mensajes nuevos
-                        if (resultListarIntervalo && resultListarIntervalo.mensajesNuevos) {
-                            await desplazarScrollVentana();
-                            await desplazarScrollConversacion();
-                        }
-                    }, 3000);
-                } else if (resultEnviarMensaje.status === 429) {
-                    // DETENER EL INTERVALO SI HAY ERROR 429 (Rate Limit)
-                    // No reintentar porque el servidor está limitando intencionalmente
-                    clearInterval(reintentoInterval);
-                    console.log('🚫 Intervalo de reintento detenido por error 429 (Rate Limit)');
-                } else {
-                    const resultListar = await listarMensajeNoLeido();
-                    // Solo hacer scroll si hay mensajes nuevos
-                    if (resultListar && resultListar.mensajesNuevos) {
-                        await desplazarScrollVentana();
-                        await desplazarScrollConversacion();
-                    }
-                    console.log('❌ Error en v1/assets/js/widget/chat.js → btnEnviar.enviarMensaje ', resultEnviarMensaje);
-                }
-            };
-
-            // Iniciar el envío del mensaje con reintento cada 30 segundos
-            // Solo reintenta en errores técnicos (500, 502, 503, etc.), NO en 429 (Rate Limit)
-            reintentoInterval = setInterval(enviarMensajeConReintento, 30000);
-            enviarMensajeConReintento(); // Intentar enviar el mensaje inmediatamente
+            await manejarEnvioMensaje();
         });
         
     }
@@ -384,6 +292,194 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         agregarEtiquetasRemitente();
     }
 });
+
+// ! MANEJAR ENVÍO DE MENSAJE DESDE EL EVENTO CLICK
+async function manejarEnvioMensaje() {
+    // VERIFICAR SI HAY ERROR 429 ACTIVO - NO PERMITIR ENVÍO SI LO HAY
+    const hayError429Activo = document.querySelector('.mensaje-error-429');
+    if (hayError429Activo) {
+       //console.log('🚫 Error 429 activo, no se permite enviar mensajes');
+        return;
+    }
+
+    // Validar si el mensaje está vacío
+    const txtMensaje = document.getElementById('txt_mensaje');
+    const mensaje = txtMensaje.value.trim();
+    if (mensaje === '') {
+        txtMensaje.focus();
+        return;
+    }
+    //console.log('📤 Pasa por aca → Enviar mensaje', mensaje);
+    
+    // Verificar si ya se está enviando un mensaje
+    if (enviandoMensaje) {
+        //console.log('⚠️ Ya se está enviando un mensaje, ignorando click');
+        return;
+    }
+    
+    // Marcar que se está enviando
+    enviandoMensaje = true;
+    
+    // OCULTAR INMEDIATAMENTE EL FORMULARIO
+    const contentFormTexto = document.getElementById('contentFormTexto');
+    contentFormTexto.classList.add('hide');
+    //console.log('🚨 Formulario ocultado INMEDIATAMENTE al hacer click en Enviar');
+    
+    // NO mostrar typing indicator aquí - se mostrará después de procesar el mensaje del usuario
+    
+    // LISTAR MENSAJES INMEDIATAMENTE PARA MOSTRAR EL MENSAJE DEL USUARIO MÁS RÁPIDO
+    //console.log('⚡ Listando mensajes no leídos inmediatamente al enviar');
+    try {
+        const resultListar = await listarMensajeNoLeido();
+        if (resultListar && resultListar.mensajesNuevos) {
+            await desplazarScrollVentana();
+            await desplazarScrollConversacion();
+        }
+        
+        // NO MOSTRAR TYPING INDICATOR AQUÍ - SE MOSTRARÁ DESPUÉS DE PROCESAR EL MENSAJE DEL USUARIO
+        // Solo asegurar que el formulario esté oculto
+        contentFormTexto.classList.add('hide');
+        
+        // LIBERAR EL FLAG DE ENVÍO DESPUÉS DE MOSTRAR EL MENSAJE DEL USUARIO
+        enviandoMensaje = false;
+        //console.log('🔄 Flag enviandoMensaje liberado después de mostrar mensaje del usuario');
+    } catch (error) {
+        console.log('❌ Error al listar mensajes inmediatamente:', error);
+        // LIBERAR EL FLAG DE ENVÍO INCLUSO SI HAY ERROR
+        enviandoMensaje = false;
+        //console.log('🔄 Flag enviandoMensaje liberado después de error en listado inmediato');
+    }
+
+    // Iniciar el proceso de envío con reintentos
+    await iniciarProcesoEnvioMensaje();
+}
+
+// ! INICIAR PROCESO DE ENVÍO CON REINTENTOS
+async function iniciarProcesoEnvioMensaje() {
+    // Función para enviar el mensaje con manejo de reintentos
+    const enviarMensajeConReintento = async () => {
+        //console.log('🔄 Ejecutando enviarMensajeConReintento');
+        const resultEnviarMensaje = await enviarMensaje();
+        //console.log('📤 Resultado de enviarMensaje:', resultEnviarMensaje);
+
+        if (resultEnviarMensaje.status === 200) {
+            // ÉXITO: Detener el intervalo y procesar respuesta
+            clearInterval(reintentoInterval);
+            //console.log('✅ Mensaje enviado exitosamente');            
+            
+            // Limpiar el campo solo cuando el envío sea exitoso
+            const txtMensaje = document.getElementById('txt_mensaje');
+            txtMensaje.value = txtMensaje.value.replace(/\n/g, '');
+            txtMensaje.value = '';
+            txtMensaje.style.height = 'auto';
+            if (window.M && M.textareaAutoResize) {
+                M.textareaAutoResize(txtMensaje);
+            }
+            
+            // Liberar flag de envío
+            enviandoMensaje = false;
+            //console.log('🔄 Flag enviandoMensaje liberado (éxito)');
+            
+            // LISTAR INMEDIATAMENTE LOS MENSAJES NO LEÍDOS PARA MOSTRAR EL MENSAJE DEL USUARIO RÁPIDAMENTE
+            //console.log('⚡ Listando mensajes no leídos inmediatamente después de enviar');
+            const resultListar = await listarMensajeNoLeido();
+            
+            // Solo hacer scroll si hay mensajes nuevos
+            if (resultListar && resultListar.mensajesNuevos) {
+                await desplazarScrollVentana();
+                await desplazarScrollConversacion();
+            }
+            
+            // MOSTRAR TYPING INDICATOR DESPUÉS DE PROCESAR EL MENSAJE DEL USUARIO
+            // Solo si no hay mensajes del ChatBot (respuesta pendiente)
+            if (!typingIndicatorVisible) {
+                //console.log('✅ Mostrando typing indicator después de procesar mensaje del usuario');
+                mostrarTypingIndicator();
+                const contentFormTexto = document.getElementById('contentFormTexto');
+                contentFormTexto.classList.add('hide');
+            } else {
+                //console.log('🔄 Manteniendo typing indicator ya visible');
+                const contentFormTexto = document.getElementById('contentFormTexto');
+                contentFormTexto.classList.add('hide');
+            }
+            
+        } else if (resultEnviarMensaje.status === 409) {
+            // ERROR 409 = RATE LIMITING (del middleware, pero con código 409)
+            clearInterval(reintentoInterval);
+            //console.log('🚫 Error 409 detectado - Rate limiting activado (código 409)');
+            
+            // Obtener el retryAfter del error (tiempo real del middleware)
+            const retryAfter = resultEnviarMensaje.retryAfter;
+            const errorData = {
+                message: resultEnviarMensaje.message || 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
+                retryAfter: retryAfter
+            };
+            
+            // OCULTAR INMEDIATAMENTE EL FORMULARIO AL DETECTAR ERROR 409 (RATE LIMITING)
+            const contentFormTexto = document.getElementById('contentFormTexto');
+            contentFormTexto.classList.add('hide');
+            //console.log('🚨 Formulario ocultado INMEDIATAMENTE por error 409 (rate limiting)');
+            
+            // Liberar el flag de envío cuando se active rate limiting
+            enviandoMensaje = false;
+            //console.log('🔄 Flag enviandoMensaje liberado por rate limiting');
+            
+            // DETENER INMEDIATAMENTE CUALQUIER REINTENTO ACTIVO
+            if (reintentoInterval) {
+                clearInterval(reintentoInterval);
+                //console.log('🛑 Reintentos detenidos por error 409 (rate limiting)');
+            }
+            
+            // Manejar como error 429 (rate limiting) con el tiempo correcto
+            manejarError429HTTP(errorData);
+            
+        } else if (resultEnviarMensaje.status === 429) {
+            // ERROR 429 = RATE LIMITING REAL (del middleware)
+            clearInterval(reintentoInterval);
+            //console.log('🚫 Error 429 detectado - Rate limiting real activado');
+            
+            // Liberar el flag de envío cuando se active rate limiting
+            enviandoMensaje = false;
+            //console.log('🔄 Flag enviandoMensaje liberado por rate limiting (429)');
+            
+            // NO MANEJAR ERROR 429 AQUÍ - YA SE MANEJÓ EN enviarMensaje()
+            //console.log('🔄 Error 429 ya manejado en enviarMensaje(), no duplicar manejo');
+            
+            // DETENER INMEDIATAMENTE CUALQUIER REINTENTO ACTIVO
+            if (reintentoInterval) {
+                clearInterval(reintentoInterval);
+                //console.log('🛑 Reintentos detenidos por error 429');
+            }
+            
+        } else {
+            // ERROR GENÉRICO: Continuar reintentando cada 30 segundos
+            //console.log('❌ Error en el envío del mensaje, reintentando en 30 segundos:', resultEnviarMensaje);
+            
+            // LISTAR MENSAJES INMEDIATAMENTE AUN EN CASO DE ERROR PARA MOSTRAR RÁPIDAMENTE
+            //console.log('⚡ Listando mensajes no leídos inmediatamente (caso error)');
+            const resultListar = await listarMensajeNoLeido();
+            // Solo hacer scroll si hay mensajes nuevos
+            if (resultListar && resultListar.mensajesNuevos) {
+                await desplazarScrollVentana();
+                await desplazarScrollConversacion();
+            }
+        }
+    };
+
+    // Iniciar el envío del mensaje con reintento cada 30 segundos
+    // Solo reintenta en errores técnicos (500, 502, 503, etc.), NO en 429 (Rate Limit)
+    reintentoInterval = setInterval(() => {
+        // Verificar si hay error 429 activo antes de reintentar
+        const hayError429Activo = document.querySelector('.mensaje-error-429');
+        if (hayError429Activo) {
+            //console.log('🚫 Error 429 activo, deteniendo reintentos');
+            clearInterval(reintentoInterval);
+            return;
+        }
+        enviarMensajeConReintento();
+    }, 30000);
+    await enviarMensajeConReintento(); // Intentar enviar el mensaje inmediatamente
+}
 
 // ! ENVIAR FORMULARIO INICIAL
 const observadorFormulario = new MutationObserver((mutations) => {
@@ -497,7 +593,7 @@ const observadorFormulario = new MutationObserver((mutations) => {
                                     // OCULTAR INMEDIATAMENTE EL FORMULARIO AL DETECTAR ERROR 429
                                     const contentFormTexto = document.getElementById('contentFormTexto');
                                     contentFormTexto.classList.add('hide');
-                                    console.log('🚨 Formulario ocultado INMEDIATAMENTE por error 429 (vigilancia)');
+                                    //console.log('🚨 Formulario ocultado INMEDIATAMENTE por error 429 (vigilancia)');
                                     
                                     manejarError429HTTP(errorData);
                                     return { status: 429, message: 'Límite de API excedido' };
@@ -531,17 +627,13 @@ const observadorFormulario = new MutationObserver((mutations) => {
                                     if (window.M && M.textareaAutoResize) {
                                         M.textareaAutoResize(txtMensaje);
                                     }
+                                    txtMensaje.focus();
                                     txtMensaje.readOnly = false;
-                                    
-                                    // Dar focus con un pequeño delay para asegurar que el DOM se actualice
-                                    setTimeout(() => {
-                                        txtMensaje.focus();
-                                    }, 100);
                                 } else if (resultFormulario.status === 429) {
                                     // DETENER EL INTERVALO SI HAY ERROR 429 (Rate Limit)
                                     // No reintentar porque el servidor está limitando intencionalmente
                                     clearInterval(reintentoInterval);
-                                    console.log('🚫 Intervalo de reintento detenido por error 429 (Rate Limit - formulario)');
+                                    //console.log('🚫 Intervalo de reintento detenido por error 429 (Rate Limit - formulario)');
                                 } else {
                                     // Actualizar bandera
                                     enviado = false;
@@ -559,7 +651,7 @@ const observadorFormulario = new MutationObserver((mutations) => {
                                 }
                             } catch (error) {
                                 // Puedes mostrar un mensaje de error si quieres, pero el reintento seguirá
-                                console.warn('❌ Error al enviar el formulario, reintentando en 30 segundos...');
+                                console.warn('❌ Error al enviar el formulario, reintentando en 30 segundos...', error);
                             }
                         };
 
@@ -603,23 +695,21 @@ async function obtenerInfoWidgetChatWeb() {
 
 // * MOSTRAR INDICADOR DE ESCRIBIENDO
 function mostrarTypingIndicator() {
+    // VERIFICAR SI HAY ERROR 429 ACTIVO - NO MOSTRAR TYPING SI LO HAY
+    const hayError429Activo = document.querySelector('.mensaje-error-429');
+    if (hayError429Activo) {
+        //console.log('⏸️  Error 429 activo, no se muestra typing indicator');
+        return;
+    }
+
     // Verificar si ya existe un typing indicator
     const existingIndicator = document.getElementById('typing-indicator');
     if (existingIndicator) {
         return; // Ya existe, no crear otro
     }
 
-    // CONDICIÓN 1: Verificar que exista el saludo de usuario
-    const saludoUsuario = document.querySelector('.saludoUsuario');
-    if (!saludoUsuario) {
-        return; // No mostrar typing si no existe el saludo
-    }
-
-    // CONDICIÓN 2: Verificar que haya al menos un mensaje del usuario (mensaje-recibido)
-    const mensajesUsuario = document.querySelectorAll('.mensaje-recibido');
-    if (mensajesUsuario.length === 0) {
-        return; // No mostrar typing si no hay mensajes del usuario
-    }
+    // Mostrar typing indicator siempre que se llame (sin condiciones restrictivas)
+    //console.log('🔄 Mostrando typing indicator...');
 
     // Crear el elemento del typing indicator
     const typingDiv = document.createElement('div');
@@ -644,10 +734,10 @@ function mostrarTypingIndicator() {
     
     typingIndicatorVisible = true;
     
-    // Deshabilitar el textarea mientras está el typing indicator
-    const contentFormTexto = document.getElementById('contentFormTexto');
-    contentFormTexto.classList.add('hide');
-    console.log('🚨 Formulario ocultado INMEDIATAMENTE por mostrarTypingIndicator');
+    // NO ocultar el formulario aquí - se manejará en listarMensajeNoLeido según las condiciones
+    // const contentFormTexto = document.getElementById('contentFormTexto');
+    // contentFormTexto.classList.add('hide');
+    //console.log('🔄 Typing indicator creado, formulario se manejará según condiciones');
     
     // Hacer scroll al final para mostrar el indicador
     desplazarScrollConversacion();
@@ -659,6 +749,7 @@ function eliminarTypingIndicator() {
     if (typingIndicator) {
         typingIndicator.remove();
         typingIndicatorVisible = false;
+        //console.log('🗑️ Typing indicator eliminado');
         
         // Reactivar el textarea cuando se elimine el typing indicator
         const txtMensaje = document.getElementById('txt_mensaje');
@@ -673,11 +764,12 @@ function eliminarTypingIndicator() {
             
             txtMensaje.readOnly = false;
             contentFormTexto.classList.remove('hide');
+            txtMensaje.focus();
             
-            // Dar focus con un pequeño delay para asegurar que el DOM se actualice
-            setTimeout(() => {
-                txtMensaje.focus();
-            }, 100);
+            // Habilitar el botón cuando se elimine el typing indicator
+            habilitarBotonEnviar();
+            
+            //console.log('✅ Formulario reactivado después de eliminar typing indicator');
         }
     }
 }
@@ -691,7 +783,7 @@ function manejarError429(mensajes) {
         try {
             // Parsear el JSON del error
             const errorData = JSON.parse(mensajeError.CONTENIDO);
-            const retryAfter = errorData.retryAfter || 900; // 15 minutos por defecto
+            const retryAfter = errorData.retryAfter * 60; // Convertir minutos a segundos
             const minutos = Math.round(retryAfter / 60);
             
             // NO aplicar fondo negro, solo ocultar el textarea
@@ -709,7 +801,7 @@ function manejarError429(mensajes) {
                 reactivarChatDespuesDeError429();
             }, retryAfter * 1000); // Convertir segundos a milisegundos
             
-            console.log(`🚫 Error 429 detectado. Chat se reactivará en ${retryAfter} segundos (${minutos} minutos)`);
+            //console.log(`🚫 Error 429 detectado. Chat se reactivará en ${retryAfter} segundos (${minutos} minutos)`);
             
         } catch (error) {
             console.error('Error al parsear el mensaje de error 429:', error);
@@ -719,7 +811,7 @@ function manejarError429(mensajes) {
 
 // * MOSTRAR MENSAJE AMIGABLE DE ERROR 429
 function mostrarMensajeError429(retryAfter, minutos, errorData) {
-    console.log('📝 Creando mensaje de error 429 con retryAfter:', retryAfter);
+    //console.log('📝 Creando mensaje de error 429 con retryAfter:', retryAfter);
     
     const conversacionDiv = document.getElementById('conversacion');
     
@@ -739,50 +831,54 @@ function mostrarMensajeError429(retryAfter, minutos, errorData) {
     mensajeDiv.appendChild(textoDiv);
     conversacionDiv.appendChild(mensajeDiv);
     
-    console.log('✅ Mensaje de error 429 agregado al DOM');
+    //console.log('✅ Mensaje de error 429 agregado al DOM');
     
     // Hacer scroll para mostrar el mensaje
     desplazarScrollConversacion();
     
     // Iniciar countdown después de un pequeño delay para asegurar que el DOM se actualice
     setTimeout(() => {
-        console.log('🚀 Iniciando countdown después del delay');
+        //console.log('🚀 Iniciando countdown después del delay');
         iniciarCountdown429(retryAfter);
+        // Inhabilitar el elmento contentFormTexto con la clase hide
+        const contentFormTexto = document.getElementById('contentFormTexto');
+        contentFormTexto.classList.add('hide');
+        //console.log('🚨 Formulario ocultado INMEDIATAMENTE por mostrarMensajeError429');
     }, 100);
 }
 
 // * INICIAR COUNTDOWN PARA ERROR 429
 function iniciarCountdown429(segundos) {
-    console.log('⏱️ Iniciando countdown con:', segundos, 'segundos');
+    //console.log('⏱️ Iniciando countdown con:', segundos, 'segundos');
     
     // LIMPIAR CUALQUIER COUNTDOWN ANTERIOR
     if (countdown429Interval) {
-        console.log('🗑️ Limpiando countdown anterior');
+        //console.log('🗑️ Limpiando countdown anterior');
         clearInterval(countdown429Interval);
         countdown429Interval = null;
     }
     
     const countdownElement = document.getElementById('countdown-429');
-    console.log('🔍 Elemento countdown encontrado:', countdownElement);
+    //console.log('🔍 Elemento countdown encontrado:', countdownElement);
     
     if (!countdownElement) {
-        console.log('❌ No se encontró el elemento countdown-429');
+        //console.log('❌ No se encontró el elemento countdown-429');
         return;
     }
     
     let tiempoRestante = segundos;
-    console.log('🎯 Countdown iniciado con', tiempoRestante, 'segundos');
+    //console.log('🎯 Countdown iniciado con', tiempoRestante, 'segundos');
     
     countdown429Interval = setInterval(() => {
         tiempoRestante--;
-        console.log('⏰ Tiempo restante:', tiempoRestante);
+        //console.log('⏰ Tiempo restante:', tiempoRestante);
         
         if (countdownElement) {
             countdownElement.textContent = tiempoRestante;
         }
         
         if (tiempoRestante <= 0) {
-            console.log('⏰ Countdown terminado');
+            //console.log('⏰ Countdown terminado');
             clearInterval(countdown429Interval);
             countdown429Interval = null;
             // El mensaje se actualizará cuando se reactive el chat
@@ -794,7 +890,7 @@ function iniciarCountdown429(segundos) {
 function reactivarChatDespuesDeError429() {
     // LIMPIAR COUNTDOWN SI ESTÁ ACTIVO
     if (countdown429Interval) {
-        console.log('🗑️ Limpiando countdown al reactivar chat');
+        //console.log('🗑️ Limpiando countdown al reactivar chat');
         clearInterval(countdown429Interval);
         countdown429Interval = null;
     }
@@ -803,7 +899,18 @@ function reactivarChatDespuesDeError429() {
     const mensajeErrorAnterior = document.querySelector('.mensaje-error-429');
     if (mensajeErrorAnterior) {
         mensajeErrorAnterior.remove();
-        console.log('🗑️ Mensaje de error 429 eliminado al reactivar chat');
+        //console.log('🗑️ Mensaje de error 429 eliminado al reactivar chat');
+    }
+    
+    // LIBERAR EL FLAG DE ENVÍO CUANDO SE REACTIVE EL CHAT
+    enviandoMensaje = false;
+    //console.log('🔄 Flag enviandoMensaje liberado al reactivar chat');
+    
+    // LIMPIAR CUALQUIER REINTENTO ACTIVO AL REACTIVAR EL CHAT
+    if (reintentoInterval) {
+        clearInterval(reintentoInterval);
+        reintentoInterval = null;
+        //console.log('🛑 Reintentos limpiados al reactivar chat');
     }
     
     // REACTIVAR EL FORMULARIO DESPUÉS DEL ERROR 429
@@ -812,18 +919,14 @@ function reactivarChatDespuesDeError429() {
     if (txtMensaje && contentFormTexto) {
         txtMensaje.readOnly = false;
         contentFormTexto.classList.remove('hide');
-        
-        // Dar focus con un pequeño delay para asegurar que el DOM se actualice
-        setTimeout(() => {
-            txtMensaje.focus();
-        }, 100);
-        console.log('👁️ Formulario reactivado después del error 429');
+        txtMensaje.focus();
+        //console.log('👁️ Formulario reactivado después del error 429');
     }
     
     // Limpiar cualquier typing indicator que pueda estar activo
     eliminarTypingIndicator();
     
-    console.log('✅ Chat reactivado completamente después del error 429');
+    //console.log('✅ Chat reactivado completamente después del error 429');
 }
 
 // * FUNCIÓN ELIMINADA - YA NO SE NECESITA MOSTRAR MENSAJE DE REACTIVACIÓN
@@ -831,14 +934,19 @@ function reactivarChatDespuesDeError429() {
 
 // * MANEJAR ERROR 429 DESDE PETICIONES HTTP
 function manejarError429HTTP(errorData) {
-    console.log('🚫 manejarError429HTTP llamado con:', errorData);
+    //console.log('🚫 manejarError429HTTP llamado con:', errorData);
     
-    const retryAfter = errorData.retryAfter || 900; // 15 minutos por defecto
+    // Usar el retryAfter del backend (ya viene en minutos)
+    // Asegurar que retryAfter sea un número válido
+    const retryAfterMinutes = errorData.retryAfter || 1; // Default a 1 minuto si no viene
+    const retryAfter = retryAfterMinutes * 60; // Convertir minutos a segundos
     const minutos = Math.round(retryAfter / 60);
+    
+    //console.log('⏰ RetryAfter del backend:', retryAfterMinutes, 'minutos →', retryAfter, 'segundos');
     
     // LIMPIAR COUNTDOWN ANTERIOR SI EXISTE
     if (countdown429Interval) {
-        console.log('🗑️ Limpiando countdown anterior');
+        //console.log('🗑️ Limpiando countdown anterior');
         clearInterval(countdown429Interval);
         countdown429Interval = null;
     }
@@ -847,13 +955,13 @@ function manejarError429HTTP(errorData) {
     const mensajeErrorAnterior = document.querySelector('.mensaje-error-429');
     if (mensajeErrorAnterior) {
         mensajeErrorAnterior.remove();
-        console.log('🗑️ Mensaje de error 429 anterior eliminado');
+        //console.log('🗑️ Mensaje de error 429 anterior eliminado');
     }
     
     // OCULTAR FORMULARIO VISUALMENTE CUANDO HAY ERROR 429
     const contentFormTexto = document.getElementById('contentFormTexto');
     contentFormTexto.classList.add('hide');
-    console.log('🚨 Formulario ocultado INMEDIATAMENTE por error 429 (vigilancia)');
+    //console.log('🚨 Formulario ocultado INMEDIATAMENTE por error 429 (vigilancia)');
     
     // Limpiar cualquier typing indicator activo
     eliminarTypingIndicator();
@@ -862,20 +970,22 @@ function manejarError429HTTP(errorData) {
     mostrarMensajeError429(retryAfter, minutos, errorData);
     
     // Configurar temporizador para reactivar el chat
+    // Usar el tiempo exacto del servidor para sincronización
     setTimeout(() => {
         reactivarChatDespuesDeError429();
     }, retryAfter * 1000); // Convertir segundos a milisegundos
     
-    console.log(`🚫 Error 429 HTTP detectado. Chat se reactivará en ${retryAfter} segundos (${minutos} minutos)`);
+    //console.log('⏰ Frontend: Reactivación programada en', retryAfter, 'segundos');
+    //console.log(`🚫 Error 429 HTTP detectado. Chat se reactivará en ${retryAfter} segundos (${minutos} minutos)`);
 }
 
 // * MANEJAR ERROR 429 GLOBAL (SOLO VISUAL)
-function manejarError429Global(retryAfter = 900) {
+function manejarError429Global(retryAfter) {
     const minutos = Math.round(retryAfter / 60);
     
     // LIMPIAR COUNTDOWN ANTERIOR SI EXISTE
     if (countdown429Interval) {
-        console.log('🗑️ Limpiando countdown anterior (global)');
+        //console.log('🗑️ Limpiando countdown anterior (global)');
         clearInterval(countdown429Interval);
         countdown429Interval = null;
     }
@@ -884,13 +994,13 @@ function manejarError429Global(retryAfter = 900) {
     const mensajeErrorAnterior = document.querySelector('.mensaje-error-429');
     if (mensajeErrorAnterior) {
         mensajeErrorAnterior.remove();
-        console.log('🗑️ Mensaje de error 429 anterior eliminado (global)');
+        //console.log('🗑️ Mensaje de error 429 anterior eliminado (global)');
     }
     
     // OCULTAR FORMULARIO VISUALMENTE CUANDO HAY ERROR 429
     const contentFormTexto = document.getElementById('contentFormTexto');
     contentFormTexto.classList.add('hide');
-    console.log('� Formulario ocultado INMEDIATAMENTE por error 429 (global)');
+    //console.log('� Formulario ocultado INMEDIATAMENTE por error 429 (global)');
     
     // Limpiar cualquier typing indicator activo
     eliminarTypingIndicator();
@@ -903,7 +1013,36 @@ function manejarError429Global(retryAfter = 900) {
         reactivarChatDespuesDeError429();
     }, retryAfter * 1000); // Convertir segundos a milisegundos
     
-    console.log(`🚫 Error 429 Global detectado. Chat se reactivará en ${retryAfter} segundos (${minutos} minutos)`);
+    //console.log(`🚫 Error 429 Global detectado. Chat se reactivará en ${retryAfter} segundos (${minutos} minutos)`);
+}
+
+// * FUNCIONES HELPER PARA CONTROL DE ESTADO DEL BOTÓN
+function deshabilitarBotonEnviar() {
+    const btnEnviar = document.getElementById('btnEnviar');
+    if (btnEnviar) {
+        btnEnviar.disabled = true;
+        btnEnviar.style.opacity = '0.6';
+        btnEnviar.style.cursor = 'not-allowed';
+        // Cambiar el texto del botón para indicar que está enviando
+        const textoOriginal = btnEnviar.innerHTML;
+        btnEnviar.setAttribute('data-texto-original', textoOriginal);
+        btnEnviar.innerHTML = 'Enviando...';
+    }
+}
+
+function habilitarBotonEnviar() {
+    const btnEnviar = document.getElementById('btnEnviar');
+    if (btnEnviar) {
+        btnEnviar.disabled = false;
+        btnEnviar.style.opacity = '1';
+        btnEnviar.style.cursor = 'pointer';
+        // Restaurar el texto original del botón
+        const textoOriginal = btnEnviar.getAttribute('data-texto-original');
+        if (textoOriginal) {
+            btnEnviar.innerHTML = textoOriginal;
+            btnEnviar.removeAttribute('data-texto-original');
+        }
+    }
 }
 
 // * AGREGAR ETIQUETAS DE REMITENTE A MENSAJES EXISTENTES
@@ -945,23 +1084,25 @@ function agregarEtiquetasRemitente() {
     });
 }
 
-// * ENVIAR MENSAJE
+// * ENVIAR MENSAJE - FUNCIÓN PRINCIPAL
 async function enviarMensaje() {
-    console.log('📤 enviarMensaje() llamado - mensaje:', document.getElementById('txt_mensaje').value);
+    //console.log('📤 enviarMensaje() llamado');
     
-    // todo: Obtener el mensaje
     // Obtener el mensaje
-    let mensaje = document.getElementById('txt_mensaje').value.replace(/\n/g, '<br/>');
+    const txtMensaje = document.getElementById('txt_mensaje');
+    let mensaje = txtMensaje.value.replace(/\n/g, '<br/>');
 
     // Eliminar el último salto de línea si existe
     mensaje = mensaje.replace(/<br\/>$/, '');
     
-    // NO limpiar el campo de mensaje aquí - se limpiará solo si el envío es exitoso
-    // document.getElementById('txt_mensaje').value = '';
+    // Verificar si el mensaje está vacío después del procesamiento
+    if (!mensaje || mensaje.trim() === '' || mensaje === '<br/>') {
+        //console.log('⚠️ Mensaje vacío detectado, no enviando');
+        return { status: 400, message: 'El mensaje está vacío' };
+    }
     
-    // NO mostrar el typing indicator aquí - se mostrará cuando llegue el mensaje del usuario desde el servidor
+    //console.log('📤 Pasa por aca → Enviar mensaje antes del try ===>', mensaje);
     
-    // todo: Enviar el mensaje
     try {
         const response = await fetch('/widget/mensaje/crear', {
             method: 'POST',
@@ -971,30 +1112,28 @@ async function enviarMensaje() {
             body: JSON.stringify({ idChatWeb, mensaje }),
         });
         
+        //console.log('📤 Status de la respuesta:', response.status);
+        
         // Verificar si la respuesta es un error 429
         if (response.status === 429) {
-            console.log('🚫 Error 429 detectado en enviarMensaje', response);
             const errorData = await response.json();
             
             // OCULTAR INMEDIATAMENTE EL FORMULARIO AL DETECTAR ERROR 429
             const contentFormTexto = document.getElementById('contentFormTexto');
             contentFormTexto.classList.add('hide');
-            console.log('🚨 Formulario ocultado INMEDIATAMENTE por error 429 (vigilancia)');
+            //console.log('🚨 Formulario ocultado INMEDIATAMENTE por error 429 (vigilancia)');
             
             manejarError429HTTP(errorData);
             return { status: 429, message: 'Límite de API excedido' };
         }
         
         const result = await response.json();
-        
-        // Solo limpiar el campo si el envío fue exitoso
-        if (result.status === 200) {
-            document.getElementById('txt_mensaje').value = '';
-        }
+        //console.log('📤 Pasa por aca → Resultado de enviarMensaje', result);
         
         return result;
     } catch (error) {
         console.log('❌ Error en v1/assets/js/widget/chat.js → enviarMensaje ', error);
+        return { status: 500, message: 'Error de conexión' };
     }
 }
 
@@ -1010,19 +1149,27 @@ async function listarMensajeNoLeido() {
         
         // Verificar si la respuesta es un error 429
         if (response.status === 429) {
-            console.log('🚫 Error 429 detectado en listarMensajeNoLeido', response);
+            //console.log('🚫 Error 429 detectado en listarMensajeNoLeido', response);
             const errorData = await response.json();
             
             // OCULTAR INMEDIATAMENTE EL FORMULARIO AL DETECTAR ERROR 429
             const contentFormTexto = document.getElementById('contentFormTexto');
             contentFormTexto.classList.add('hide');
-            console.log('🚨 Formulario ocultado INMEDIATAMENTE por error 429 (vigilancia)');
+            //console.log('🚨 Formulario ocultado INMEDIATAMENTE por error 429 (vigilancia)');
             
             manejarError429HTTP(errorData);
             return { mensajesNuevos: false };
         }
         
         const result = await response.json();
+        
+        // VERIFICAR SI HAY ERROR 429 ACTIVO - SI LO HAY, NO PROCESAR MENSAJES NUEVOS
+        const hayError429Activo = document.querySelector('.mensaje-error-429');
+        if (hayError429Activo) {
+            //console.log('⏸️  Error 429 activo, ignorando mensajes nuevos hasta que se reactive el chat');
+            return { mensajesNuevos: false };
+        }
+        
         // Contenedor de la conversación
         const conversacionDiv = document.getElementById('conversacion');
 
@@ -1040,6 +1187,8 @@ async function listarMensajeNoLeido() {
         const hayError429 = mensajes.some(mensaje => mensaje.ESTADO === 'Error API' && mensaje.CONTENIDO.includes('status":429'));
         if (hayError429) {
             manejarError429(mensajes);
+            // Si hay error 429, no procesar más mensajes
+            return { mensajesNuevos: false };
         }
         
         // Usar for...of en lugar de forEach para poder usar await correctamente
@@ -1048,13 +1197,20 @@ async function listarMensajeNoLeido() {
             const txtMensaje = document.getElementById('txt_mensaje');
             const conversacionDiv = document.getElementById('conversacion');
             
-            // Mostrar el formulario de texto por defecto
-            contentFormTexto.classList.remove('hide');
-            
-            // Dar focus al textarea cuando se muestre el formulario
-            setTimeout(() => {
-                txtMensaje.focus();
-            }, 100);
+            // VERIFICAR NUEVAMENTE SI HAY ERROR 429 ACTIVO DENTRO DEL LOOP
+            const hayError429ActivoEnLoop = document.querySelector('.mensaje-error-429');
+            if (hayError429ActivoEnLoop) {
+                //console.log('⏸️  Error 429 activo en loop, saltando procesamiento de mensajes');
+                break;
+            }
+
+            // Solo mostrar el formulario de texto si NO hay typing indicator visible Y NO hay error 429/409 activo
+            if (!typingIndicatorVisible && !hayError429ActivoEnLoop) {
+                contentFormTexto.classList.remove('hide');
+            } else if (typingIndicatorVisible && !hayError429ActivoEnLoop) {
+                // Si hay typing indicator visible, ocultar el formulario
+                contentFormTexto.classList.add('hide');
+            }
 
             // Si el mensaje es de tipo Formulario
             if (mensaje.TIPO === 'Formulario') {
@@ -1127,10 +1283,30 @@ async function listarMensajeNoLeido() {
         }
         
         // MOSTRAR TYPING INDICATOR DESPUÉS DE PROCESAR TODOS LOS MENSAJES
-        // Solo si hay mensajes del usuario y no hay mensajes del ChatBot después
+        // Solo si hay mensajes del usuario y no hay mensajes del ChatBot después Y NO hay error 429 activo
         const hayMensajeRecibido = mensajes.some(mensaje => mensaje.ESTADO === 'Recibido');
-        if (hayMensajeRecibido && !hayMensajeEnviado && !typingIndicatorVisible) {
+        const hayError429ActivoFinal = document.querySelector('.mensaje-error-429');
+        
+        // console.log('🔍 Verificando condiciones para mostrar typing:', {
+        //     hayMensajeRecibido,
+        //     hayMensajeEnviado,
+        //     typingIndicatorVisible,
+        //     hayError429ActivoFinal: !!hayError429ActivoFinal
+        // });
+        
+        // MANTENER TYPING INDICATOR si ya está visible y no hay respuesta del ChatBot
+        if (typingIndicatorVisible && !hayMensajeEnviado && !hayError429ActivoFinal) {
+            //console.log('🔄 Manteniendo typing indicator - esperando respuesta del ChatBot');
+            const contentFormTexto = document.getElementById('contentFormTexto');
+            contentFormTexto.classList.add('hide');
+        }
+        // MOSTRAR TYPING INDICATOR solo si hay mensaje del usuario sin respuesta Y no está visible
+        else if (hayMensajeRecibido && !hayMensajeEnviado && !typingIndicatorVisible && !hayError429ActivoFinal) {
+            //console.log('✅ Mostrando typing indicator después de listar mensajes');
             mostrarTypingIndicator();
+            // Ocultar el formulario cuando se muestra el typing indicator
+            const contentFormTexto = document.getElementById('contentFormTexto');
+            contentFormTexto.classList.add('hide');
         }
         
         // Retornar si hubo mensajes nuevos
@@ -1283,7 +1459,7 @@ async function vigilarInactividad() {
         // OCULTAR INMEDIATAMENTE EL FORMULARIO AL DETECTAR ERROR 429
         const contentFormTexto = document.getElementById('contentFormTexto');
             contentFormTexto.classList.add('hide');
-            console.log('🚨 Formulario ocultado INMEDIATAMENTE por error 429 (vigilancia)');
+            //console.log('🚨 Formulario ocultado INMEDIATAMENTE por error 429 (vigilancia)');
         
         manejarError429HTTP(errorData);
         return;
@@ -1332,24 +1508,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Detener la vigilancia cuando el cliente envíe un mensaje
 document.addEventListener('DOMContentLoaded', () => {
-    const btnEnviar = document.getElementById('btnEnviar');
     const txtMensaje = document.getElementById('txt_mensaje');
-    
-    if (btnEnviar) {
-        btnEnviar.addEventListener('click', async () => {
-            // Reiniciar inmediatamente sin detener la vigilancia
-            console.log('🔄 Reiniciando inactividad por envío de mensaje');
-            ultimaActividad = Date.now();
-            tiempoInactividad = 0;
-            umbralesNotificados = [];
-        });
-    }
     
     // También reiniciar cuando el usuario escriba en el campo de mensaje
     if (txtMensaje) {
         txtMensaje.addEventListener('input', () => {
             if (vigilanciaActiva || verificarOpcionesServiciosMostradas()) {
-                console.log('🔄 Reiniciando inactividad por escritura en campo');
+                //console.log('🔄 Reiniciando inactividad por escritura en campo');
                 ultimaActividad = Date.now();
                 tiempoInactividad = 0;
                 umbralesNotificados = [];

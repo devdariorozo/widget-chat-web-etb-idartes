@@ -49,6 +49,18 @@ const existeMensajeReciente = async (idChat, remitente, tipoMensaje, contenido, 
 // * CREAR
 const crear = async (idChat, remitente, estadoMensaje, tipoMensaje, contenido, enlaces, lectura, descripcion, estadoRegistro, responsable) => {
     try {
+        // Permitir duplicados solo si el contenido contiene ciertas clases especiales
+        const permitirDuplicado =
+            (typeof contenido === 'string' &&
+                (contenido.includes('alertaErrorAPIArbol') || contenido.includes('alertaInactividadArbol')));
+        if (!permitirDuplicado) {
+            // Verificar si ya existe un mensaje igual en toda la conversación (normalizado)
+            const mensajes = await listarConversacion(idChat);
+            const contenidoNormalizado = normalizarContenido(contenido);
+            if (mensajes && mensajes.some(msg => normalizarContenido(msg.CONTENIDO) === contenidoNormalizado)) {
+                return false;
+            }
+        }
         // todo: Sentencia SQL
         const query = `
             INSERT INTO
@@ -66,7 +78,9 @@ const crear = async (idChat, remitente, estadoMensaje, tipoMensaje, contenido, e
                 msg_responsable = ?;
         `;
         // todo: Ejecutar la sentencia y retornar respuesta
-        return await pool.query(query, [idChat, remitente, estadoMensaje, tipoMensaje, contenido, enlaces, lectura, descripcion, estadoRegistro, responsable]);
+        const [result] = await pool.query(query, [idChat, remitente, estadoMensaje, tipoMensaje, contenido, enlaces, lectura, descripcion, estadoRegistro, responsable]);
+        
+        return result;
     } catch (error) {
         // todo: Capturar el error
         console.log('❌ Error en v1/models/widget/mensaje.model.js → crear ', error);
@@ -74,8 +88,8 @@ const crear = async (idChat, remitente, estadoMensaje, tipoMensaje, contenido, e
     }
 };
 
-// * CREAR RESPUESTA AI
-const crearRespuestaAI = async (idChat, remitente, estado, tipo, contenido, enlaces, lectura, descripcion, registro, responsable) => {
+// * CREAR MENSAJE DESDE SOUL CHAT  
+const crearSoulChat = async (idChat, remitente, estado, tipo, contenido, enlaces, lectura, descripcion, registro, responsable) => {
     try {
         // todo: Sentencia SQL
         const query = `
@@ -95,11 +109,12 @@ const crearRespuestaAI = async (idChat, remitente, estado, tipo, contenido, enla
         `;
 
         // todo: Ejecutar la sentencia y retornar respuesta
-        return await pool.query(query, [idChat, remitente, estado, tipo, contenido, enlaces, lectura, descripcion, registro, responsable]);
+        const [result] = await pool.query(query, [idChat, remitente, estado, tipo, contenido, enlaces, lectura, descripcion, registro, responsable]);
+        return result;
     } catch (error) {
 
         // todo: Capturar el error
-        console.log('❌ Error en v1/models/widget/mensaje.model.js → crearRespuestaAI ', error);
+        console.log('❌ Error en v1/models/widget/mensaje.model.js → crearSoulChat ', error);
         return false;
     }
 };
@@ -277,7 +292,7 @@ const filtrarUltimoMensajeEnviado = async (idChatWeb, estadoMensaje, tipoMensaje
 // ! EXPORTACIONES
 module.exports = {
     crear,
-    crearRespuestaAI,
+    crearSoulChat,
     listarNoLeido,
     leer,
     listarConversacion,
