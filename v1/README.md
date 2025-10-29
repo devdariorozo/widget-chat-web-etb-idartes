@@ -1,12 +1,12 @@
-# widget-chat-web-etb-idartes
+# WidgetWEB_Agendamiento_Pymes_ETB
 
-**Autor:** Ramón Dario Rozo Torres
-**Última Modificación:** Ramón Dario Rozo Torres
+**Autor:** Ramón Dario Rozo Torres 24 de Enero de 2025
+**Última Modificación:** Ramón Dario Rozo Torres 26 de Junio de 2025
 **Versión:** 1.0.0
 
 ## Descripción
 
-Widget chat web para la empresa ETB IDARTES.
+Widget chat web para la empresa ThomasGreg Sons.
 
 ## 📦 Información Técnica
 
@@ -96,12 +96,17 @@ docker compose down -v --remove-orphans
 
 
 
+
+
+
+
+
 ## Modo Manual (Servidor tradicional):
 
 ## Instalación
 
 ```bash
-    1.  Clonar repositorio.
+    1.  Clonar repositorio (https://dev.azure.com/MontecheloPipelines/ThomasGreg/_git/Widget_WEB_%20ThomasGreg_Sons).
 
     2.  Entrar a la carpeta raiz del proyecto.
 
@@ -521,16 +526,16 @@ docker compose down -v --remove-orphans
 
 ```bash
     1.  Ambiente de pruebas
-            ??????
+            https://demothomasgregysons.rpagroupcos.com
 
         Monitor
-            ??????/widget/chat/monitor
+            https://demothomasgregysons.rpagroupcos.com/widget/chat/monitor
 
     2.  Ambiente de produccion
-            ?????
+            https://thomasgregysons.rpagroupcos.com
 
         Monitor    
-            ?????/widget/chat/monitor
+            https://thomasgregysons.rpagroupcos.com/widget/chat/monitor
 
 ```
 
@@ -551,15 +556,14 @@ docker compose down -v --remove-orphans
 
 Si deseas contribuir al proyecto, por favor sigue los siguientes pasos:
 
-1.  Clonar repositorio desde ?????.
-2. Desde la rama master, crea una rama nombre_tu_rama.
-3. Clone el proyecto desde el repositorio oficial y rama master.
-4. Crea una rama para tu funcionalidad (`git checkout -b nombre_tu_rama`).
-5. Realiza un commit de tus cambios (`git commit -m 'Mensaje de commit...'`).
-6. Sube los cambios al repositorio (`git push origin nombre_tu_rama`)
-7. Solicita un merge a la rama quality.
-8. Si el merge es exitoso, solicita un merge a la rama master desde la rama quality.
-9. Solicita el deploy de la rama master.
+1. Desde la rama master, crea una rama nombre_tu_rama.
+2. Clone el proyecto desde el repositorio oficial y rama master.
+3. Crea una rama para tu funcionalidad (`git checkout -b nombre_tu_rama`).
+4. Realiza un commit de tus cambios (`git commit -m 'Mensaje de commit...'`).
+5. Sube los cambios al repositorio (`git push origin nombre_tu_rama`)
+6. Solicita un merge a la rama quality.
+7. Si el merge es exitoso, solicita un merge a la rama master desde la rama quality.
+8. Solicita el deploy de la rama master.
 
 ## Licencia
 

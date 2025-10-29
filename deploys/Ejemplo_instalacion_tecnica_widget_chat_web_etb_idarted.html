@@ -4,7 +4,7 @@
 <head>
   <meta charset='UTF-8'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-  <title>IDARTED</title>
+  <title>IDC EXTERIOR</title>
 
   <!-- Favicon -->
   <link rel="apple-touch-icon" href="APP_URL/images/imagen-corporativa/favicon.png">
@@ -40,7 +40,7 @@
 <body>
 
   <div class="titlePagina" style="background: #0b06ff; height: 8%; position: fixed; top: 0; left: 0; right: 0; z-index: 1000;">
-    <h1 style="text-align: center; margin: 0rem; color: rgb(255, 255, 255);"><strong>Ejemplo Instalación Técnica Widget Chat Web ETB - IDARTED</strong></h1>
+    <h1 style="text-align: center; margin: 0rem; color: rgb(255, 255, 255);"><strong>Widget Chat Web ETB - IDARTES / Ejemplo Instalación Técnica</strong></h1>
   </div>
 
   
@@ -194,8 +194,55 @@
 
   <!-- Import js y css -->
   <script>
+    // ========================================================================
+    // INTERCEPTOR DE FETCH PARA CAPTURAR idChatWeb
+    // ========================================================================
+    
+    // Variable global para almacenar el idChatWeb capturado
+    window.capturedIdChatWeb = null;
+    
+    // Guardar la función fetch original
+    const originalFetch = window.fetch;
+    
+    // Sobrescribir fetch para interceptar peticiones
+    window.fetch = function(...args) {
+      const [url, options] = args;
+      
+      // Interceptar la petición de crear chat
+      if (url && url.includes('/widget/chat/crear')) {
+        console.log(" Interceptando petición de crear chat:", url);
+        
+        // Intentar extraer el idChatWeb del body
+        if (options && options.body) {
+          try {
+            const body = JSON.parse(options.body);
+            if (body.idChatWeb) {
+              window.capturedIdChatWeb = body.idChatWeb;
+              console.log(" idChatWeb capturado:", window.capturedIdChatWeb);
+              
+              // Notificar que tenemos el ID
+              window.dispatchEvent(new CustomEvent('idChatWebCapturado', { 
+                detail: { idChatWeb: window.capturedIdChatWeb } 
+              }));
+            }
+          } catch (e) {
+            console.error("❌ Error al parsear body de crear chat:", e);
+          }
+        }
+      }
+      
+      // Ejecutar el fetch original y retornar la promesa
+      return originalFetch.apply(this, args);
+    };
+    
+    console.log("🔧 Interceptor de fetch configurado");
+
+    // ========================================================================
+    // CARGA DEL WIDGET
+    // ========================================================================
+    
     // Definición de constantes para las URLs
-    const URL_BASE = 'APP_URL';
+    const URL_BASE = "APP_URL";
     const URL_CSS = `${URL_BASE}/chatWeb.css`;
     const URL_JS = `${URL_BASE}/chatWeb.js`;
 
@@ -205,7 +252,7 @@
         let el;
         const timer = setTimeout(() => {
           if (el && el.parentNode) el.parentNode.removeChild(el);
-          reject(new Error('Timeout al cargar: ' + src));
+          reject(new Error("Timeout al cargar: " + src));
         }, timeout);
 
         cargarFn(src)
@@ -231,8 +278,8 @@
     // Funcion para cargar el css
     function cargarCSS(src) {
       return new Promise((resolve, reject) => {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
         link.href = src;
         link.onload = resolve;
         link.onerror = reject;
@@ -245,7 +292,7 @@
     // Funcion para cargar el js
     function cargarJS(src) {
       return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
+        const script = document.createElement("script");
         script.src = src;
         script.onload = resolve;
         script.onerror = reject;
@@ -257,51 +304,221 @@
     cargarConTimeout(cargarCSS, URL_CSS, 1500)
       .then(() => cargarConTimeout(cargarJS, URL_JS, 1500))
       .then(() => {
-        if (window.WidgetChat && typeof window.WidgetChat.init === 'function' && document.getElementById('contenedorWidget')) {
+        if (
+          window.WidgetChat &&
+          typeof window.WidgetChat.init === "function" &&
+          document.getElementById("contenedorWidget")
+        ) {
           window.WidgetChat.init();
-          console.log('✅ Widget cargado exitosamente');
+          console.log("✅ Widget cargado exitosamente");
+          
+          // Configurar sistema de comunicación con iframe
+          setTimeout(configurarComunicacionIframe, 1000);
         } else {
-          console.error('❌ El widget o el contenedor no están disponibles.');
+          console.error("❌ El widget o el contenedor no están disponibles.");
         }
       })
       .catch((error) => {
-        console.error('❌ Error al cargar recursos del widget, por favor contactenos:', error);
-        
+        console.error(
+          "❌ Error al cargar recursos del widget, por favor contactenos:",
+          error
+        );
+
         // Configuración de reintentos
         const intervaloReintento = 15000; // 15 segundos
         const tiempoMaximo = 300000; // 5 minutos
         const tiempoInicio = Date.now();
-        
+
         // Funcion para intentar cargar nuevamente los recursos
         function intentarCarga() {
           const tiempoTranscurrido = Date.now() - tiempoInicio;
-          
+
           if (tiempoTranscurrido >= tiempoMaximo) {
-            console.error('❌ Tiempo máximo de reintentos alcanzado');
+            console.error("❌ Tiempo máximo de reintentos alcanzado");
             return;
           }
-          
-          console.log('🔄 Reintentando cargar el widget...');
-          
+
+          console.log("🔄 Reintentando cargar el widget...");
+
           cargarConTimeout(cargarCSS, URL_CSS, 1500)
             .then(() => cargarConTimeout(cargarJS, URL_JS, 1500))
             .then(() => {
-              if (window.WidgetChat && typeof window.WidgetChat.init === 'function' && document.getElementById('contenedorWidget')) {
+              if (
+                window.WidgetChat &&
+                typeof window.WidgetChat.init === "function" &&
+                document.getElementById("contenedorWidget")
+              ) {
                 window.WidgetChat.init();
-                console.log('✅ Widget cargado exitosamente');
+                console.log("✅ Widget cargado exitosamente");
+                
+                // Configurar sistema de comunicación con iframe
+                setTimeout(configurarComunicacionIframe, 1000);
               } else {
-                throw new Error('El widget o el contenedor no están disponibles');
+                throw new Error(
+                  "El widget o el contenedor no están disponibles"
+                );
               }
             })
             .catch((error) => {
-              console.error('❌ Error en reintento:', error);
+              console.error("❌ Error en reintento:", error);
               setTimeout(intentarCarga, intervaloReintento);
             });
         }
-        
+
         // Iniciar el primer reintento
         setTimeout(intentarCarga, intervaloReintento);
       });
+
+    // ========================================================================
+    // SISTEMA DE COMUNICACIÓN CON IFRAME
+    // ========================================================================
+    
+    // Función principal para configurar la comunicación con el iframe
+    function configurarComunicacionIframe() {
+      console.log("🔧 Configurando sistema de comunicación con iframe");
+      
+      // Escuchar el evento de captura de idChatWeb
+      window.addEventListener('idChatWebCapturado', function(event) {
+        console.log("📨 Evento idChatWebCapturado recibido:", event.detail.idChatWeb);
+        
+        // Esperar un momento para que el iframe se cree
+        setTimeout(() => {
+          const iframe = document.getElementById('iframeChatWeb');
+          if (iframe) {
+            console.log("✅ Iframe encontrado después de capturar ID");
+            enviarMensajeAlIframe(iframe, event.detail.idChatWeb);
+          } else {
+            console.log("⏳ Iframe aún no existe, esperando...");
+            // Observar para cuando se cree
+            observarCreacionIframe(event.detail.idChatWeb);
+          }
+        }, 500);
+      });
+      
+      // También observar cambios en el DOM para detectar el iframe
+      observarCreacionIframe();
+      
+      console.log("✅ Sistema de comunicación configurado");
+    }
+    
+    // Función para observar la creación del iframe
+    function observarCreacionIframe(idChatWebConocido = null) {
+      const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          mutation.addedNodes.forEach(function(node) {
+            // Verificar si el nodo es el iframe o lo contiene
+            if (node.id === 'iframeChatWeb' || (node.querySelector && node.querySelector('#iframeChatWeb'))) {
+              const iframe = document.getElementById('iframeChatWeb');
+              if (iframe) {
+                console.log("✅ Iframe detectado por observer");
+                
+                // Usar el ID capturado o intentar obtenerlo
+                const idChat = idChatWebConocido || window.capturedIdChatWeb || '';
+                
+                if (idChat) {
+                  console.log("✅ Usando idChatWeb:", idChat);
+                  enviarMensajeAlIframe(iframe, idChat);
+                } else {
+                  console.log("⚠️ idChatWeb no disponible aún, enviando mensaje sin ID");
+                  enviarMensajeAlIframe(iframe, '');
+                }
+                
+                // Dejar de observar
+                observer.disconnect();
+              }
+            }
+          });
+        });
+      });
+
+      // Observar el contenedor del widget
+      const contenedor = document.getElementById('contenedorWidget');
+      if (contenedor) {
+        observer.observe(contenedor, {
+          childList: true,
+          subtree: true
+        });
+        console.log("👀 Observer activo para detectar iframe");
+      }
+
+      // Verificar si el iframe ya existe
+      const iframeExistente = document.getElementById('iframeChatWeb');
+      if (iframeExistente) {
+        console.log("Iframe ya existe");
+        const idChat = idChatWebConocido || window.capturedIdChatWeb || '';
+        enviarMensajeAlIframe(iframeExistente, idChat);
+        observer.disconnect();
+      }
+    }
+    
+    // Función para enviar mensaje al iframe
+    function enviarMensajeAlIframe(iframe, idChatWeb) {
+      console.log("Preparando envío de mensaje al iframe");
+      console.log("   - idChatWeb:", idChatWeb);
+      
+      // Función para enviar el mensaje
+      const enviar = function() {
+        if (iframe.contentWindow) {
+          try {
+            const mensaje = { 
+              chatWeb: 'Crear', 
+              idWidgetChatWeb: idChatWeb 
+            };
+            
+            iframe.contentWindow.postMessage(
+              mensaje, 
+              'APP_URL'
+            );
+            
+            console.log("Mensaje enviado al iframe:", mensaje);
+          } catch (e) {
+            console.error("❌ Error al enviar mensaje al iframe:", e);
+          }
+        } else {
+          console.error("❌ contentWindow no disponible");
+        }
+      };
+      
+      // Enviar cuando el iframe cargue
+      iframe.addEventListener('load', function() {
+        console.log("Iframe cargado completamente");
+        setTimeout(enviar, 300);
+      });
+      
+      // También intentar enviar en múltiples momentos
+      setTimeout(enviar, 500);
+      setTimeout(enviar, 1000);
+      setTimeout(enviar, 2000);
+      
+      // Escuchar mensajes del iframe
+      window.addEventListener('message', function(event) {
+        if (event.origin === 'APP_URL') {
+          console.log("📨 Mensaje recibido del iframe:", event.data);
+          
+          if (event.data && event.data.tipo === 'chatListo') {
+            console.log(" Chat inicializado correctamente en el iframe");
+          }
+        }
+      }, false);
+    }
+    
+    // Exponer funciones globalmente para debugging
+    window.configurarComunicacionIframe = configurarComunicacionIframe;
+    window.enviarMensajeAlIframe = enviarMensajeAlIframe;
+  </script>
+
+  <!-- Script de debugging -->
+  <script>
+    console.log(" IDC Exterior - Sistema de Widget Mejorado");
+    console.log(" Origen:", window.location.origin);
+    console.log(" URL:", window.location.href);
+    
+    // Detectar errores globales
+    window.addEventListener('error', function(e) {
+      if (e.target !== window) {
+        console.error(" Error al cargar recurso:", e.target.src || e.target.href);
+      }
+    }, true);
   </script>
 </body>
 

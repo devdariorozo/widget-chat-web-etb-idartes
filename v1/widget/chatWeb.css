@@ -471,3 +471,84 @@ html, body {
     --chat-btn-bottom: 2.5rem;
   }
 }
+
+/* ! ESTILOS PARA ERROR 429 */
+/* Hacer la imagen transparente y con color cuando hay error */
+#contenedorWidget .btn-chat-pau.error-429 {
+  pointer-events: none !important;  /* Evita que el botón se pueda hacer clic */
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+}
+
+#contenedorWidget .btn-chat-pau.error-429 .img-btn {
+  opacity: 0.5 !important;
+  filter: grayscale(100%) !important;
+  background-color: #ddd !important;
+  border-radius: 50% !important;
+  pointer-events: none !important;  /* Evita que el botón se pueda hacer clic */
+}
+
+/* Countdown centrado */
+#contenedorWidget .btn-chat-pau .countdown-text {
+  pointer-events: none !important;  /* Evita que el botón se pueda hacer clic */
+  display: none;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  color: #ff0000 !important;
+  font-size: 2.5rem !important;
+  font-weight: bold !important;
+  text-align: center !important;
+  z-index: 20 !important;
+  text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Mostrar countdown cuando hay error */
+#contenedorWidget .btn-chat-pau.error-429 .countdown-text {
+  display: block !important;
+}
+
+/* ! ESTILOS PARA LA CAPA DE PRELOAD */
+#preload-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(128, 128, 128, 0.85);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(8px);
+}
+
+#preload-layer .preload-content {
+  text-align: center;
+  color: #666666;
+}
+
+#preload-layer .preload-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e0e0e0;
+  border-top: 4px solid #333333;
+  border-radius: 50%;
+  animation: preload-spin 1.2s linear infinite;
+  margin: 0 auto 20px;
+}
+
+#preload-layer .preload-text {
+  font-size: 16px;
+  color: #000000;
+  font-weight: bold;
+  opacity: 1;
+}
+
+/* Animación del spinner del preload */
+@keyframes preload-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

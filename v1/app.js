@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                          LEVANTAR SERVIDOR EXPRESS
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres
-// @lastModified Ramón Dario Rozo Torres
+// @author Ramón Dario Rozo Torres (24 de Enero de 2025)
+// @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
 // @version 1.0.0
 // v1/app.js
 
@@ -40,8 +40,51 @@ if (TRUST_PROXY_ENV === 'true') {
 } else {
     app.set('trust proxy', 1);
 }
-// * CONFIGURACIÓN DEL CORS
-app.use(cors());
+
+// ! CONFIGURACIONES
+// * CONFIGURACIÓN DE CORS
+// Obtener las URLs permitidas desde el .env
+const allowedOriginsRaw = process.env.ALLOWED_ORIGINS || '';
+const allowedOrigins = allowedOriginsRaw.split(',').map(origin => origin.trim());
+
+const corsOptions = {
+    origin: (origin, callback) => {
+        console.log(`■ origin inicial: ${origin}`);
+        
+        // Si ALLOWED_ORIGINS es '*', permitir todos los orígenes
+        if (allowedOriginsRaw.trim() === '*') {
+            console.log('■ CORS: Modo abierto (*) - Permitiendo todos los orígenes');
+            callback(null, true);
+            return;
+        }
+        
+        if (origin == undefined || origin == null) {
+            origin = process.env.APP_URL;
+        }
+        console.log(`■ origin final: ${origin}`);
+        
+        // Permitir solicitudes desde las URLs especificadas
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true); // Permitir el origen
+        } else {
+            // Formatear la fecha y hora
+            const now = new Date();
+            const formattedDate = `${now.getUTCDate()}/${now.toLocaleString('default', { month: 'short' })}/${now.getUTCFullYear()}:${now.toISOString().substr(11, 8)} +0000`;
+            if (origin) {
+                console.log(`■ Backend ${formattedDate} → Validación de CORS • Acceso denegado para: ${origin}`);
+            } else {
+                console.log(`■ Backend ${formattedDate} → Validación de CORS • Acceso denegado para el origen desconocido`);
+            }
+            callback(new Error('No se permite el acceso desde el origen especificado...')); // Denegar el origen
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos permitidos
+    allowedHeaders: ['Content-Type', 'Authorization'], // Encabezados permitidos
+    credentials: true, // Importante para widgets que usen cookies/sesiones
+};
+app.use(cors(corsOptions));
+console.log('■ Configuración de CORS aplicada correctamente');
+
 // * CONFIGURACIÓN DEL PUERTO
 const PORT = parseInt(process.env.APP_PORT) || 4000;
 // * CONFIGURACIÓN DEL FORMATO JSON
@@ -67,19 +110,18 @@ app.use(express.static(path.join(__dirname, 'uploads')));
 // * MIDDLEWARE MORGAN PARA REGISTRAR SOLICITUDES HTTP
 app.use(morgan('■ ETB IDARTES :localdate → :method → :status • :url → :response-time ms'));
 
-// * MIDDLEWARE DE RATE LIMITING GENERAL
-// const { apiLimiter } = require('./middlewares/rateLimiter.js');
-// app.use('/widget', apiLimiter); // Aplicar rate limiting a todas las rutas del widget
-
 // * MIDDLEWARE PARA ACEPTAR DATOS EN FORMATO JSON
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // ! RUTAS
+console.log('■ Cargando rutas...');
 // * MODULO DE WIDGET
 // TODO: CHAT WEB
+console.log('■ Cargando rutas de Widget chat...');
 app.use('/widget/chat', require('./routes/widget/chat.routes.js'));
 // TODO: MENSAJE
+console.log('■ Cargando rutas de Widget mensaje...');
 app.use('/widget/mensaje', require('./routes/widget/mensaje.routes.js'));
 
 // * RUTA INICIAL

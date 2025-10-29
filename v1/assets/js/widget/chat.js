@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                      CHAT WEB
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres
-// @lastModified Ramón Dario Rozo Torres
+// @author Ramón Dario Rozo Torres (24 de Enero de 2025)
+// @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
 // @version 1.0.0
 // v1/assets/js/widget/chat.js
 
@@ -183,6 +183,9 @@ $(document).ready(function(){
         const enviarArchivos = () => {
             fetch('/widget/mensaje/adjuntarArchivos', {
                 method: 'POST',
+                headers: {
+                    'origin': window.location.origin
+                },
                 body: formData,
             })
                 .then(async response => {
@@ -259,12 +262,25 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // Botón de enviar
     const btnEnviar = document.getElementById('btnEnviar'); 
     // Ocultar contenedor de adjuntos
-    contentAdjuntos.classList.add('hide');;
+    contentAdjuntos.classList.add('hide');
 
     // * SI EL CHAT ES NUEVO
     if (chatWeb === 'Crear') {
+        // * LIMPIAR CONTENIDO ANTERIOR INMEDIATAMENTE
+        limpiarContenidoAnterior();
+        
+        // * Mostrar indicador de carga para mejorar la percepción de velocidad
+        mostrarIndicadorCarga();
+        
         // todo: Listar mensajes
         const resultListar = await listarMensajeNoLeido();
+        
+        // * Ocultar indicador de carga
+        ocultarIndicadorCarga();
+        
+        // * GARANTIZAR QUE EL PRELOAD SE OCULTE SIEMPRE (incluso sin mensajes)
+        ocultarCapaPreload();
+        
         // Solo hacer scroll si hay mensajes nuevos
         if (resultListar && resultListar.mensajesNuevos) {
             await desplazarScrollVentana();
@@ -285,8 +301,14 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     }
 
     if (chatWeb === 'Minimizar') {
+        // * LIMPIAR CONTENIDO ANTERIOR ANTES DE CARGAR CONVERSACIÓN
+        limpiarContenidoAnterior();
+        
         // todo: Minimizar el chat
         await listarConversacion(); // Listar la conversación completa al abrir el chat
+        
+        // * GARANTIZAR QUE EL PRELOAD SE OCULTE SIEMPRE (incluso sin mensajes)
+        ocultarCapaPreload();
         
         // Agregar etiquetas de remitente a mensajes existentes
         agregarEtiquetasRemitente();
@@ -581,7 +603,8 @@ const observadorFormulario = new MutationObserver((mutations) => {
                                 const response = await fetch("/widget/chat/formularioInicial", {
                                     method: "POST",
                                     headers: {
-                                        "Content-Type": "application/json"
+                                        "Content-Type": "application/json",
+                                        "origin": window.location.origin
                                     },
                                     body: JSON.stringify({ idChatWeb, camposFormulario })
                                 });
@@ -1045,6 +1068,116 @@ function habilitarBotonEnviar() {
     }
 }
 
+// * MOSTRAR INDICADOR DE CARGA
+function mostrarIndicadorCarga() {
+    const conversacionDiv = document.getElementById('conversacion');
+    if (conversacionDiv && !document.getElementById('indicador-carga')) {
+        const indicadorDiv = document.createElement('div');
+        indicadorDiv.id = 'indicador-carga';
+        indicadorDiv.className = 'indicador-carga';
+        indicadorDiv.innerHTML = `
+            <div class="carga-spinner">
+                <div class="spinner"></div>
+                <span>Iniciando chat...</span>
+            </div>
+        `;
+        conversacionDiv.appendChild(indicadorDiv);
+        
+        // Hacer scroll para mostrar el indicador
+        setTimeout(() => {
+            desplazarScrollConversacion();
+        }, 10);
+    }
+}
+
+// * OCULTAR INDICADOR DE CARGA
+function ocultarIndicadorCarga() {
+    const indicador = document.getElementById('indicador-carga');
+    if (indicador) {
+        indicador.remove();
+    }
+    
+    // También ocultar la capa de preload cuando se oculta el indicador de carga
+    ocultarCapaPreload();
+}
+
+// * OCULTAR CAPA DE PRELOAD
+function ocultarCapaPreload() {
+    // Intentar ocultar desde el iframe
+    const preloadLayer = document.getElementById('preload-layer');
+    if (preloadLayer) {
+        preloadLayer.style.display = 'none';
+    }
+    
+    // También intentar ocultar desde el parent window (chatWeb.js)
+    try {
+        if (window.parent && window.parent.WidgetChatAPI && window.parent.WidgetChatAPI.ocultarPreload) {
+            window.parent.WidgetChatAPI.ocultarPreload();
+        }
+    } catch (error) {
+        // Si hay error de same-origin, continuar sin problemas
+        // console.log('No se pudo acceder al parent window para ocultar preload');
+    }
+    
+    // Enviar mensaje al parent para ocultar el preload
+    try {
+        if (window.parent) {
+            window.parent.postMessage({
+                type: 'ocultarPreload'
+            }, '*');
+        }
+    } catch (error) {
+        console.log('❌ Error enviando mensaje para ocultar preload:', error);
+    }
+}
+
+// * LIMPIAR CONTENIDO ANTERIOR
+function limpiarContenidoAnterior() {
+    // Limpiar la conversación
+    const conversacionDiv = document.getElementById('conversacion');
+    if (conversacionDiv) {
+        conversacionDiv.innerHTML = '';
+    }
+    
+    // Limpiar el campo de mensaje
+    const txtMensaje = document.getElementById('txt_mensaje');
+    if (txtMensaje) {
+        txtMensaje.value = '';
+        txtMensaje.style.height = 'auto';
+        if (window.M && M.textareaAutoResize) {
+            M.textareaAutoResize(txtMensaje);
+        }
+    }
+    
+    // Limpiar el registro de mensajes renderizados
+    renderedMessageIds.clear();
+    
+    // Limpiar cualquier typing indicator activo
+    eliminarTypingIndicator();
+    
+    // Limpiar cualquier error 429 activo
+    const mensajeError429 = document.querySelector('.mensaje-error-429');
+    if (mensajeError429) {
+        mensajeError429.remove();
+    }
+    
+    // Resetear variables globales
+    typingIndicatorVisible = false;
+    enviandoMensaje = false;
+    error429Manejado = false;
+    
+    // Limpiar intervalos activos
+    if (countdown429Interval) {
+        clearInterval(countdown429Interval);
+        countdown429Interval = null;
+    }
+    
+    if (reintentoInterval) {
+        clearInterval(reintentoInterval);
+        reintentoInterval = null;
+    }
+}
+
 // * AGREGAR ETIQUETAS DE REMITENTE A MENSAJES EXISTENTES
 function agregarEtiquetasRemitente() {
     // Buscar todos los mensajes existentes
@@ -1107,7 +1240,8 @@ async function enviarMensaje() {
         const response = await fetch('/widget/mensaje/crear', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'origin': window.location.origin
             },
             body: JSON.stringify({ idChatWeb, mensaje }),
         });
@@ -1143,7 +1277,8 @@ async function listarMensajeNoLeido() {
         const response = await fetch('/widget/mensaje/listarNoLeido?idChatWeb=' + idChatWeb, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'origin': window.location.origin
             },
         });
         
@@ -1174,7 +1309,53 @@ async function listarMensajeNoLeido() {
         const conversacionDiv = document.getElementById('conversacion');
 
         // Mapeo de mensajes
-        const mensajes = result.data;
+        const mensajes = result.data || [];
+        let mensajesNuevos = false; // Flag para detectar si hay mensajes nuevos
+        
+        // * SOLUCIÓN: Si no hay mensajes, esperar un poco y reintentar
+        if (!mensajes || mensajes.length === 0) {
+            //console.log('⚠️ No se encontraron mensajes, esperando y reintentando...');
+            await new Promise(resolve => setTimeout(resolve, 200)); // Reducido a 200ms para mejor responsividad
+            
+            // Reintentar una vez más
+            try {
+                const retryResponse = await fetch('/widget/mensaje/listarNoLeido?idChatWeb=' + idChatWeb, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'origin': window.location.origin
+                    },
+                });
+                
+                if (retryResponse.ok) {
+                    const retryResult = await retryResponse.json();
+                    const retryMensajes = retryResult.data || [];
+                    
+                    if (retryMensajes.length > 0) {
+                        //console.log('✅ Mensajes encontrados en el reintento:', retryMensajes.length);
+                        return await procesarMensajes(retryMensajes);
+                    }
+                }
+            } catch (retryError) {
+                //console.log('❌ Error en reintento:', retryError);
+            }
+            
+            //console.log('⚠️ No se encontraron mensajes después del reintento');
+            return { mensajesNuevos: false };
+        }
+        
+        return await procesarMensajes(mensajes);
+    } catch (error) {
+        console.log('❌ Error en v1/assets/js/widget/chat.js → listarMensajeNoLeido ', error);
+        return { mensajesNuevos: false };
+    }
+}
+
+// * FUNCIÓN AUXILIAR PARA PROCESAR MENSAJES
+async function procesarMensajes(mensajes) {
+    try {
+        // Contenedor de la conversación
+        const conversacionDiv = document.getElementById('conversacion');
         let mensajesNuevos = false; // Flag para detectar si hay mensajes nuevos
         
         // CONDICIÓN: Eliminar typing indicator cuando responda el ChatBot
@@ -1273,7 +1454,8 @@ async function listarMensajeNoLeido() {
                 await fetch('/widget/mensaje/leer', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'origin': window.location.origin
                     },
                     body: JSON.stringify({ idMensaje }),
                 });
@@ -1309,26 +1491,31 @@ async function listarMensajeNoLeido() {
             contentFormTexto.classList.add('hide');
         }
         
+        // Ocultar la capa de preload cuando se procesen mensajes
+        if (mensajesNuevos) {
+            ocultarCapaPreload();
+        }
+        
         // Retornar si hubo mensajes nuevos
         return { mensajesNuevos };
     } catch (error) {
-        console.log('❌ Error en v1/assets/js/widget/chat.js → listarMensajeNoLeido ', error);
+        console.log('❌ Error en v1/assets/js/widget/chat.js → procesarMensajes ', error);
         return { mensajesNuevos: false };
     }
 }
 
 // * FUNCIÓN PARA DESPLAZAR EL SCROLL DE LA VENTANA
 async function desplazarScrollVentana() {
-    // Esperar un breve momento para asegurarse de que el DOM se haya actualizado
-    await new Promise(resolve => setTimeout(resolve, 100)); // Espera 100 ms
+    // Esperar un momento mínimo para asegurarse de que el DOM se haya actualizado
+    await new Promise(resolve => setTimeout(resolve, 50)); // Reducido a 50ms
     // Desplazar el body hacia abajo
     window.scrollTo(0, document.body.scrollHeight);
 }
 
 // * FUNCIÓN PARA DESPLAZAR EL SCROLL DE LA CONVERSACIÓN
 async function desplazarScrollConversacion() {
-    // Esperar un breve momento para asegurarse de que el DOM se haya actualizado
-    await new Promise(resolve => setTimeout(resolve, 100)); // Espera 100 ms
+    // Esperar un momento mínimo para asegurarse de que el DOM se haya actualizado
+    await new Promise(resolve => setTimeout(resolve, 50)); // Reducido a 50ms
     // Desplazar el scroll de la conversación
     const conversacionDiv = document.getElementById('conversacion');
     conversacionDiv.scrollTop = conversacionDiv.scrollHeight;
@@ -1340,7 +1527,8 @@ async function listarConversacion() {
         const response = await fetch('/widget/mensaje/listarConversacion?idChatWeb=' + idChatWeb, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'origin': window.location.origin
             },
         });
         const result = await response.json();
@@ -1376,6 +1564,9 @@ async function listarConversacion() {
                 mensajeDiv.appendChild(textoDiv);
                 conversacionDiv.appendChild(mensajeDiv);
             });
+            
+            // Ocultar la capa de preload cuando se muestre la conversación
+            ocultarCapaPreload();
         }
     } catch (error) {
         console.log('❌ Error en v1/assets/js/widget/chat.js → listarConversacion ', error);
@@ -1443,7 +1634,8 @@ async function vigilarInactividad() {
     const response = await fetch('/widget/mensaje/vigilaInactividadChat', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'origin': window.location.origin
         },
         body: JSON.stringify({ 
             idChatWeb,
@@ -1748,7 +1940,8 @@ async function listarConversacionCompleta() {
         const response = await fetch('/widget/mensaje/listarConversacion?idChatWeb=' + idChatWeb, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'origin': window.location.origin
             },
         });
         const result = await response.json();
@@ -1782,7 +1975,8 @@ async function marcarMensajesNoLeidosComoLeidos() {
         const response = await fetch('/widget/mensaje/listarNoLeido?idChatWeb=' + idChatWeb, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'origin': window.location.origin
             },
         });
         const result = await response.json();
@@ -1791,7 +1985,8 @@ async function marcarMensajesNoLeidosComoLeidos() {
             await fetch('/widget/mensaje/leer', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'origin': window.location.origin
                 },
                 body: JSON.stringify({ idMensaje: mensaje.ID_MENSAJE }),
             });
