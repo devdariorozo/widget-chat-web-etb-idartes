@@ -90,7 +90,7 @@ html, body {
 /* Estilo para el mensaje enviado */
 .mensaje-enviado {
     position: relative;
-    background-color: #6d94cd85 ; /* Color de fondo */
+    background-color: #ACA2CE ; /* Color de fondo */
     color: #000000; /* Color del texto */
     border-radius: 10px; /* Bordes redondeados */
     padding: 0.7rem 1.2rem;
@@ -123,13 +123,13 @@ html, body {
     left: 10px; /* Ajustar la posición */
     border-width: 7px;
     border-style: solid;
-    border-color: transparent transparent #6d94cd85  transparent; /* Triángulo */
+    border-color: transparent transparent #ACA2CE  transparent; /* Triángulo */
 }
 
 /* ! INDICADOR DE ESCRIBIENDO (TYPING INDICATOR) */
 .typing-indicator {
     position: relative;
-    background-color: #6d94cd85; /* Mismo color que mensaje-enviado */
+    background-color: #ACA2CE; /* Mismo color que mensaje-enviado */
     color: #000000;
     border-radius: 10px;
     padding: 0.7rem 1.2rem;
@@ -150,7 +150,7 @@ html, body {
     left: 10px;
     border-width: 7px;
     border-style: solid;
-    border-color: transparent transparent #6d94cd85 transparent;
+    border-color: transparent transparent #ACA2CE transparent;
 }
 
 /* Contenedor de los puntos */
@@ -326,9 +326,9 @@ a:hover {
 }
 
 @keyframes btnEnviar {
-    0% { background: #6d94cd85 ; }
-    50% { background: #6d94cd85 ; }
-    100% { background: #6d94cd85 ; }
+    0% { background: #ACA2CE ; }
+    50% { background: #ACA2CE ; }
+    100% { background: #ACA2CE ; }
 }
 
 /* Estilos personalizados para Dropify */
@@ -519,7 +519,7 @@ a:hover {
 
 .modal {
   z-index: 1125001 !important;
-  background: #6d94cd85 !important;
+  background: #ACA2CE !important;
   color: #000000 !important;
   border-radius: 12px;
   max-height: 90vh; /* Limita la altura máxima al 90% de la pantalla */
@@ -672,7 +672,7 @@ color: #000000 !important;
     display: none !important;
 }
 .select2-dropdown {
-    background: #6d94cd85 !important;
+    background: #ACA2CE !important;
     color: #000000 !important;
     z-index: 1200000 !important;
 }

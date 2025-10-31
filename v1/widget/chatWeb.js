@@ -7,8 +7,8 @@
 // v1/widget/chatWeb.js
 
 // ! VARIABLES GLOBALES
-// const APP_URL = 'https://idcexteriorchatbot.mysoul.software'; // Producción
-// const APP_URL = 'https://idcexteriorchatbotdos.mysoul.software'; // 715 QA
+// const APP_URL = 'https://???.mysoul.software'; // Producción
+// const APP_URL = 'https://???.mysoul.software'; // 715 QA
 const APP_URL = 'http://localhost:5006'; // Desarrollo
 let chatWeb = '';
 let idChatWeb = '';
@@ -113,6 +113,88 @@ function inicializarWidgetChat() {
             return;
         }
         
+        // * VERIFICAR SI YA EXISTE UN CHAT PARA RESTAURARLO
+        // Si ya existe idChatWeb, restaurar el chat existente en lugar de crear uno nuevo
+        if (idChatWeb && idChatWeb !== '') {
+            // console.log('🔄 Restaurando chat existente con ID:', idChatWeb);
+            
+            // * Mostrar el chat INMEDIATAMENTE para mejor UX
+            toggleChatState(true);
+            
+            // * Verificar si el iframe ya está cargado
+            const chatURL = `${APP_URL}/widget/chat/web`;
+            
+            // * Si el iframe ya está cargado con la URL correcta, solo enviar el mensaje de restauración
+            if (iframeChatWeb.src && iframeChatWeb.src.includes(chatURL)) {
+                // console.log('✅ Iframe ya cargado - Enviando mensaje de restauración');
+                
+                // * Enviar mensaje al iframe inmediatamente para restaurar el chat
+                if (iframeChatWeb.contentWindow) {
+                    try {
+                        // Usar 'Minimizar' para cargar la conversación completa existente
+                        iframeChatWeb.contentWindow.postMessage(
+                            { 
+                                chatWeb: 'Minimizar', 
+                                idWidgetChatWeb: idChatWeb 
+                            }, 
+                            APP_URL
+                        );
+                        // console.log('✅ Mensaje de restauración enviado al iframe con ID:', idChatWeb);
+                    } catch (e) {
+                        console.error('❌ Error al enviar mensaje para restaurar chat:', e);
+                    }
+                }
+                return; // Salir aquí - chat restaurado
+            }
+            
+            // * Si el iframe no está cargado, cargarlo y luego restaurar
+            // * MOSTRAR CAPA DE PRELOAD
+            mostrarCapaPreload();
+            
+            // * Limpiar el iframe antes de cargar contenido
+            iframeChatWeb.src = 'about:blank';
+            
+            // * FALLBACK: Ocultar preload después de 10 segundos como medida de seguridad
+            setTimeout(() => {
+                ocultarCapaPreload();
+            }, 10000);
+
+            // * Cuando el iframe esté listo, enviar mensaje para restaurar el chat
+            iframeChatWeb.onload = function() {
+                // console.log('📤 Iframe cargado - Restaurando chat existente');
+                
+                // * Ocultar preload cuando el iframe esté completamente cargado
+                setTimeout(() => {
+                    ocultarCapaPreload();
+                    
+                    // * Enviar mensaje al iframe para restaurar el chat con el ID existente
+                    if (iframeChatWeb.contentWindow) {
+                        try {
+                            // Usar 'Minimizar' para cargar la conversación completa existente
+                            iframeChatWeb.contentWindow.postMessage(
+                                { 
+                                    chatWeb: 'Minimizar', 
+                                    idWidgetChatWeb: idChatWeb 
+                                }, 
+                                APP_URL
+                            );
+                            // console.log('✅ Mensaje de restauración enviado al iframe con ID:', idChatWeb);
+                        } catch (e) {
+                            console.error('❌ Error al enviar mensaje para restaurar chat:', e);
+                        }
+                    }
+                }, 1000); // Dar tiempo para que el iframe se inicialice
+            };
+            
+            // * Cargar el chat después de un breve momento
+            setTimeout(() => {
+                iframeChatWeb.src = chatURL;
+            }, 10);
+            
+            return; // Salir aquí - no crear nuevo chat
+        }
+        
+        // * SI NO HAY CHAT EXISTENTE, CREAR UNO NUEVO
         // * LIMPIAR COMPLETAMENTE EL ESTADO ANTERIOR
         idChatWeb = '';
         chatWeb = '';

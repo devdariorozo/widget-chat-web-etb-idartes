@@ -143,7 +143,8 @@ const solicitarNombresApellidos = async (idChat, remitente) => {
         const solicitarNombresApellidosArbol = dataEstatica.arbol.solicitarNombresApellidos;
         chatData.descripcion = 'Se solicitan los nombres y apellidos.';
         await modelChat.actualizar(idChat, solicitarNombresApellidosArbol, chatData);
-        return await crearMensaje(idChat, remitente, dataEstatica.configuracion.estadoMensaje.enviado, dataEstatica.configuracion.tipoMensaje.texto, dataEstatica.mensajes.solicitarNombresApellidos, chatData.descripcion);
+        const resultadoMensaje = await crearMensaje(idChat, remitente, dataEstatica.configuracion.estadoMensaje.enviado, dataEstatica.configuracion.tipoMensaje.texto, dataEstatica.mensajes.solicitarNombresApellidos, chatData.descripcion);
+        return resultadoMensaje;
     } catch (error) {
         // ? Error api  
         const api = dataEstatica.configuracion.responsable;
@@ -176,8 +177,13 @@ const procesarNombresApellidos = async (idChat, remitente, contenido) => {
             const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
             ⚠️ <i>Por favor ingresar minimo un nombre y un apellido.</i></p>`;
 
-        await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
-        return await solicitarNombresApellidos(idChat, remitente);
+        const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+        if (resultado) {
+            // Mostrar nuevamente el mensaje de solicitud para que el usuario vea qué se le está pidiendo
+            const resultadoSolicitar = await solicitarNombresApellidos(idChat, remitente);
+            return resultadoSolicitar;
+        }
+        return false;
     } catch (error) {
         // ? Error api  
         const api = dataEstatica.configuracion.responsable;
@@ -220,10 +226,13 @@ const procesarGenero = async (idChat, remitente, contenido) => {
             const pasoArbol = 'Alerta No Entiendo - Solicitar Genero';
             const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
             ⚠️ <i>Por favor seleccionar una opción válida para continuar.</i></p>`;
-            await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
-            return await solicitarGenero(idChat, remitente);
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                // Mostrar nuevamente el mensaje de solicitud para que el usuario vea qué se le está pidiendo
+                return await solicitarGenero(idChat, remitente);
+            }
+            return false;
         }
-        
     } catch (error) {
         // ? Error api  
         const api = dataEstatica.configuracion.responsable;
@@ -265,8 +274,12 @@ const procesarCorreoElectronico = async (idChat, remitente, contenido) => {
             const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
             ⚠️ <i>Por favor ingrese un correo electrónico válido.</i></p>`;
 
-            await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
-            return await solicitarCorreoElectronico(idChat, remitente);
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                // Mostrar nuevamente el mensaje de solicitud para que el usuario vea qué se le está pidiendo
+                return await solicitarCorreoElectronico(idChat, remitente);
+            }
+            return false;
         }
     } catch (error) {
         // ? Error api  
@@ -316,8 +329,12 @@ const procesarNumeroTelefono = async (idChat, remitente, contenido) => {
             <b>Ejemplos válidos:</b> <br/>
             3216549870, 6015235568, 573214569870, 93212351256
             </i></p>`;
-            await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
-            return await solicitarNumeroTelefono(idChat, remitente);
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                // Mostrar nuevamente el mensaje de solicitud para que el usuario vea qué se le está pidiendo
+                return await solicitarNumeroTelefono(idChat, remitente);
+            }
+            return false;
         }
     } catch (error) {
         // ? Error api  
@@ -364,8 +381,12 @@ const procesarLocalidad = async (idChat, remitente, contenido) => {
             const pasoArbol = 'Alerta No Entiendo - Solicitar Localidad';
             const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
             ⚠️ <i>Por favor ingrese una localidad válida (mínimo 3, máximo 250 caracteres).</i></p>`;
-            await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
-            return await solicitarLocalidad(idChat, remitente);
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                // Mostrar nuevamente el mensaje de solicitud para que el usuario vea qué se le está pidiendo
+                return await solicitarLocalidad(idChat, remitente);
+            }
+            return false;
         }
     }
     catch (error) {
@@ -414,8 +435,12 @@ const procesarEnQuePodemosAyudarle = async (idChat, remitente, contenido) => {
             const pasoArbol = 'Alerta No Entiendo - Solicitar En Que Podemos Ayudarle';
             const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
             ⚠️ <i>Por favor escriba al menos 3 caracteres (máx 1000) y vuelva a intentarlo.</i></p>`;
-            await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
-            return await solicitarEnQuePodemosAyudarle(idChat, remitente);
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                // Mostrar nuevamente el mensaje de solicitud para que el usuario vea qué se le está pidiendo
+                return await solicitarEnQuePodemosAyudarle(idChat, remitente);
+            }
+            return false;
         }
     }
     catch (error) {
@@ -466,8 +491,12 @@ const procesarRangoEdad = async (idChat, remitente, contenido) => {
             const pasoArbol = 'Alerta No Entiendo - Solicitar Rango Edad';
             const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
             ⚠️ <i>Por favor seleccione una opción válida para continuar.</i></p>`;
-            await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
-            return await solicitarRangoEdad(idChat, remitente);
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                // Mostrar nuevamente el mensaje de solicitud para que el usuario vea qué se le está pidiendo
+                return await solicitarRangoEdad(idChat, remitente);
+            }
+            return false;
         }
     } catch (error) {
         // ? Error api
@@ -508,8 +537,12 @@ const procesarAutorizacionTratamientoDatos = async (idChat, remitente, contenido
             const pasoArbol = 'Alerta No Entiendo - Solicitar Autorizacion Tratamiento Datos';
             const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
             ⚠️ <i>Por favor seleccione una opción válida para continuar.</i></p>`;
-            await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
-            return await solicitarAutorizacionTratamientoDatos(idChat, remitente);
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                // Mostrar nuevamente el mensaje de solicitud para que el usuario vea qué se le está pidiendo
+                return await solicitarAutorizacionTratamientoDatos(idChat, remitente);
+            }
+            return false;
         }
     }
     catch (error) {
@@ -607,14 +640,15 @@ const manejarNoEntiendo = async (idChat, remitente, pasoArbol, alertaNoEntiendo)
     try {
         chatData.descripcion = 'Se notifica que no se entiende el mensaje.';
         await modelChat.actualizar(idChat, pasoArbol, chatData);
-        const mensaje = await crearMensaje(idChat, remitente, dataEstatica.configuracion.estadoMensaje.enviado, dataEstatica.configuracion.tipoMensaje.texto, alertaNoEntiendo, chatData.descripcion);
+        await crearMensaje(idChat, remitente, dataEstatica.configuracion.estadoMensaje.enviado, dataEstatica.configuracion.tipoMensaje.texto, alertaNoEntiendo, chatData.descripcion);
         return true;
     } catch (error) {
         // todo: Enviar mensaje de error por API
         const api = 'Widget Chat Web MinTic ';
         const procesoApi = 'Funcion manejarNoEntiendo';
         console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → manejarNoEntiendo: ', error);
-        return await errorAPI(api, procesoApi, error, idChat, remitente);
+        await errorAPI(api, procesoApi, error, idChat, remitente);
+        return false;
     }
 };
 

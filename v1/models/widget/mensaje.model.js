@@ -49,18 +49,6 @@ const existeMensajeReciente = async (idChat, remitente, tipoMensaje, contenido, 
 // * CREAR
 const crear = async (idChat, remitente, estadoMensaje, tipoMensaje, contenido, enlaces, lectura, descripcion, estadoRegistro, responsable) => {
     try {
-        // Permitir duplicados solo si el contenido contiene ciertas clases especiales
-        const permitirDuplicado =
-            (typeof contenido === 'string' &&
-                (contenido.includes('alertaErrorAPIArbol') || contenido.includes('alertaInactividadArbol')));
-        if (!permitirDuplicado) {
-            // Verificar si ya existe un mensaje igual en toda la conversación (normalizado)
-            const mensajes = await listarConversacion(idChat);
-            const contenidoNormalizado = normalizarContenido(contenido);
-            if (mensajes && mensajes.some(msg => normalizarContenido(msg.CONTENIDO) === contenidoNormalizado)) {
-                return false;
-            }
-        }
         // todo: Sentencia SQL
         const query = `
             INSERT INTO
