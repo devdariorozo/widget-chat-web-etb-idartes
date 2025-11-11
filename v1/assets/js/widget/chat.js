@@ -25,6 +25,66 @@ let countdown429Interval = null; // Para controlar el countdown del error 429
 const renderedMessageIds = new Set();
 // Control de estado para evitar múltiples envíos simultáneos
 let enviandoMensaje = false; // Flag para controlar si ya se está enviando un mensaje
+let haRecibidoPrimerMensajeEnviado = false; // Controla cuando inicia la interacción con AI Soul
+let refrescoMensajesInterval = null; // Intervalo para refrescar mensajes automáticamente
+let refrescandoMensajes = false; // Evita llamadas concurrentes al refresco
+let chatFinalizado = false; // Indica si el chat ha sido cerrado definitivamente
+
+// ! UTILIDADES UI
+function limpiarYEnfocarTextarea(debeEnfocar = true) {
+    const contentFormTexto = document.getElementById('contentFormTexto');
+    if (debeEnfocar && contentFormTexto) {
+        contentFormTexto.classList.remove('hide');
+    }
+    const txtMensaje = document.getElementById('txt_mensaje');
+    if (txtMensaje) {
+        txtMensaje.readOnly = false;
+        txtMensaje.value = '';
+        txtMensaje.style.height = 'auto';
+        if (window.M && M.textareaAutoResize) {
+            M.textareaAutoResize(txtMensaje);
+        }
+        if (debeEnfocar) {
+            setTimeout(() => {
+                console.log('🔍 Enfocando textarea');
+                txtMensaje.focus();
+                // Llevar el cursor al final
+                const longitud = txtMensaje.value.length;
+                if (typeof txtMensaje.setSelectionRange === 'function') {
+                    txtMensaje.setSelectionRange(longitud, longitud);
+                }
+            }, 200);
+        }
+    }
+}
+
+function deshabilitarFormularioMensaje() {
+    const txtMensaje = document.getElementById('txt_mensaje');
+    const contentFormTexto = document.getElementById('contentFormTexto');
+    const btnEnviar = document.getElementById('btnEnviar');
+    if (txtMensaje) {
+        txtMensaje.value = '';
+        txtMensaje.readOnly = true;
+        txtMensaje.blur();
+    }
+    if (contentFormTexto) {
+        contentFormTexto.classList.add('hide');
+    }
+    if (btnEnviar) {
+        btnEnviar.disabled = true;
+        btnEnviar.style.opacity = '0.6';
+        btnEnviar.style.cursor = 'not-allowed';
+    }
+}
+
+function marcarChatComoFinalizado() {
+    chatFinalizado = true;
+    deshabilitarFormularioMensaje();
+    eliminarTypingIndicator();
+    enviandoMensaje = false;
+    detenerVigilanciaInactividad();
+    detenerRefrescoMensajes();
+}
 
 // ! EVENTOS DE ACTIVIDAD
 // Eventos que se disparan frecuentemente (necesitan debounce)
@@ -208,18 +268,13 @@ $(document).ready(function(){
                     if (data.status === 200) {
                         $('#contentAdjuntos').addClass('hide');
                         $('#contentFormTexto').removeClass('hide');
-                        txtMensaje.value = '';
-                        txtMensaje.style.height = 'auto';
-                        if (window.M && M.textareaAutoResize) {
-                            M.textareaAutoResize(txtMensaje);
-                        }
+                        limpiarYEnfocarTextarea();
                         const resultListar = await listarMensajeNoLeido();
                         // Solo hacer scroll si hay mensajes nuevos
                         if (resultListar && resultListar.mensajesNuevos) {
                             await desplazarScrollVentana();
                             await desplazarScrollConversacion();
                         }
-                        txtMensaje.focus();
                     } else {
                         console.log('❌ Error en v1/assets/js/widget/chat.js → btnAdjuntar.enviarArchivos ', data.message);
                     }
@@ -256,7 +311,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // Contenedor de formulario de texto
     const contentFormTexto = document.getElementById('contentFormTexto');
     // Contenedor de formulario de adjuntos
-    const contentAdjuntos = document.getElementById('contentAdjuntos');    
+    const contentAdjuntos = document.getElementById('contentAdjuntos');
     // Campo de mensaje
     const txtMensaje = document.getElementById('txt_mensaje');
     // Botón de enviar
@@ -268,6 +323,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     if (chatWeb === 'Crear') {
         // * LIMPIAR CONTENIDO ANTERIOR INMEDIATAMENTE
         limpiarContenidoAnterior();
+        contentFormTexto.classList.add('hide');
+        mostrarTypingIndicator();
         
         // * Mostrar indicador de carga para mejorar la percepción de velocidad
         mostrarIndicadorCarga();
@@ -298,10 +355,23 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             await manejarEnvioMensaje();
         });
         
+    // Enviar con Enter, salto de línea con Shift+Enter
+    txtMensaje.addEventListener('keydown', async (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            await manejarEnvioMensaje();
+        }
+    });
+    txtMensaje.addEventListener('keyup', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+        }
+    });
+
+        iniciarRefrescoMensajes();
     }
 
     if (chatWeb === 'Minimizar') {
-        console.log('🔍 ChatWeb minimizado');
         // * LIMPIAR CONTENIDO ANTERIOR ANTES DE CARGAR CONVERSACIÓN
         limpiarContenidoAnterior();
         
@@ -313,11 +383,16 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         
         // Agregar etiquetas de remitente a mensajes existentes
         agregarEtiquetasRemitente();
+
+        iniciarRefrescoMensajes();
     }
 });
 
 // ! MANEJAR ENVÍO DE MENSAJE DESDE EL EVENTO CLICK
 async function manejarEnvioMensaje() {
+    if (chatFinalizado) {
+        return;
+    }
     // VERIFICAR SI HAY ERROR 429 ACTIVO - NO PERMITIR ENVÍO SI LO HAY
     const hayError429Activo = document.querySelector('.mensaje-error-429');
     if (hayError429Activo) {
@@ -391,13 +466,7 @@ async function iniciarProcesoEnvioMensaje() {
             //console.log('✅ Mensaje enviado exitosamente');            
             
             // Limpiar el campo solo cuando el envío sea exitoso
-            const txtMensaje = document.getElementById('txt_mensaje');
-            txtMensaje.value = txtMensaje.value.replace(/\n/g, '');
-            txtMensaje.value = '';
-            txtMensaje.style.height = 'auto';
-            if (window.M && M.textareaAutoResize) {
-                M.textareaAutoResize(txtMensaje);
-            }
+            limpiarYEnfocarTextarea(false);
             
             // Liberar flag de envío
             enviandoMensaje = false;
@@ -413,83 +482,17 @@ async function iniciarProcesoEnvioMensaje() {
                 await desplazarScrollConversacion();
             }
             
-            // Verificar el último mensaje en la conversación para determinar si mostrar typing indicator
-            const conversacionDiv = document.getElementById('conversacion');
-            const todosLosMensajesEnDOM = conversacionDiv.querySelectorAll('[data-id-mensaje]');
-            let ultimoMensajeEnDOM = null;
-            if (todosLosMensajesEnDOM.length > 0) {
-                const mensajesDOMArray = Array.from(todosLosMensajesEnDOM);
-                const ultimoElemento = mensajesDOMArray[mensajesDOMArray.length - 1];
-                const idUltimoMensajeDOM = parseInt(ultimoElemento.getAttribute('data-id-mensaje'));
-                
-                // Verificar si el último mensaje es del ChatBot (tiene clase 'mensaje-enviado')
-                const esMensajeEnviado = ultimoElemento.classList.contains('mensaje-enviado');
-                
-                if (esMensajeEnviado) {
-                    // El último mensaje es del ChatBot, NO mostrar typing indicator
-                    console.log('✅ Último mensaje es del ChatBot (ID:', idUltimoMensajeDOM, ') - NO mostrar typing indicator');
-                    
-                    // Verificar si el último mensaje es "Fin Chat" antes de habilitar el formulario
-                    const ultimoMensajeElemento = conversacionDiv.querySelector(`[data-id-mensaje="${idUltimoMensajeDOM}"]`);
-                    const esFinChat = ultimoMensajeElemento && ultimoMensajeElemento.querySelector('.mensaje-enviado') && 
-                                    (ultimoMensajeElemento.textContent.includes('Gracias por haber utilizado') || 
-                                     ultimoMensajeElemento.textContent.includes('Chat cerrado por inactividad'));
-                    
-                    // También verificar en los mensajes recibidos si hay alguno con TIPO Fin Chat
-                    const hayFinChatEnMensajes = Array.from(conversacionDiv.querySelectorAll('[data-id-mensaje]'))
-                        .some(msg => msg.textContent.includes('Gracias por haber utilizado') || 
-                                     msg.textContent.includes('Chat cerrado por inactividad'));
-                    
-                    if (!esFinChat && !hayFinChatEnMensajes) {
-                        const contentFormTexto = document.getElementById('contentFormTexto');
-                        if (contentFormTexto) {
-                            contentFormTexto.classList.remove('hide');
-                        }
-                        const txtMensaje = document.getElementById('txt_mensaje');
-                        if (txtMensaje) {
-                            txtMensaje.readOnly = false;
-                            txtMensaje.focus();
-                        }
-                    } else {
-                        // Si es Fin Chat, deshabilitar formulario
-                        const contentFormTexto = document.getElementById('contentFormTexto');
-                        if (contentFormTexto) {
-                            contentFormTexto.classList.add('hide');
-                        }
-                        const txtMensaje = document.getElementById('txt_mensaje');
-                        if (txtMensaje) {
-                            txtMensaje.readOnly = true;
-                        }
-                    }
-                    
-                    // Asegurarse de que no haya typing indicator visible
-                    const typingIndicatorEnDOM = document.getElementById('typing-indicator');
-                    if (typingIndicatorEnDOM) {
-                        eliminarTypingIndicator();
-                    }
-                } else {
-                    // El último mensaje es del Usuario, mostrar typing indicator
-                    // MOSTRAR TYPING INDICATOR DESPUÉS DE PROCESAR EL MENSAJE DEL USUARIO
-                    // Solo si no hay mensajes del ChatBot (respuesta pendiente)
-                    if (!typingIndicatorVisible) {
-                        //console.log('✅ Mostrando typing indicator después de procesar mensaje del usuario');
-                        mostrarTypingIndicator();
-                        const contentFormTexto = document.getElementById('contentFormTexto');
-                        contentFormTexto.classList.add('hide');
-                    } else {
-                        //console.log('🔄 Manteniendo typing indicator ya visible');
-                        const contentFormTexto = document.getElementById('contentFormTexto');
-                        contentFormTexto.classList.add('hide');
-                    }
-                }
+            // MOSTRAR TYPING INDICATOR DESPUÉS DE PROCESAR EL MENSAJE DEL USUARIO
+            // Solo si no hay mensajes del ChatBot (respuesta pendiente)
+            if (!typingIndicatorVisible) {
+                //console.log('✅ Mostrando typing indicator después de procesar mensaje del usuario');
+                mostrarTypingIndicator();
+                const contentFormTexto = document.getElementById('contentFormTexto');
+                contentFormTexto.classList.add('hide');
             } else {
-                // Si no hay mensajes en el DOM aún, mostrar typing indicator
-                if (!typingIndicatorVisible) {
-                    //console.log('✅ Mostrando typing indicator después de procesar mensaje del usuario');
-                    mostrarTypingIndicator();
-                    const contentFormTexto = document.getElementById('contentFormTexto');
-                    contentFormTexto.classList.add('hide');
-                }
+                //console.log('🔄 Manteniendo typing indicator ya visible');
+                const contentFormTexto = document.getElementById('contentFormTexto');
+                contentFormTexto.classList.add('hide');
             }
             
         } else if (resultEnviarMensaje.status === 409) {
@@ -570,230 +573,6 @@ async function iniciarProcesoEnvioMensaje() {
     await enviarMensajeConReintento(); // Intentar enviar el mensaje inmediatamente
 }
 
-// ! ENVIAR FORMULARIO INICIAL
-const observadorFormulario = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-        if (mutation.addedNodes.length) {
-            // ! INICIALIZAR SELECT2
-            $('#txt_paisResidencia').select2({
-                allowClear: true,
-                language: 'es',
-                placeholder: 'Seleccione un país',
-                width: '100%'
-            }).on("select2:open", function() {
-                $('#txt_paisResidencia').siblings('.select2-label').removeClass('active-ok').addClass('active');
-            }).on("select2:select", function(e) {
-                valida_txt_paisResidencia();
-                if ($('#txt_paisResidencia').val()) {
-                    $('#txt_paisResidencia').siblings('.select2-label').removeClass('active').addClass('active-ok');
-                } else {
-                    $('#txt_paisResidencia').siblings('.select2-label').removeClass('active');
-                }
-
-                 // Obtener el elemento seleccionado
-                 const selectedOption = e.params.data.element;
-                 const indicativo = selectedOption.getAttribute('data-indicativo') || '';
-                 // Actualizar el campo de indicativo
-                 $('#txt_indicativoPais').val(indicativo);
- 
-                 // Reposicionar el label si es necesario (Materialize)
-                 const labelIndicativoPais = document.querySelector('label[for="txt_indicativoPais"]');
-                 if (indicativo && labelIndicativoPais) {
-                     labelIndicativoPais.classList.add('active');
-                 }
-                 // Validar el campo indicativo si tienes función
-                 if (typeof valida_txt_indicativoPais === 'function') {
-                     valida_txt_indicativoPais();
-                 }
-
-            }).on("select2:close", function() {
-                valida_txt_paisResidencia();
-                if ($('#txt_paisResidencia').val()) {
-                    $('#txt_paisResidencia').siblings('.select2-label').removeClass('active').addClass('active-ok');
-                } else {
-                    $('#txt_paisResidencia').siblings('.select2-label').removeClass('active');
-                }
-            });
-
-            const btn_Continuar = document.getElementById('btn_Continuar');
-            if (btn_Continuar && !btn_Continuar.hasListener) {
-                // Desconectar el observador una vez que encontramos el botón
-                observadorFormulario.disconnect();
-                
-                // Marcar que ya tiene un listener
-                btn_Continuar.hasListener = true;
-                
-                // Agregar el evento click al botón
-                btn_Continuar.addEventListener('click', async () => {
-                    try {
-                        // Validar todos los campos
-                        const validaciones = await Promise.all([
-                            valida_txt_nombres(),
-                            valida_txt_apellidos(),
-                            valida_txt_numeroCedula(),
-                            valida_txt_paisResidencia(),
-                            valida_txt_ciudadResidencia(),
-                            valida_txt_indicativoPais(),
-                            valida_txt_numeroCelular(),
-                            valida_txt_correoElectronico(),
-                            valida_txt_autorizacionDatosPersonales()
-                        ]);
-
-                        // Si alguna validación falló, detener el envío
-                        if (validaciones.includes(false)) {
-                            return;
-                        }
-
-                        // Deshabilitar el botón mientras se envían los mensajes
-                        btn_Continuar.disabled = true;
-
-                        // Crear un objeto con los valores a enviar
-                        const camposFormulario = {
-                            nombres: document.getElementById('txt_nombres').value.trim(),
-                            apellidos: document.getElementById('txt_apellidos').value.trim(),
-                            numeroCedula: document.getElementById('txt_numeroCedula').value.trim(),
-                            paisResidencia: document.getElementById('txt_paisResidencia').value.trim(),
-                            ciudadResidencia: document.getElementById('txt_ciudadResidencia').value.trim(),
-                            indicativoPais: document.getElementById('txt_indicativoPais').value.trim(),
-                            numeroCelular: document.getElementById('txt_numeroCelular').value.trim(),
-                            correoElectronico: document.getElementById('txt_correoElectronico').value.trim(),
-                            autorizacionDatosPersonales: document.getElementById('autorizacionDatosPersonales').checked ? 'Si' : 'No'
-                        };
-
-                        let enviado = false; // Bandera para saber si ya se envió correctamente
-
-                        // Función para intentar enviar el formulario
-                        const enviarFormulario = async () => {
-                            if (enviado) return; // Si ya se envió, no hacer nada
-
-                            try {
-                                const response = await fetch("/widget/chat/formularioInicial", {
-                                    method: "POST",
-                                    headers: {
-                                        "Content-Type": "application/json",
-                                        "origin": window.location.origin
-                                    },
-                                    body: JSON.stringify({ idChatWeb, camposFormulario })
-                                });
-
-                                // Verificar si la respuesta es un error 429
-                                if (response.status === 429) {
-                                    const errorData = await response.json();
-                                    
-                                    // OCULTAR INMEDIATAMENTE EL FORMULARIO AL DETECTAR ERROR 429
-                                    const contentFormTexto = document.getElementById('contentFormTexto');
-                                    contentFormTexto.classList.add('hide');
-                                    //console.log('🚨 Formulario ocultado INMEDIATAMENTE por error 429 (vigilancia)');
-                                    
-                                    manejarError429HTTP(errorData);
-                                    return { status: 429, message: 'Límite de API excedido' };
-                                }
-
-                                const resultFormulario = await response.json();
-                                if (resultFormulario.status === 200) {
-                                    enviado = true; // Marcar como enviado
-                                    clearInterval(reintentoInterval); // <-- ¡DETENER EL INTERVALO AQUÍ!
-
-                                    // Ocultar el formulario
-                                    document.getElementById('content_form').classList.add('hide');
-
-                                    // Llamar a la función para listar mensajes no leídos
-                                    const resultListar = await listarMensajeNoLeido();
-
-                                    // Solo hacer scroll si hay mensajes nuevos
-                                    if (resultListar && resultListar.mensajesNuevos) {
-                                        await desplazarScrollVentana();
-                                        await desplazarScrollConversacion();
-                                    }
-
-                                    // Verificar si hay mensaje Fin Chat en el DOM antes de habilitar el formulario
-                                    const conversacionDiv = document.getElementById('conversacion');
-                                    const hayMensajeFinChatEnDOM = conversacionDiv && 
-                                        Array.from(conversacionDiv.querySelectorAll('.mensaje-enviado'))
-                                            .some(msg => {
-                                                const texto = msg.textContent || '';
-                                                return texto.includes('Gracias por haber utilizado') || 
-                                                       texto.includes('Chat cerrado por inactividad');
-                                            });
-                                    
-                                    if (!hayMensajeFinChatEnDOM) {
-                                        // Habilitar el formulario de texto solo si NO hay Fin Chat
-                                        const contentFormTexto = document.getElementById('contentFormTexto');
-                                        contentFormTexto.classList.remove('hide');
-
-                                        // Habilitar el campo de mensaje
-                                        const txtMensaje = document.getElementById('txt_mensaje');
-                                        txtMensaje.value = '';
-                                        txtMensaje.style.height = 'auto';
-                                        if (window.M && M.textareaAutoResize) {
-                                            M.textareaAutoResize(txtMensaje);
-                                        }
-                                        txtMensaje.focus();
-                                        txtMensaje.readOnly = false;
-                                    } else {
-                                        // Si hay Fin Chat, deshabilitar formulario
-                                        // console.log('🔒 Detectado mensaje Fin Chat - deshabilitando formulario');
-                                        const contentFormTexto = document.getElementById('contentFormTexto');
-                                        if (contentFormTexto) {
-                                            contentFormTexto.classList.add('hide');
-                                        }
-                                        const txtMensaje = document.getElementById('txt_mensaje');
-                                        if (txtMensaje) {
-                                            txtMensaje.readOnly = true;
-                                        }
-                                    }
-                                } else if (resultFormulario.status === 429) {
-                                    // DETENER EL INTERVALO SI HAY ERROR 429 (Rate Limit)
-                                    // No reintentar porque el servidor está limitando intencionalmente
-                                    clearInterval(reintentoInterval);
-                                    //console.log('🚫 Intervalo de reintento detenido por error 429 (Rate Limit - formulario)');
-                                } else {
-                                    // Actualizar bandera
-                                    enviado = false;
-
-                                    // Habilitar el botón
-                                    btn_Continuar.disabled = false;
-
-                                    const resultListar = await listarMensajeNoLeido();
-                                    // Solo hacer scroll si hay mensajes nuevos
-                                    if (resultListar && resultListar.mensajesNuevos) {
-                                        await desplazarScrollVentana();
-                                        await desplazarScrollConversacion();
-                                    }
-                                    console.log('❌ Error en v1/assets/js/widget/chat.js → btn_Continuar.enviarFormulario ', resultFormulario);
-                                }
-                            } catch (error) {
-                                // Puedes mostrar un mensaje de error si quieres, pero el reintento seguirá
-                                console.warn('❌ Error al enviar el formulario, reintentando en 30 segundos...', error);
-                            }
-                        };
-
-                        // Enviar el formulario la primera vez inmediatamente
-                        await enviarFormulario();
-
-                        // Iniciar el reintento cada 30 segundos si no se ha enviado con éxito
-                        // Solo reintenta en errores técnicos (500, 502, 503, etc.), NO en 429 (Rate Limit)
-                        reintentoInterval = setInterval(enviarFormulario, 30000);
-                    } catch (error) {
-                        console.log('❌ Error en v1/assets/js/widget/chat.js → btn_Continuar.enviarFormulario ', error);
-                    }
-                });
-            }
-        }
-    });
-});
-
-// Iniciar la observación del DOM solo si no está ya observando
-if (!observadorFormulario._isObserving) {
-    document.addEventListener('DOMContentLoaded', () => {
-        observadorFormulario.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-        observadorFormulario._isObserving = true;
-    });
-}
-
 // ! FUNCIONES AUXILIARES
 // * OBTENER INFORMACIÓN DEL WIDGET CHAT WEB
 async function obtenerInfoWidgetChatWeb() {
@@ -808,6 +587,9 @@ async function obtenerInfoWidgetChatWeb() {
 
 // * MOSTRAR INDICADOR DE ESCRIBIENDO
 function mostrarTypingIndicator() {
+    if (chatFinalizado) {
+        return;
+    }
     // VERIFICAR SI HAY ERROR 429 ACTIVO - NO MOSTRAR TYPING SI LO HAY
     const hayError429Activo = document.querySelector('.mensaje-error-429');
     if (hayError429Activo) {
@@ -868,16 +650,9 @@ function eliminarTypingIndicator() {
         const txtMensaje = document.getElementById('txt_mensaje');
         const contentFormTexto = document.getElementById('contentFormTexto');
         if (txtMensaje && contentFormTexto) {
-            // Limpiar saltos de línea del textarea cuando llegue respuesta del ChatBot
-            txtMensaje.value = '';
-            txtMensaje.style.height = 'auto';
-            if (window.M && M.textareaAutoResize) {
-                M.textareaAutoResize(txtMensaje);
-            }
-            
             txtMensaje.readOnly = false;
             contentFormTexto.classList.remove('hide');
-            txtMensaje.focus();
+            limpiarYEnfocarTextarea();
             
             // Habilitar el botón cuando se elimine el typing indicator
             habilitarBotonEnviar();
@@ -1032,7 +807,7 @@ function reactivarChatDespuesDeError429() {
     if (txtMensaje && contentFormTexto) {
         txtMensaje.readOnly = false;
         contentFormTexto.classList.remove('hide');
-        txtMensaje.focus();
+        limpiarYEnfocarTextarea();
         //console.log('👁️ Formulario reactivado después del error 429');
     }
     
@@ -1206,7 +981,7 @@ function ocultarCapaPreload() {
         }
     } catch (error) {
         // Si hay error de same-origin, continuar sin problemas
-        // console.log('No se pudo acceder al parent window para ocultar preload');
+        console.log('No se pudo acceder al parent window para ocultar preload');
     }
     
     // Enviar mensaje al parent para ocultar el preload
@@ -1217,7 +992,7 @@ function ocultarCapaPreload() {
             }, '*');
         }
     } catch (error) {
-        console.log('❌ Error enviando mensaje para ocultar preload:', error);
+        console.log('Error enviando mensaje para ocultar preload:', error);
     }
 }
 
@@ -1237,6 +1012,13 @@ function limpiarContenidoAnterior() {
         if (window.M && M.textareaAutoResize) {
             M.textareaAutoResize(txtMensaje);
         }
+        txtMensaje.readOnly = false;
+    }
+    const btnEnviar = document.getElementById('btnEnviar');
+    if (btnEnviar) {
+        btnEnviar.disabled = false;
+        btnEnviar.style.opacity = '1';
+        btnEnviar.style.cursor = 'pointer';
     }
     
     // Limpiar el registro de mensajes renderizados
@@ -1255,6 +1037,10 @@ function limpiarContenidoAnterior() {
     typingIndicatorVisible = false;
     enviandoMensaje = false;
     error429Manejado = false;
+    haRecibidoPrimerMensajeEnviado = false;
+    chatFinalizado = false;
+    detenerVigilanciaInactividad();
+    detenerRefrescoMensajes();
     
     // Limpiar intervalos activos
     if (countdown429Interval) {
@@ -1448,48 +1234,10 @@ async function procesarMensajes(mensajes) {
         const conversacionDiv = document.getElementById('conversacion');
         let mensajesNuevos = false; // Flag para detectar si hay mensajes nuevos
         
-        // Sincronizar typingIndicatorVisible con el estado real del DOM
-        const typingIndicatorExistente = document.getElementById('typing-indicator');
-        if (typingIndicatorExistente && !typingIndicatorVisible) {
-            typingIndicatorVisible = true;
-        } else if (!typingIndicatorExistente && typingIndicatorVisible) {
-            typingIndicatorVisible = false;
-        }
-        
-        // Verificar si el chat está en estado "Fin Chat"
-        const hayFinChat = mensajes.some(mensaje => mensaje.TIPO === 'Fin Chat');
-        
-        // Determinar el ÚLTIMO mensaje usando el ID_MENSAJE mayor
-        let ultimoMensaje = null;
-        if (mensajes.length > 0) {
-            // Encontrar el mensaje con el ID_MENSAJE mayor
-            ultimoMensaje = mensajes.reduce((max, mensaje) => {
-                if (!max || !mensaje.ID_MENSAJE) return mensaje;
-                return mensaje.ID_MENSAJE > max.ID_MENSAJE ? mensaje : max;
-            }, null);
-        }
-        
-        // CONDICIÓN: Eliminar typing indicator SOLO si el último mensaje es del ChatBot (Enviado)
-        // Y no es un mensaje de Fin Chat
-        if (ultimoMensaje && ultimoMensaje.ESTADO === 'Enviado' && !hayFinChat) {
-            // SIEMPRE verificar y eliminar el typing indicator si existe en el DOM
-            const typingIndicatorEnDOM = document.getElementById('typing-indicator');
-            if (typingIndicatorEnDOM) {
-                // console.log('🗑️ Eliminando typing indicator (inicio) - último mensaje es del ChatBot (ID:', ultimoMensaje.ID_MENSAJE, ')');
-                eliminarTypingIndicator();
-            } else if (typingIndicatorVisible) {
-                // Por si acaso la variable está desincronizada
-                // console.log('🗑️ Eliminando typing indicator (inicio, variable desincronizada) - último mensaje es del ChatBot (ID:', ultimoMensaje.ID_MENSAJE, ')');
-                typingIndicatorVisible = false;
-                const contentFormTexto = document.getElementById('contentFormTexto');
-                if (contentFormTexto) {
-                    contentFormTexto.classList.remove('hide');
-                }
-                const txtMensaje = document.getElementById('txt_mensaje');
-                if (txtMensaje) {
-                    txtMensaje.readOnly = false;
-                }
-            }
+        // CONDICIÓN: Eliminar typing indicator cuando responda el ChatBot
+        const hayMensajeEnviado = mensajes.some(mensaje => mensaje.ESTADO === 'Enviado');
+        if (typingIndicatorVisible && hayMensajeEnviado) {
+            eliminarTypingIndicator();
         }
 
         // MANEJAR ERROR 429 (Límite de API excedido)
@@ -1503,10 +1251,30 @@ async function procesarMensajes(mensajes) {
         // Usar for...of en lugar de forEach para poder usar await correctamente
         for (const mensaje of mensajes) {
             const contentFormTexto = document.getElementById('contentFormTexto');
-            const contentAdjuntos = document.getElementById('contentAdjuntos');
             const txtMensaje = document.getElementById('txt_mensaje');
             const conversacionDiv = document.getElementById('conversacion');
             
+            const esFinChat = mensaje.TIPO === 'Fin Chat';
+
+            if (mensaje.ESTADO === 'Enviado') {
+                if (esFinChat) {
+                    chatFinalizado = true;
+                }
+                if (!haRecibidoPrimerMensajeEnviado) {
+                    haRecibidoPrimerMensajeEnviado = true;
+                    iniciarVigilanciaInactividad();
+                    ultimaActividad = Date.now();
+                    tiempoInactividad = 0;
+                    umbralesNotificados = [];
+                }
+                setTimeout(() => {
+                    if (!esFinChat && !chatFinalizado) {
+                        limpiarYEnfocarTextarea();
+                    }
+                    desplazarScrollConversacion();
+                }, 0);
+            }
+
             // VERIFICAR NUEVAMENTE SI HAY ERROR 429 ACTIVO DENTRO DEL LOOP
             const hayError429ActivoEnLoop = document.querySelector('.mensaje-error-429');
             if (hayError429ActivoEnLoop) {
@@ -1514,23 +1282,19 @@ async function procesarMensajes(mensajes) {
                 break;
             }
 
-            // VERIFICAR SI HAY MENSAJE "Fin Chat" - SI LO HAY, NO HABILITAR EL FORMULARIO
-            const hayMensajeFinChatEnLoop = mensajes.some(m => m.TIPO === 'Fin Chat');
-            
-            // Solo mostrar el formulario de texto si NO hay typing indicator visible Y NO hay error 429/409 activo Y NO hay Fin Chat
-            if (!typingIndicatorVisible && !hayError429ActivoEnLoop && !hayMensajeFinChatEnLoop) {
+            // Solo mostrar el formulario de texto si NO hay typing indicator visible Y NO hay error 429/409 activo
+            if (!typingIndicatorVisible && !hayError429ActivoEnLoop && !chatFinalizado) {
                 contentFormTexto.classList.remove('hide');
-            } else if (typingIndicatorVisible && !hayError429ActivoEnLoop && !hayMensajeFinChatEnLoop) {
+                setTimeout(() => {
+                    if (!chatFinalizado) {
+                        limpiarYEnfocarTextarea();
+                    }
+                    desplazarScrollConversacion();
+                }, 0);
+            } else if (typingIndicatorVisible && !hayError429ActivoEnLoop && !chatFinalizado) {
                 // Si hay typing indicator visible, ocultar el formulario
                 contentFormTexto.classList.add('hide');
             }
-            
-            // Si hay Fin Chat, aplicar restricciones inmediatamente
-            if (hayMensajeFinChatEnLoop) {
-                txtMensaje.readOnly = true;
-                contentFormTexto.classList.add('hide');
-            }
-
             // Si el mensaje es de tipo Formulario
             if (mensaje.TIPO === 'Formulario') {
                 contentFormTexto.classList.add('hide');
@@ -1547,9 +1311,8 @@ async function procesarMensajes(mensajes) {
                 contentFormTexto.classList.add('hide');
             }
             // Si el mensaje es de tipo Fin Chat
-            if (mensaje.TIPO === 'Fin Chat') {
-                txtMensaje.readOnly = true;
-                contentFormTexto.classList.add('hide');
+            if (esFinChat) {
+                marcarChatComoFinalizado();
                 // ¡NO ocultar ni modificar los controles del widget!
             }
             // Evitar duplicados visuales: si ya está renderizado, no volver a pintarlo
@@ -1592,8 +1355,7 @@ async function procesarMensajes(mensajes) {
                 await fetch('/widget/mensaje/leer', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'origin': window.location.origin
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ idMensaje }),
                 });
@@ -1601,113 +1363,32 @@ async function procesarMensajes(mensajes) {
                 console.log('❌ Error en v1/assets/js/widget/chat.js → listarMensajeNoLeido.leerMensaje ', error);
             }
         }
-
-        // Sincronizar nuevamente typingIndicatorVisible después de procesar todos los mensajes
-        const typingIndicatorEnDOM = document.getElementById('typing-indicator');
-        typingIndicatorVisible = !!typingIndicatorEnDOM;
-
-        // Determinar el ÚLTIMO mensaje usando el ID_MENSAJE mayor del array recibido
-        let mensajeFinalParaEvaluar = null;
-        if (mensajes.length > 0) {
-            // Encontrar el mensaje con el ID_MENSAJE mayor
-            mensajeFinalParaEvaluar = mensajes.reduce((max, mensaje) => {
-                if (!max || !mensaje.ID_MENSAJE) return mensaje;
-                return mensaje.ID_MENSAJE > max.ID_MENSAJE ? mensaje : max;
-            }, null);
-        }
         
+        // MOSTRAR TYPING INDICATOR DESPUÉS DE PROCESAR TODOS LOS MENSAJES
+        // Solo si hay mensajes del usuario y no hay mensajes del ChatBot después Y NO hay error 429 activo
+        const hayMensajeRecibido = mensajes.some(mensaje => mensaje.ESTADO === 'Recibido');
         const hayError429ActivoFinal = document.querySelector('.mensaje-error-429');
-        const esFinChat = mensajes.some(mensaje => mensaje.TIPO === 'Fin Chat');
-        const esUltimoMensajeFinChat = mensajeFinalParaEvaluar && mensajeFinalParaEvaluar.TIPO === 'Fin Chat';
         
-        // console.log('🔍 Mensajes paso por aca → procesarMensajes:', mensajes);
-        // console.log('🔍 Último mensaje para evaluar (ID_MENSAJE mayor):', mensajeFinalParaEvaluar);
-        // console.log('🔍 ID_MENSAJE último mensaje:', mensajeFinalParaEvaluar?.ID_MENSAJE);
-        // console.log('🔍 Estado último mensaje:', mensajeFinalParaEvaluar?.ESTADO);
-        // console.log('🔍 TIPO último mensaje:', mensajeFinalParaEvaluar?.TIPO);
-        // console.log('🔍 Es Fin Chat:', esFinChat);
-        // console.log('🔍 Es último mensaje Fin Chat:', esUltimoMensajeFinChat);
-        // console.log('🔍 Typing indicator visible:', typingIndicatorVisible);
-        // console.log('🔍 Hay error 429 activo final:', hayError429ActivoFinal);
+        // console.log('🔍 Verificando condiciones para mostrar typing:', {
+        //     hayMensajeRecibido,
+        //     hayMensajeEnviado,
+        //     typingIndicatorVisible,
+        //     hayError429ActivoFinal: !!hayError429ActivoFinal
+        // });
         
-        // PRIORIDAD 1: VERIFICAR SI HAY "Fin Chat" - SI LO HAY, APLICAR RESTRICCIONES Y SALIR
-        if (esUltimoMensajeFinChat || esFinChat) {
-            // console.log('🔒 Chat finalizado (Fin Chat) - deshabilitando formulario INMEDIATAMENTE');
-            const txtMensaje = document.getElementById('txt_mensaje');
+        // MANTENER TYPING INDICATOR si ya está visible y no hay respuesta del ChatBot
+        if (typingIndicatorVisible && !hayMensajeEnviado && !hayError429ActivoFinal && !chatFinalizado) {
+            //console.log('🔄 Manteniendo typing indicator - esperando respuesta del ChatBot');
             const contentFormTexto = document.getElementById('contentFormTexto');
-            if (txtMensaje && contentFormTexto) {
-                txtMensaje.readOnly = true;
-                contentFormTexto.classList.add('hide');
-                // Eliminar cualquier typing indicator visible cuando el chat está finalizado
-                const typingIndicatorEnDOM = document.getElementById('typing-indicator');
-                if (typingIndicatorEnDOM) {
-                    eliminarTypingIndicator();
-                }
-                typingIndicatorVisible = false;
-                // console.log('✅ Formulario deshabilitado y oculto por Fin Chat');
-            }
-            // Retornar aquí - no procesar más lógica de typing indicator
-            if (mensajesNuevos) {
-                ocultarCapaPreload();
-            }
-            return { mensajesNuevos };
+            contentFormTexto.classList.add('hide');
         }
-        
-        // LÓGICA PRINCIPAL: Mostrar/mantener typing indicator si:
-        // 1. NO es Fin Chat
-        // 2. El último mensaje es del Usuario (Recibido)
-        // 3. NO hay error 429 activo
-        const debeMostrarTyping = !esFinChat && 
-                                   mensajeFinalParaEvaluar && 
-                                   mensajeFinalParaEvaluar.ESTADO === 'Recibido' && 
-                                   !hayError429ActivoFinal;
-        
-        if (debeMostrarTyping) {
-            if (!typingIndicatorVisible) {
-                // console.log('✅ Mostrando typing indicator - último mensaje es del usuario (ID:', mensajeFinalParaEvaluar.ID_MENSAJE, ')');
-                mostrarTypingIndicator();
-                const contentFormTexto = document.getElementById('contentFormTexto');
-                contentFormTexto.classList.add('hide');
-            } else {
-                // console.log('🔄 Manteniendo typing indicator - último mensaje es del usuario (ID:', mensajeFinalParaEvaluar.ID_MENSAJE, ')');
-                const contentFormTexto = document.getElementById('contentFormTexto');
-                contentFormTexto.classList.add('hide');
-            }
-        } else if (mensajeFinalParaEvaluar && mensajeFinalParaEvaluar.ESTADO === 'Enviado' && !esFinChat) {
-            // Si el último mensaje es del ChatBot Y NO es Fin Chat, SIEMPRE eliminar typing indicator
-            const typingIndicatorEnDOM = document.getElementById('typing-indicator');
-            if (typingIndicatorEnDOM) {
-                // console.log('🗑️ Eliminando typing indicator - último mensaje es del ChatBot (ID:', mensajeFinalParaEvaluar.ID_MENSAJE, ')');
-                eliminarTypingIndicator();
-            } else if (typingIndicatorVisible) {
-                // Por si acaso la variable está desincronizada
-                // console.log('🗑️ Eliminando typing indicator (variable desincronizada) - último mensaje es del ChatBot (ID:', mensajeFinalParaEvaluar.ID_MENSAJE, ')');
-                typingIndicatorVisible = false;
-                const contentFormTexto = document.getElementById('contentFormTexto');
-                if (contentFormTexto && !esFinChat) {
-                    contentFormTexto.classList.remove('hide');
-                }
-                const txtMensaje = document.getElementById('txt_mensaje');
-                if (txtMensaje && !esFinChat) {
-                    txtMensaje.readOnly = false;
-                    txtMensaje.focus();
-                }
-            } else {
-                // El último mensaje es del ChatBot pero no hay typing indicator visible
-                // Asegurarse de que el formulario esté visible SOLO si NO es Fin Chat
-                if (!esFinChat) {
-                    // console.log('✅ Último mensaje es del ChatBot (ID:', mensajeFinalParaEvaluar.ID_MENSAJE, ') - asegurando formulario visible');
-                    const contentFormTexto = document.getElementById('contentFormTexto');
-                    if (contentFormTexto) {
-                        contentFormTexto.classList.remove('hide');
-                    }
-                    const txtMensaje = document.getElementById('txt_mensaje');
-                    if (txtMensaje) {
-                        txtMensaje.readOnly = false;
-                        txtMensaje.focus();
-                    }
-                }
-            }
+        // MOSTRAR TYPING INDICATOR solo si hay mensaje del usuario sin respuesta Y no está visible
+        else if (hayMensajeRecibido && !hayMensajeEnviado && !typingIndicatorVisible && !hayError429ActivoFinal && !chatFinalizado) {
+            //console.log('✅ Mostrando typing indicator después de listar mensajes');
+            mostrarTypingIndicator();
+            // Ocultar el formulario cuando se muestra el typing indicator
+            const contentFormTexto = document.getElementById('contentFormTexto');
+            contentFormTexto.classList.add('hide');
         }
         
         // Ocultar la capa de preload cuando se procesen mensajes
@@ -1760,6 +1441,7 @@ async function listarConversacion() {
             renderedMessageIds.clear();
 
             mensajes.forEach(mensaje => {
+                const esFinChat = mensaje.TIPO === 'Fin Chat';
                 const mensajeDiv = document.createElement('div');
                 mensajeDiv.className = (mensaje.ESTADO === 'Enviado' ? 'mensaje-enviado' : 'mensaje-recibido') + ' mensaje-mostrado';
                 if (mensaje.ID_MENSAJE) {
@@ -1767,6 +1449,25 @@ async function listarConversacion() {
                     renderedMessageIds.add(mensaje.ID_MENSAJE);
                 }
                 
+            if (mensaje.ESTADO === 'Enviado') {
+                if (esFinChat) {
+                    chatFinalizado = true;
+                }
+                if (!haRecibidoPrimerMensajeEnviado) {
+                    haRecibidoPrimerMensajeEnviado = true;
+                    iniciarVigilanciaInactividad();
+                    ultimaActividad = Date.now();
+                    tiempoInactividad = 0;
+                    umbralesNotificados = [];
+                }
+                setTimeout(() => {
+                    if (!esFinChat && !chatFinalizado) {
+                        limpiarYEnfocarTextarea();
+                    }
+                    desplazarScrollConversacion();
+                }, 0);
+            }
+
                 // Crear el contenido con etiqueta de remitente
                 const textoDiv = document.createElement('div');
                 textoDiv.className = 'texto';
@@ -1782,28 +1483,37 @@ async function listarConversacion() {
                 
                 mensajeDiv.appendChild(textoDiv);
                 conversacionDiv.appendChild(mensajeDiv);
+                
+                if (esFinChat) {
+                    marcarChatComoFinalizado();
+                }
             });
             
             // Ocultar la capa de preload cuando se muestre la conversación
             ocultarCapaPreload();
+            setTimeout(() => {
+                if (chatFinalizado) {
+                    marcarChatComoFinalizado();
+                } else {
+                    limpiarYEnfocarTextarea();
+                }
+                desplazarScrollConversacion();
+            }, 0);
         }
     } catch (error) {
         console.log('❌ Error en v1/assets/js/widget/chat.js → listarConversacion ', error);
     }
 }
 
-// ! FUNCIÓN PARA VERIFICAR SI EL FORMULARIO HA SIDO DILIGENCIADO
-function verificarOpcionesServiciosMostradas() {
-    // Activar vigilancia solo cuando los datos diligenciados estén presentes
-    // Esto indica que el formulario fue enviado y procesado correctamente
-    const datosDiligenciados = document.querySelector('.datos-diligenciados');
-    return !!datosDiligenciados;
+// ! FUNCIÓN PARA VERIFICAR SI YA INICIÓ LA INTERACCIÓN CON AI SOUL
+function haIniciadoInteraccionConIA() {
+    return haRecibidoPrimerMensajeEnviado;
 }
 
 // ! FUNCIÓN PARA ACTUALIZAR ÚLTIMA ACTIVIDAD (SOLO ACTIVIDAD REAL DEL USUARIO)
 function actualizarUltimaActividad() {
-    // Reiniciar si la vigilancia está activa o si ya está el saludo mostrado (ciclo válido)
-    if (vigilanciaActiva || verificarOpcionesServiciosMostradas()) {
+    // Reiniciar si la vigilancia está activa o si ya inició la interacción con AI Soul
+    if (vigilanciaActiva || haIniciadoInteraccionConIA()) {
         // Implementar debounce para evitar múltiples llamadas seguidas
         clearTimeout(debounceTimeout);
         
@@ -1825,7 +1535,7 @@ eventosFrecuentes.forEach(evento => {
 // Eventos ocasionales (sin debounce - respuesta inmediata)
 eventosOcasionales.forEach(evento => {
     document.addEventListener(evento, () => {
-        if (vigilanciaActiva || verificarOpcionesServiciosMostradas()) {
+        if (vigilanciaActiva || haIniciadoInteraccionConIA()) {
             ultimaActividad = Date.now();
             tiempoInactividad = 0;
             umbralesNotificados = [];
@@ -1835,7 +1545,7 @@ eventosOcasionales.forEach(evento => {
 
 // * FUNCION PARA VIGILAR LA INACTIVIDAD DEL CHAT
 async function vigilarInactividad() {
-    if (!vigilanciaActiva && !verificarOpcionesServiciosMostradas()) return;
+    if (!vigilanciaActiva) return;
 
     const tiempoActual = Date.now();
     tiempoInactividad = Math.floor((tiempoActual - ultimaActividad) / 1000);
@@ -1853,8 +1563,7 @@ async function vigilarInactividad() {
     const response = await fetch('/widget/mensaje/vigilaInactividadChat', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'origin': window.location.origin
+            'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
             idChatWeb,
@@ -1889,16 +1598,19 @@ async function vigilarInactividad() {
 }
 
 function iniciarVigilanciaInactividad() {
-    if (inactividadInterval) clearInterval(inactividadInterval);
-    // Solo iniciar la vigilancia si ya se mostraron las opciones del flujo
-    if (verificarOpcionesServiciosMostradas()) {
-        vigilanciaActiva = true;
-        // Al iniciar un ciclo, reiniciar contadores y umbrales
-        ultimaActividad = Date.now();
-        tiempoInactividad = 0;
-        umbralesNotificados = [];
-        inactividadInterval = setInterval(vigilarInactividad, 10000); // Vigilar cada 10 segundos
+    if (!haIniciadoInteraccionConIA()) return;
+    if (vigilanciaActiva) return;
+
+    if (inactividadInterval) {
+        clearInterval(inactividadInterval);
     }
+
+    vigilanciaActiva = true;
+    // Al iniciar un ciclo, reiniciar contadores y umbrales
+    ultimaActividad = Date.now();
+    tiempoInactividad = 0;
+    umbralesNotificados = [];
+    inactividadInterval = setInterval(vigilarInactividad, 10000); // Vigilar cada 10 segundos
 }
 
 function detenerVigilanciaInactividad() {
@@ -1906,25 +1618,44 @@ function detenerVigilanciaInactividad() {
     vigilanciaActiva = false;
 }
 
-// Llamar a iniciarVigilanciaInactividad cuando se inicie el chat
-document.addEventListener('DOMContentLoaded', () => {
-    // Verificar el estado del formulario cada 5 segundos hasta que sea enviado
-    const verificarFormularioInterval = setInterval(() => {
-        if (verificarOpcionesServiciosMostradas()) {
-            clearInterval(verificarFormularioInterval);
-            iniciarVigilanciaInactividad();
-        }
-    }, 5000);
-});
+// * FUNCIONES PARA REFRESCO AUTOMÁTICO DE MENSAJES
+async function refrescarMensajes() {
+    if (refrescandoMensajes) return;
+    const hayError429Activo = document.querySelector('.mensaje-error-429');
+    if (hayError429Activo) return;
 
-// Detener la vigilancia cuando el cliente envíe un mensaje
+    refrescandoMensajes = true;
+    try {
+        await listarMensajeNoLeido();
+    } catch (error) {
+        console.log('❌ Error en refrescarMensajes:', error);
+    } finally {
+        refrescandoMensajes = false;
+    }
+}
+
+function iniciarRefrescoMensajes() {
+    if (refrescoMensajesInterval) return;
+    refrescarMensajes(); // Primer intento inmediato
+    refrescoMensajesInterval = setInterval(refrescarMensajes, 2500);
+}
+
+function detenerRefrescoMensajes() {
+    if (refrescoMensajesInterval) {
+        clearInterval(refrescoMensajesInterval);
+        refrescoMensajesInterval = null;
+    }
+    refrescandoMensajes = false;
+}
+
+// Llamar a iniciarVigilanciaInactividad cuando se inicie el chat
 document.addEventListener('DOMContentLoaded', () => {
     const txtMensaje = document.getElementById('txt_mensaje');
     
     // También reiniciar cuando el usuario escriba en el campo de mensaje
     if (txtMensaje) {
         txtMensaje.addEventListener('input', () => {
-            if (vigilanciaActiva || verificarOpcionesServiciosMostradas()) {
+            if (vigilanciaActiva || haIniciadoInteraccionConIA()) {
                 //console.log('🔄 Reiniciando inactividad por escritura en campo');
                 ultimaActividad = Date.now();
                 tiempoInactividad = 0;
@@ -1933,7 +1664,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         txtMensaje.addEventListener('keydown', () => {
-            if (vigilanciaActiva || verificarOpcionesServiciosMostradas()) {
+            if (vigilanciaActiva || haIniciadoInteraccionConIA()) {
                 ultimaActividad = Date.now();
                 tiempoInactividad = 0;
                 umbralesNotificados = [];
@@ -2204,8 +1935,7 @@ async function marcarMensajesNoLeidosComoLeidos() {
             await fetch('/widget/mensaje/leer', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'origin': window.location.origin
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ idMensaje: mensaje.ID_MENSAJE }),
             });

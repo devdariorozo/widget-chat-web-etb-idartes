@@ -245,6 +245,7 @@ a:hover {
 
 /* * CAMPO DE TEXTO */
 #txt_mensaje {
+    min-height: 2.75rem;
     max-height: 8rem;
     overflow-y: auto !important;
     resize: none;
@@ -294,7 +295,7 @@ a:hover {
 
 /* * BOTONES */
 #btnEnviar {
-    background: #0077B6  !important;
+    background: #372564  !important;
 }
 
 #btnEnviar:hover {
@@ -304,7 +305,7 @@ a:hover {
 }
 
 #btn_Continuar {
-    background: #0077B6  !important;
+    background: #372564  !important;
   /*  box-shadow: 0 8px 16px rgba(255, 254, 254, 0.4);  Sombra más pronunciada */
     transform: translateY(-1px); /* Elevar ligeramente el botón */
 }
@@ -316,7 +317,7 @@ a:hover {
 }
 
 #btnAdjuntos {
-    background: #0077B6  !important;
+    background: #372564  !important;
 }
 
 #btnAdjuntos:hover {

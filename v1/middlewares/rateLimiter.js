@@ -7,6 +7,8 @@
 // v1/middlewares/rateLimiter.js
 
 const rateLimit = require('express-rate-limit');
+const logger = require('../logger');
+const { getOrigen, getDestino, getContextoRecurso } = require('../logger/context');
 
 // * OBTENER VALORES DEL .ENV CON PARSEO SEGURO
 const getEnvInt = (varName, defaultValue) => {
@@ -22,10 +24,17 @@ const BASE_WINDOW_MS = LIMITE_MINUTOS * 60 * 1000; // Convertir minutos a ms
 const BASE_MAX = LIMITE_MAX_PETICIONES;
 
 // * LOGS PARA DEBUGGING
-console.log('🔧 Rate Limiter Configuración:');
-console.log('   LIMITE_MINUTOS:', LIMITE_MINUTOS, 'minutos →', BASE_WINDOW_MS / 1000, 'segundos');
-console.log('   LIMITE_MAX_PETICIONES:', LIMITE_MAX_PETICIONES, 'peticiones');
-console.log('   RetryAfter calculado:', BASE_WINDOW_MS / 1000, 'segundos');
+logger.info({
+    contexto: 'middleware',
+    recurso: 'rateLimiter',
+    configuracion: {
+        limiteMinutos: LIMITE_MINUTOS,
+        limiteMaxPeticiones: LIMITE_MAX_PETICIONES,
+        windowMs: BASE_WINDOW_MS,
+        windowSegundos: BASE_WINDOW_MS / 1000,
+        retryAfterSegundos: BASE_WINDOW_MS / 1000
+    }
+}, 'Rate Limiter configurado');
 
 // * RATE LIMITING ESPECÍFICO PARA CREAR CHAT
 const crearChatLimiter = (req, res, next) => {
@@ -57,37 +66,60 @@ const crearChatLimiter = (req, res, next) => {
                 blocked: false,
                 blockStartTime: null
             };
-            console.log('🆕 CREAR CHAT LIMITER: Nuevo usuario IP:', ip, 'Endpoint:', endpoint);
+            logger.info({
+                contexto: 'middleware',
+                recurso: 'rateLimiter.crearChatLimiter',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                ip,
+                endpoint,
+                accion: 'nuevo_usuario'
+            }, 'Nuevo usuario en rate limiter crear chat');
             
             global.rateLimitStore.set(key, userData);
         }
         
-        // console.log('📋 CREAR CHAT LIMITER: Estado actual - Count:', userData.count, 'Blocked:', userData.blocked, 'BlockStartTime:', userData.blockStartTime);
-        
         // VERIFICAR SI ESTÁ BLOQUEADO
         if (userData.blocked && userData.blockStartTime) {
             const timeSinceBlock = now - userData.blockStartTime;
-            console.log('⏰ CREAR CHAT LIMITER: Tiempo desde bloqueo:', Math.round(timeSinceBlock / 1000), 'segundos');
             
             if (timeSinceBlock >= blockTimeMs) {
                 // ¡BLOQUEO COMPLETADO! REINICIAR CONTADOR
-                console.log('🔄 CREAR CHAT LIMITER: Bloqueo completado para IP:', ip, 'Endpoint:', endpoint,
-                           'Tiempo bloqueado:', Math.round(timeSinceBlock / 1000), 'segundos');
+                logger.info({
+                    contexto: 'middleware',
+                    recurso: 'rateLimiter.crearChatLimiter',
+                    origen: getOrigen(req),
+                    destino: getDestino(req),
+                    contextoRecurso: getContextoRecurso(req),
+                    ip,
+                    endpoint,
+                    tiempoBloqueadoSegundos: Math.round(timeSinceBlock / 1000),
+                    accion: 'bloqueo_completado'
+                }, 'Bloqueo completado - contador reiniciado');
                 
                 userData.count = 0;
                 userData.blocked = false;
                 userData.blockStartTime = null;
-                
-                console.log('✅ CREAR CHAT LIMITER: Contador reiniciado para IP:', ip, 'Endpoint:', endpoint,
-                           'Contador: 0/', maxRequests);
                 
                 global.rateLimitStore.set(key, userData);
                 
             } else {
                 // AÚN ESTÁ BLOQUEADO - CALCULAR TIEMPO RESTANTE
                 const timeRemaining = blockTimeMs - timeSinceBlock;
-                console.log('⏳ CREAR CHAT LIMITER: IP aún bloqueada:', ip, 'Endpoint:', endpoint,
-                           'Tiempo restante:', Math.round(timeRemaining / 1000), 'segundos');
+                logger.warn({
+                    contexto: 'middleware',
+                    recurso: 'rateLimiter.crearChatLimiter',
+                    origen: getOrigen(req),
+                    destino: getDestino(req),
+                    contextoRecurso: getContextoRecurso(req),
+                    codigoRespuesta: 429,
+                    rta: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
+                    ip,
+                    endpoint,
+                    tiempoRestanteSegundos: Math.round(timeRemaining / 1000),
+                    retryAfter: LIMITE_MINUTOS
+                }, 'IP aún bloqueada en rate limiter crear chat');
                 
                 return res.status(429).json({
                     status: 429,
@@ -100,18 +132,26 @@ const crearChatLimiter = (req, res, next) => {
         // SI NO ESTÁ BLOQUEADO, INCREMENTAR CONTADOR Y VERIFICAR LÍMITE
         if (!userData.blocked) {
             userData.count++;
-            console.log('📊 CREAR CHAT LIMITER: IP:', ip, 'Endpoint:', endpoint,
-                       'Petición:', userData.count, '/', maxRequests,
-                       'Restantes:', maxRequests - userData.count);
             
             // SI SE ALCANZÓ EL LÍMITE, BLOQUEAR
             if (userData.count >= maxRequests) {
                 userData.blocked = true;
                 userData.blockStartTime = now;
                 
-                console.log('🚫 CREAR CHAT LIMITER: Límite alcanzado para IP:', ip, 'Endpoint:', endpoint,
-                           'Peticiones:', userData.count, '/', maxRequests,
-                           'Bloqueado por:', LIMITE_MINUTOS, 'minutos');
+                logger.warn({
+                    contexto: 'middleware',
+                    recurso: 'rateLimiter.crearChatLimiter',
+                    origen: getOrigen(req),
+                    destino: getDestino(req),
+                    contextoRecurso: getContextoRecurso(req),
+                    codigoRespuesta: 429,
+                    rta: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
+                    ip,
+                    endpoint,
+                    peticiones: userData.count,
+                    maxPeticiones: maxRequests,
+                    bloqueadoPorMinutos: LIMITE_MINUTOS
+                }, 'Límite alcanzado - IP bloqueada');
                 
                 global.rateLimitStore.set(key, userData);
                 
@@ -126,7 +166,18 @@ const crearChatLimiter = (req, res, next) => {
             
         } else {
             // ESTE CASO NO DEBERÍA OCURRIR, PERO POR SEGURIDAD
-            console.log('⚠️ CREAR CHAT LIMITER: Estado inconsistente');
+            logger.warn({
+                contexto: 'middleware',
+                recurso: 'rateLimiter.crearChatLimiter',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 429,
+                rta: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
+                ip,
+                endpoint,
+                accion: 'estado_inconsistente'
+            }, 'Estado inconsistente en rate limiter');
             return res.status(429).json({
                 status: 429,
                 message: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
@@ -136,7 +187,13 @@ const crearChatLimiter = (req, res, next) => {
         
         next();
     } catch (error) {
-        console.error('❌ Error en crearChatLimiter:', error);
+        logger.error({
+            contexto: 'middleware',
+            recurso: 'rateLimiter.crearChatLimiter',
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack
+        }, 'Error en crearChatLimiter');
         next();
     }
 };
@@ -154,8 +211,6 @@ const formLimiter = (req, res, next) => {
         const endpoint = req.path.split('/').pop();
         const key = `form_${ip}_${endpoint}`;
         
-        // console.log('🔑 CHAT LIMITER: Clave única:', key, 'Límite:', maxRequests, 'bloqueo:', LIMITE_MINUTOS, 'minutos');
-        
         // Inicializar el store global si no existe
         if (!global.rateLimitStore) {
             global.rateLimitStore = new Map();
@@ -171,37 +226,60 @@ const formLimiter = (req, res, next) => {
                 blocked: false,
                 blockStartTime: null
             };
-            console.log('🆕 FORM LIMITER: Nuevo usuario IP:', ip, 'Endpoint:', endpoint);
+            logger.info({
+                contexto: 'middleware',
+                recurso: 'rateLimiter.formLimiter',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                ip,
+                endpoint,
+                accion: 'nuevo_usuario'
+            }, 'Nuevo usuario en rate limiter formulario');
             
             global.rateLimitStore.set(key, userData);
         }
         
-        // console.log('📋 FORM LIMITER: Estado actual - Count:', userData.count, 'Blocked:', userData.blocked, 'BlockStartTime:', userData.blockStartTime);
-        
         // VERIFICAR SI ESTÁ BLOQUEADO
         if (userData.blocked && userData.blockStartTime) {
             const timeSinceBlock = now - userData.blockStartTime;
-            console.log('⏰ FORM LIMITER: Tiempo desde bloqueo:', Math.round(timeSinceBlock / 1000), 'segundos');
             
             if (timeSinceBlock >= blockTimeMs) {
                 // ¡BLOQUEO COMPLETADO! REINICIAR CONTADOR
-                console.log('🔄 FORM LIMITER: Bloqueo completado para IP:', ip, 'Endpoint:', endpoint,
-                           'Tiempo bloqueado:', Math.round(timeSinceBlock / 1000), 'segundos');
+                logger.info({
+                    contexto: 'middleware',
+                    recurso: 'rateLimiter.formLimiter',
+                    origen: getOrigen(req),
+                    destino: getDestino(req),
+                    contextoRecurso: getContextoRecurso(req),
+                    ip,
+                    endpoint,
+                    tiempoBloqueadoSegundos: Math.round(timeSinceBlock / 1000),
+                    accion: 'bloqueo_completado'
+                }, 'Bloqueo completado - contador reiniciado');
                 
                 userData.count = 0;
                 userData.blocked = false;
                 userData.blockStartTime = null;
-                
-                console.log('✅ FORM LIMITER: Contador reiniciado para IP:', ip, 'Endpoint:', endpoint,
-                           'Contador: 0/', maxRequests);
                 
                 global.rateLimitStore.set(key, userData);
                 
             } else {
                 // AÚN ESTÁ BLOQUEADO - CALCULAR TIEMPO RESTANTE
                 const timeRemaining = blockTimeMs - timeSinceBlock;
-                console.log('⏳ FORM LIMITER: IP aún bloqueada:', ip, 'Endpoint:', endpoint,
-                           'Tiempo restante:', Math.round(timeRemaining / 1000), 'segundos');
+                logger.warn({
+                    contexto: 'middleware',
+                    recurso: 'rateLimiter.formLimiter',
+                    origen: getOrigen(req),
+                    destino: getDestino(req),
+                    contextoRecurso: getContextoRecurso(req),
+                    codigoRespuesta: 429,
+                    rta: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
+                    ip,
+                    endpoint,
+                    tiempoRestanteSegundos: Math.round(timeRemaining / 1000),
+                    retryAfter: LIMITE_MINUTOS
+                }, 'IP aún bloqueada en rate limiter formulario');
                 
                 return res.status(429).json({
                     status: 429,
@@ -214,18 +292,26 @@ const formLimiter = (req, res, next) => {
         // SI NO ESTÁ BLOQUEADO, INCREMENTAR CONTADOR Y VERIFICAR LÍMITE
         if (!userData.blocked) {
             userData.count++;
-            console.log('📊 FORM LIMITER: IP:', ip, 'Endpoint:', endpoint,
-                       'Petición:', userData.count, '/', maxRequests,
-                       'Restantes:', maxRequests - userData.count);
             
             // SI SE ALCANZÓ EL LÍMITE, BLOQUEAR
             if (userData.count >= maxRequests) {
                 userData.blocked = true;
                 userData.blockStartTime = now;
                 
-                console.log('🚫 FORM LIMITER: Límite alcanzado para IP:', ip, 'Endpoint:', endpoint,
-                           'Peticiones:', userData.count, '/', maxRequests,
-                           'Bloqueado por:', LIMITE_MINUTOS, 'minutos');
+                logger.warn({
+                    contexto: 'middleware',
+                    recurso: 'rateLimiter.formLimiter',
+                    origen: getOrigen(req),
+                    destino: getDestino(req),
+                    contextoRecurso: getContextoRecurso(req),
+                    codigoRespuesta: 429,
+                    rta: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
+                    ip,
+                    endpoint,
+                    peticiones: userData.count,
+                    maxPeticiones: maxRequests,
+                    bloqueadoPorMinutos: LIMITE_MINUTOS
+                }, 'Límite alcanzado - IP bloqueada');
                 
                 global.rateLimitStore.set(key, userData);
                 
@@ -240,7 +326,18 @@ const formLimiter = (req, res, next) => {
             
         } else {
             // ESTE CASO NO DEBERÍA OCURRIR, PERO POR SEGURIDAD
-            console.log('⚠️ FORM LIMITER: Estado inconsistente');
+            logger.warn({
+                contexto: 'middleware',
+                recurso: 'rateLimiter.formLimiter',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 429,
+                rta: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
+                ip,
+                endpoint,
+                accion: 'estado_inconsistente'
+            }, 'Estado inconsistente en rate limiter');
             return res.status(429).json({
                 status: 429,
                 message: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
@@ -250,7 +347,13 @@ const formLimiter = (req, res, next) => {
         
         next();
     } catch (error) {
-        console.error('❌ Error en formLimiter:', error);
+        logger.error({
+            contexto: 'middleware',
+            recurso: 'rateLimiter.formLimiter',
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack
+        }, 'Error en formLimiter');
         next();
     }
 };
@@ -268,8 +371,6 @@ const crearMensajeLimiter = (req, res, next) => {
         const endpoint = req.path.split('/').pop();
         const key = `crearMensaje_${ip}_${endpoint}`;
         
-        // console.log('🔑 CREAR MENSAJE LIMITER: Clave única:', key, 'Límite:', maxRequests, 'bloqueo:', LIMITE_MINUTOS, 'minutos');
-        
         // Inicializar el store global si no existe
         if (!global.rateLimitStore) {
             global.rateLimitStore = new Map();
@@ -285,37 +386,60 @@ const crearMensajeLimiter = (req, res, next) => {
                 blocked: false,
                 blockStartTime: null
             };
-            console.log('🆕 CREAR MENSAJE LIMITER: Nuevo usuario IP:', ip, 'Endpoint:', endpoint);
+            logger.info({
+                contexto: 'middleware',
+                recurso: 'rateLimiter.crearMensajeLimiter',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                ip,
+                endpoint,
+                accion: 'nuevo_usuario'
+            }, 'Nuevo usuario en rate limiter crear mensaje');
             
             global.rateLimitStore.set(key, userData);
         }
         
-        // console.log('📋 CREAR MENSAJE LIMITER: Estado actual - Count:', userData.count, 'Blocked:', userData.blocked, 'BlockStartTime:', userData.blockStartTime);
-        
         // VERIFICAR SI ESTÁ BLOQUEADO
         if (userData.blocked && userData.blockStartTime) {
             const timeSinceBlock = now - userData.blockStartTime;
-            console.log('⏰ CREAR MENSAJE LIMITER: Tiempo desde bloqueo:', Math.round(timeSinceBlock / 1000), 'segundos');
             
             if (timeSinceBlock >= blockTimeMs) {
                 // ¡BLOQUEO COMPLETADO! REINICIAR CONTADOR
-                console.log('🔄 CREAR MENSAJE LIMITER: Bloqueo completado para IP:', ip, 'Endpoint:', endpoint,
-                           'Tiempo bloqueado:', Math.round(timeSinceBlock / 1000), 'segundos');
+                logger.info({
+                    contexto: 'middleware',
+                    recurso: 'rateLimiter.crearMensajeLimiter',
+                    origen: getOrigen(req),
+                    destino: getDestino(req),
+                    contextoRecurso: getContextoRecurso(req),
+                    ip,
+                    endpoint,
+                    tiempoBloqueadoSegundos: Math.round(timeSinceBlock / 1000),
+                    accion: 'bloqueo_completado'
+                }, 'Bloqueo completado - contador reiniciado');
                 
                 userData.count = 0;
                 userData.blocked = false;
                 userData.blockStartTime = null;
-                
-                console.log('✅ CREAR MENSAJE LIMITER: Contador reiniciado para IP:', ip, 'Endpoint:', endpoint,
-                           'Contador: 0/', maxRequests);
                 
                 global.rateLimitStore.set(key, userData);
                 
             } else {
                 // AÚN ESTÁ BLOQUEADO - CALCULAR TIEMPO RESTANTE
                 const timeRemaining = blockTimeMs - timeSinceBlock;
-                console.log('⏳ CREAR MENSAJE LIMITER: IP aún bloqueada:', ip, 'Endpoint:', endpoint,
-                           'Tiempo restante:', Math.round(timeRemaining / 1000), 'segundos');
+                logger.warn({
+                    contexto: 'middleware',
+                    recurso: 'rateLimiter.crearMensajeLimiter',
+                    origen: getOrigen(req),
+                    destino: getDestino(req),
+                    contextoRecurso: getContextoRecurso(req),
+                    codigoRespuesta: 429,
+                    rta: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
+                    ip,
+                    endpoint,
+                    tiempoRestanteSegundos: Math.round(timeRemaining / 1000),
+                    retryAfter: LIMITE_MINUTOS
+                }, 'IP aún bloqueada en rate limiter crear mensaje');
                 
                 return res.status(429).json({
                     status: 429,
@@ -328,18 +452,26 @@ const crearMensajeLimiter = (req, res, next) => {
         // SI NO ESTÁ BLOQUEADO, INCREMENTAR CONTADOR Y VERIFICAR LÍMITE
         if (!userData.blocked) {
             userData.count++;
-            console.log('📊 CREAR MENSAJE LIMITER: IP:', ip, 'Endpoint:', endpoint,
-                       'Petición:', userData.count, '/', maxRequests,
-                       'Restantes:', maxRequests - userData.count);
             
             // SI SE ALCANZÓ EL LÍMITE, BLOQUEAR
             if (userData.count >= maxRequests) {
                 userData.blocked = true;
                 userData.blockStartTime = now;
                 
-                console.log('🚫 CREAR MENSAJE LIMITER: Límite alcanzado para IP:', ip, 'Endpoint:', endpoint,
-                           'Peticiones:', userData.count, '/', maxRequests,
-                           'Bloqueado por:', LIMITE_MINUTOS, 'minutos');
+                logger.warn({
+                    contexto: 'middleware',
+                    recurso: 'rateLimiter.crearMensajeLimiter',
+                    origen: getOrigen(req),
+                    destino: getDestino(req),
+                    contextoRecurso: getContextoRecurso(req),
+                    codigoRespuesta: 429,
+                    rta: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
+                    ip,
+                    endpoint,
+                    peticiones: userData.count,
+                    maxPeticiones: maxRequests,
+                    bloqueadoPorMinutos: LIMITE_MINUTOS
+                }, 'Límite alcanzado - IP bloqueada');
                 
                 global.rateLimitStore.set(key, userData);
                 
@@ -354,7 +486,18 @@ const crearMensajeLimiter = (req, res, next) => {
             
         } else {
             // ESTE CASO NO DEBERÍA OCURRIR, PERO POR SEGURIDAD
-            console.log('⚠️ CREAR MENSAJE LIMITER: Estado inconsistente');
+            logger.warn({
+                contexto: 'middleware',
+                recurso: 'rateLimiter.crearMensajeLimiter',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 429,
+                rta: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
+                ip,
+                endpoint,
+                accion: 'estado_inconsistente'
+            }, 'Estado inconsistente en rate limiter');
             return res.status(429).json({
                 status: 429,
                 message: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
@@ -364,7 +507,13 @@ const crearMensajeLimiter = (req, res, next) => {
         
         next();
     } catch (error) {
-        console.error('❌ Error en crearMensajeLimiter:', error);
+        logger.error({
+            contexto: 'middleware',
+            recurso: 'rateLimiter.crearMensajeLimiter',
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack
+        }, 'Error en crearMensajeLimiter');
         next();
     }
 };
@@ -382,8 +531,6 @@ const crearMensajeSoulChatLimiter = (req, res, next) => {
         const endpoint = req.path.split('/').pop();
         const key = `crearMensajeSoulChat_${ip}_${endpoint}`;
         
-        // console.log('🔑 CREAR MENSAJE SOUL CHAT LIMITER: Clave única:', key, 'Límite:', maxRequests, 'bloqueo:', LIMITE_MINUTOS, 'minutos');
-        
         // Inicializar el store global si no existe
         if (!global.rateLimitStore) {
             global.rateLimitStore = new Map();
@@ -399,37 +546,60 @@ const crearMensajeSoulChatLimiter = (req, res, next) => {
                 blocked: false,
                 blockStartTime: null
             };
-            console.log('🆕 CREAR MENSAJE SOUL CHAT LIMITER: Nuevo usuario IP:', ip, 'Endpoint:', endpoint);
+            logger.info({
+                contexto: 'middleware',
+                recurso: 'rateLimiter.crearMensajeSoulChatLimiter',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                ip,
+                endpoint,
+                accion: 'nuevo_usuario'
+            }, 'Nuevo usuario en rate limiter crear mensaje soul chat');
             
             global.rateLimitStore.set(key, userData);
         }
         
-        // console.log('📋 CREAR MENSAJE SOUL CHAT LIMITER: Estado actual - Count:', userData.count, 'Blocked:', userData.blocked, 'BlockStartTime:', userData.blockStartTime);
-        
         // VERIFICAR SI ESTÁ BLOQUEADO
         if (userData.blocked && userData.blockStartTime) {
             const timeSinceBlock = now - userData.blockStartTime;
-            console.log('⏰ CREAR MENSAJE SOUL CHAT LIMITER: Tiempo desde bloqueo:', Math.round(timeSinceBlock / 1000), 'segundos');
             
             if (timeSinceBlock >= blockTimeMs) {
                 // ¡BLOQUEO COMPLETADO! REINICIAR CONTADOR
-                console.log('🔄 CREAR MENSAJE SOUL CHAT LIMITER: Bloqueo completado para IP:', ip, 'Endpoint:', endpoint,
-                           'Tiempo bloqueado:', Math.round(timeSinceBlock / 1000), 'segundos');
+                logger.info({
+                    contexto: 'middleware',
+                    recurso: 'rateLimiter.crearMensajeSoulChatLimiter',
+                    origen: getOrigen(req),
+                    destino: getDestino(req),
+                    contextoRecurso: getContextoRecurso(req),
+                    ip,
+                    endpoint,
+                    tiempoBloqueadoSegundos: Math.round(timeSinceBlock / 1000),
+                    accion: 'bloqueo_completado'
+                }, 'Bloqueo completado - contador reiniciado');
                 
                 userData.count = 0;
                 userData.blocked = false;
                 userData.blockStartTime = null;
-                
-                console.log('✅ CREAR MENSAJE SOUL CHAT LIMITER: Contador reiniciado para IP:', ip, 'Endpoint:', endpoint,
-                           'Contador: 0/', maxRequests);
                 
                 global.rateLimitStore.set(key, userData);
                 
             } else {
                 // AÚN ESTÁ BLOQUEADO - CALCULAR TIEMPO RESTANTE
                 const timeRemaining = blockTimeMs - timeSinceBlock;
-                console.log('⏳ CREAR MENSAJE SOUL CHAT LIMITER: IP aún bloqueada:', ip, 'Endpoint:', endpoint,
-                           'Tiempo restante:', Math.round(timeRemaining / 1000), 'segundos');
+                logger.warn({
+                    contexto: 'middleware',
+                    recurso: 'rateLimiter.crearMensajeSoulChatLimiter',
+                    origen: getOrigen(req),
+                    destino: getDestino(req),
+                    contextoRecurso: getContextoRecurso(req),
+                    codigoRespuesta: 429,
+                    rta: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
+                    ip,
+                    endpoint,
+                    tiempoRestanteSegundos: Math.round(timeRemaining / 1000),
+                    retryAfter: LIMITE_MINUTOS
+                }, 'IP aún bloqueada en rate limiter crear mensaje soul chat');
                 
                 return res.status(429).json({
                     status: 429,
@@ -442,18 +612,26 @@ const crearMensajeSoulChatLimiter = (req, res, next) => {
         // SI NO ESTÁ BLOQUEADO, INCREMENTAR CONTADOR Y VERIFICAR LÍMITE
         if (!userData.blocked) {
             userData.count++;
-            console.log('📊 CREAR MENSAJE SOUL CHAT LIMITER: IP:', ip, 'Endpoint:', endpoint,
-                       'Petición:', userData.count, '/', maxRequests,
-                       'Restantes:', maxRequests - userData.count);
             
             // SI SE ALCANZÓ EL LÍMITE, BLOQUEAR
             if (userData.count >= maxRequests) {
                 userData.blocked = true;
                 userData.blockStartTime = now;
                 
-                console.log('🚫 CREAR MENSAJE SOUL CHAT LIMITER: Límite alcanzado para IP:', ip, 'Endpoint:', endpoint,
-                           'Peticiones:', userData.count, '/', maxRequests,
-                           'Bloqueado por:', LIMITE_MINUTOS, 'minutos');
+                logger.warn({
+                    contexto: 'middleware',
+                    recurso: 'rateLimiter.crearMensajeSoulChatLimiter',
+                    origen: getOrigen(req),
+                    destino: getDestino(req),
+                    contextoRecurso: getContextoRecurso(req),
+                    codigoRespuesta: 429,
+                    rta: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
+                    ip,
+                    endpoint,
+                    peticiones: userData.count,
+                    maxPeticiones: maxRequests,
+                    bloqueadoPorMinutos: LIMITE_MINUTOS
+                }, 'Límite alcanzado - IP bloqueada');
                 
                 global.rateLimitStore.set(key, userData);
                 
@@ -468,7 +646,18 @@ const crearMensajeSoulChatLimiter = (req, res, next) => {
             
         } else {
             // ESTE CASO NO DEBERÍA OCURRIR, PERO POR SEGURIDAD
-            console.log('⚠️ CREAR MENSAJE SOUL CHAT LIMITER: Estado inconsistente');
+            logger.warn({
+                contexto: 'middleware',
+                recurso: 'rateLimiter.crearMensajeSoulChatLimiter',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 429,
+                rta: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
+                ip,
+                endpoint,
+                accion: 'estado_inconsistente'
+            }, 'Estado inconsistente en rate limiter');
             return res.status(429).json({
                 status: 429,
                 message: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
@@ -478,7 +667,13 @@ const crearMensajeSoulChatLimiter = (req, res, next) => {
         
         next();
     } catch (error) {
-        console.error('❌ Error en crearMensajeSoulChatLimiter:', error);
+        logger.error({
+            contexto: 'middleware',
+            recurso: 'rateLimiter.crearMensajeSoulChatLimiter',
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack
+        }, 'Error en crearMensajeSoulChatLimiter');
         next();
     }
 };

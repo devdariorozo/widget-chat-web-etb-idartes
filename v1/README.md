@@ -90,6 +90,29 @@ docker compose down -v --remove-orphans
 - ✅ **Simplicidad y compatibilidad** para múltiples proyectos
 
 
+## 📝 Control de logs - logger con rotación diaria automática
+Ejecutar el comando npm run test para probar el logger.
+### Ejemplo práctico
+Día 1 (03 de noviembre):
+Crea: widget-idc-exterior-chat-bot-PRO-2025-11-03.log
+Todos los logs del día 03 se escriben ahí
+Pasa medianoche (04 de noviembre a las 00:00):
+Detecta el cambio de día automáticamente
+Cierra el archivo del 03
+Crea: widget-idc-exterior-chat-bot-PRO-2025-11-04.log
+Todos los logs del día 04 se escriben ahí
+Día 5 (05 de noviembre):
+Detecta el cambio de día
+Cierra el archivo del 04
+Crea: widget-idc-exterior-chat-bot-PRO-2025-11-05.log
+Y así sucesivamente...
+Se sube el archivo de log a S3 AWS cada hora.
+### Ventajas
+Rotación automática cada día sin reiniciar
+Cada día tiene su propio archivo
+Funciona con aplicaciones que corren 24/7
+Cierra correctamente el archivo anterior antes de crear el nuevo
+Mantiene permisos correctos en cada nuevo archivo
 
 
 

@@ -1,11 +1,11 @@
 # BACKLOG
 
-## ENTREGA 20 OCTUBRE 2025
+## ENTREGA 21 NOVIEMBRE 2025
 
 Pendientes para poder finalizar el desarrollo:
 * Icono del widget  / pendiente
 * Logo del sistema  / pendiente
-* Nombre par el chat web  / pendiente
+* Nombre par el chat web  IDARTES / ok
 * Mensaje de saludo  / pendiente
 * Mensaje de despedida  / pendiente
 * Mensaje desiste terminos y condiciones  / pendiente

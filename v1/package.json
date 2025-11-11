@@ -4,6 +4,7 @@
   "description": "Construido con node-express(v16.20.2) mysql2(v3.11.0) y jwt(v9.0.0), motor de plantillas handlebars() materialize()",
   "main": "app.js",
   "scripts": {
+    "test": "node testing/testSoulChat.js",
     "dev": "nodemon app.js",
     "qa": "node app.js",
     "pro": "node app.js",
@@ -27,9 +28,11 @@
   "license": "ISC",
   "devDependencies": {
     "eslint": "^9.8.0",
-    "nodemon": "^3.1.4"
+    "nodemon": "^3.1.4",
+    "pino-pretty": "^13.1.2"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.922.0",
     "axios": "^1.7.9",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -43,6 +46,8 @@
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.11.0",
-    "node-cron": "^4.2.1"
+    "node-cron": "^4.2.1",
+    "pino": "^10.1.0",
+    "pino-http": "^11.0.0"
   }
 }

@@ -17,18 +17,38 @@ const dataEstatica = require('../../seeds/dataEstatica.js');
 const modelChat = require('../../models/widget/chat.model.js');
 const modelArbolChatBot = require('../../models/widget/arbolChatBot.model.js');
 const serviceSoulChat = require('../../services/serviceSoulChat.service.js');
+const logger = require('../../logger');
+const { getOrigen, getDestino, getContextoRecurso } = require('../../logger/context');
 
 // ! CONTROLADORES
 // * CREAR
 const crear = async (req, res) => {
     try {
+        logger.info({
+            contexto: 'controller',
+            recurso: 'mensaje.crear',
+            origen: getOrigen(req),
+            destino: getDestino(req),
+            contextoRecurso: getContextoRecurso(req),
+            body: req.body
+        }, 'Controller mensaje.controller.js → crear');
         // todo: Validar los datos
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            logger.warn({
+                contexto: 'controller',
+                recurso: 'mensaje.crear',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 400,
+                rta: errors.array()[0].msg,
+                erroresValidacion: errors.array()
+            }, 'Error de validación en mensaje.crear');
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: dataEstatica.configuracion.responsable,
+                title: 'ETB - IDARTES',
                 message: errors.array()[0].msg
             });
         }
@@ -62,39 +82,64 @@ const crear = async (req, res) => {
 
                 // todo: Navegar arbol chat bot
                 const resultArbol = await modelArbolChatBot.arbolChatBot(remitente, contenido);
+                
+                // Si resultArbol es false (mensaje duplicado), aún consideramos exitoso el envío
+                // Si resultArbol es undefined, hay un problema
                 if (resultArbol !== undefined) {
                     // todo: Enviar respuesta
+                    logger.info({
+                        contexto: 'controller',
+                        recurso: 'mensaje.crear',
+                        origen: getOrigen(req),
+                        destino: getDestino(req),
+                        contextoRecurso: getContextoRecurso(req),
+                        codigoRespuesta: 200,
+                        rta: 'El mensaje se ha creado correctamente en el sistema.',
+                        idChat,
+                        remitente
+                    }, 'Mensaje creado exitosamente');
                     return res.json({
                         status: 200,
                         type: 'success',
-                        title: dataEstatica.configuracion.responsable,
+                        title: 'ETB - IDARTES',
                         message: 'El mensaje se ha creado correctamente en el sistema.',
-                    });
-                } else {
-                    // todo: Enviar respuesta
-                    return res.json({
-                        status: 409,
-                        type: 'warning',
-                        title: dataEstatica.configuracion.responsable,
-                        message: 'No se pudo crear el mensaje, por favor intenta de nuevo o comunícate con nosotros.',
                     });
                 }
             }
         } else {
             // todo: Enviar respuesta
+            logger.warn({
+                contexto: 'controller',
+                recurso: 'mensaje.crear',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 400,
+                rta: 'El chat no existe en el sistema.',
+                idChatWeb
+            }, 'Intento de crear mensaje sin chat existente');
             res.json({
                 status: 400,
                 type: 'warning',
-                title: dataEstatica.configuracion.responsable,
+                title: 'ETB - IDARTES',
                 message: 'El chat no existe en el sistema.'
             });
         }
     } catch (error) {
-        console.log('❌ Error en v1/controllers/widget/mensaje.controller.js → crear ', error);
+        logger.error({
+            contexto: 'controller',
+            recurso: 'mensaje.crear',
+            origen: getOrigen(req),
+            destino: getDestino(req),
+            contextoRecurso: getContextoRecurso(req),
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack
+        }, 'Error en v1/controllers/widget/mensaje.controller.js → crear');
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: dataEstatica.configuracion.responsable,
+            title: 'ETB - IDARTES',
             message: 'No se pudo crear el mensaje, por favor intenta de nuevo o comunícate con nosotros.',
             error: error.message
         });
@@ -104,13 +149,31 @@ const crear = async (req, res) => {
 // * CREAR MENSJAJE DESDE SOUL CHAT
 const crearSoulChat = async (req, res) => {
     try {
+        logger.info({
+            contexto: 'controller',
+            recurso: 'mensaje.crearSoulChat',
+            origen: getOrigen(req),
+            destino: getDestino(req),
+            contextoRecurso: getContextoRecurso(req),
+            body: req.body
+        }, 'Controller mensaje.controller.js → crearSoulChat');
         // todo: Validar los datos
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            logger.warn({
+                contexto: 'controller',
+                recurso: 'mensaje.crearSoulChat',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 400,
+                rta: errors.array()[0].msg,
+                erroresValidacion: errors.array()
+            }, 'Error de validación en mensaje.crearSoulChat');
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: dataEstatica.configuracion.responsable,
+                title: 'ETB - IDARTES',
                 message: errors.array()[0].msg
             });
         }
@@ -133,23 +196,43 @@ const crearSoulChat = async (req, res) => {
 
         // todo: Crear el registro
         const result = await model.crearSoulChat(idChat, remitente, estado, tipo, contenido, enlaces, lectura, descripcion, registro, responsable);
-
+        
         // todo: Enviar respuesta
         if (result) {
             // todo: Enviar respuesta
+            logger.info({
+                contexto: 'controller',
+                recurso: 'mensaje.crearSoulChat',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 200,
+                rta: 'El mensaje se ha creado correctamente en el sistema.',
+                idChat,
+                remitente
+            }, 'Mensaje Soul Chat creado exitosamente');
             return res.json({
                 status: 200,
                 type: 'success',
-                title: dataEstatica.configuracion.responsable,
+                title: 'ETB - IDARTES',
                 message: 'El mensaje se ha creado correctamente en el sistema.',
             });
         }
     } catch (error) {
-        console.log('❌ Error en v1/controllers/widget/mensaje.controller.js → crearSoulChat ', error);
+        logger.error({
+            contexto: 'controller',
+            recurso: 'mensaje.crearSoulChat',
+            origen: getOrigen(req),
+            destino: getDestino(req),
+            contextoRecurso: getContextoRecurso(req),
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack
+        }, 'Error en v1/controllers/widget/mensaje.controller.js → crearSoulChat');
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: dataEstatica.configuracion.responsable,
+            title: 'ETB - IDARTES',
             message: 'No se pudo crear el mensaje, por favor intenta de nuevo o comunícate con nosotros.',
             error: error.message
         });
@@ -159,13 +242,31 @@ const crearSoulChat = async (req, res) => {
 // * LISTAR NO LEÍDOS
 const listarNoLeido = async (req, res) => {
     try {
+        logger.info({
+            contexto: 'controller',
+            recurso: 'mensaje.listarNoLeido',
+            origen: getOrigen(req),
+            destino: getDestino(req),
+            contextoRecurso: getContextoRecurso(req),
+            query: req.query
+        }, 'Controller mensaje.controller.js → listarNoLeido');
         // todo: Validar los datos
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            logger.warn({
+                contexto: 'controller',
+                recurso: 'mensaje.listarNoLeido',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 400,
+                rta: errors.array()[0].msg,
+                erroresValidacion: errors.array()
+            }, 'Error de validación en mensaje.listarNoLeido');
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: dataEstatica.configuracion.responsable,
+                title: 'ETB - IDARTES',
                 message: errors.array()[0].msg
             });
         }
@@ -183,20 +284,40 @@ const listarNoLeido = async (req, res) => {
 
         if (result) {
             // todo: Enviar respuesta
+            logger.info({
+                contexto: 'controller',
+                recurso: 'mensaje.listarNoLeido',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 200,
+                rta: 'Los mensajes se han listado correctamente en el sistema.',
+                totalMensajes: result.length,
+                idChatWeb
+            }, 'Mensajes no leídos listados exitosamente');
             res.json({
                 status: 200,
                 type: 'success',
-                title: dataEstatica.configuracion.responsable,
+                title: 'ETB - IDARTES',
                 message: 'Los mensajes se han listado correctamente en el sistema.',
                 data: result
             });
         }
     } catch (error) {
-        console.log('❌ Error en v1/controllers/widget/mensaje.controller.js → listarNoLeido ', error);
+        logger.error({
+            contexto: 'controller',
+            recurso: 'mensaje.listarNoLeido',
+            origen: getOrigen(req),
+            destino: getDestino(req),
+            contextoRecurso: getContextoRecurso(req),
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack
+        }, 'Error en v1/controllers/widget/mensaje.controller.js → listarNoLeido');
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: dataEstatica.configuracion.responsable,
+            title: 'ETB - IDARTES',
             message: 'No se pudo listar los mensajes, por favor intenta de nuevo o comunícate con nosotros.',
             error: error.message
         });
@@ -206,13 +327,31 @@ const listarNoLeido = async (req, res) => {
 // * LEER
 const leer = async (req, res) => {
     try {
+        logger.info({
+            contexto: 'controller',
+            recurso: 'mensaje.leer',
+            origen: getOrigen(req),
+            destino: getDestino(req),
+            contextoRecurso: getContextoRecurso(req),
+            body: req.body
+        }, 'Controller mensaje.controller.js → leer');
         // todo: Validar los datos
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            logger.warn({
+                contexto: 'controller',
+                recurso: 'mensaje.leer',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 400,
+                rta: errors.array()[0].msg,
+                erroresValidacion: errors.array()
+            }, 'Error de validación en mensaje.leer');
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: dataEstatica.configuracion.responsable,
+                title: 'ETB - IDARTES',
                 message: errors.array()[0].msg
             });
         }
@@ -230,19 +369,38 @@ const leer = async (req, res) => {
 
         if (result) {
         // todo: Enviar respuesta
+        logger.info({
+            contexto: 'controller',
+            recurso: 'mensaje.leer',
+            origen: getOrigen(req),
+            destino: getDestino(req),
+            contextoRecurso: getContextoRecurso(req),
+            codigoRespuesta: 200,
+            rta: 'El mensaje se ha leído correctamente en el sistema.',
+            idMensaje
+        }, 'Mensaje leído exitosamente');
         res.json({
             status: 200,
                 type: 'success',
-                title: dataEstatica.configuracion.responsable,
+                title: 'ETB - IDARTES',
                 message: 'El mensaje se ha leído correctamente en el sistema.',
             });
         }
     } catch (error) {
-        console.log('❌ Error en v1/controllers/widget/mensaje.controller.js → leer ', error);
+        logger.error({
+            contexto: 'controller',
+            recurso: 'mensaje.leer',
+            origen: getOrigen(req),
+            destino: getDestino(req),
+            contextoRecurso: getContextoRecurso(req),
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack
+        }, 'Error en v1/controllers/widget/mensaje.controller.js → leer');
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: dataEstatica.configuracion.responsable,
+            title: 'ETB - IDARTES',
             message: 'No se pudo leer el mensaje, por favor intenta de nuevo o comunícate con nosotros.',
             error: error.message
         });
@@ -252,13 +410,31 @@ const leer = async (req, res) => {
 // * ADJUNTAR ARCHIVOS
 const adjuntarArchivos = async (req, res) => {
     try {
+        logger.info({
+            contexto: 'controller',
+            recurso: 'mensaje.adjuntarArchivos',
+            origen: getOrigen(req),
+            destino: getDestino(req),
+            contextoRecurso: getContextoRecurso(req),
+            body: req.body
+        }, 'Controller mensaje.controller.js → adjuntarArchivos');
         // Validar los datos
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            logger.warn({
+                contexto: 'controller',
+                recurso: 'mensaje.adjuntarArchivos',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 400,
+                rta: errors.array()[0].msg,
+                erroresValidacion: errors.array()
+            }, 'Error de validación en mensaje.adjuntarArchivos');
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: dataEstatica.configuracion.responsable,
+                title: 'ETB - IDARTES',
                 message: errors.array()[0].msg
             });
         }
@@ -268,10 +444,19 @@ const adjuntarArchivos = async (req, res) => {
         const archivos = req.files;
 
         if (!archivos || archivos.length === 0) {
+            logger.warn({
+                contexto: 'controller',
+                recurso: 'mensaje.adjuntarArchivos',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 400,
+                rta: 'No se han recibido archivos.'
+            }, 'Adjuntar archivos - sin archivos recibidos');
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: dataEstatica.configuracion.responsable,
+                title: 'ETB - IDARTES',
                 message: 'No se han recibido archivos.'
             });
         }
@@ -284,10 +469,19 @@ const adjuntarArchivos = async (req, res) => {
         });
 
         if (invalidFiles.length > 0) {
+            logger.warn({
+                contexto: 'controller',
+                recurso: 'mensaje.adjuntarArchivos',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 400,
+                rta: 'Algunos archivos tienen extensiones no permitidas.'
+            }, 'Adjuntar archivos - extensiones inválidas');
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: dataEstatica.configuracion.responsable,
+                title: 'ETB - IDARTES',
                 message: 'Algunos archivos tienen extensiones no permitidas.'
             });
         }
@@ -336,27 +530,57 @@ const adjuntarArchivos = async (req, res) => {
 
             // Enviar respuesta
             if (result) {
+                logger.info({
+                    contexto: 'controller',
+                    recurso: 'mensaje.adjuntarArchivos',
+                    origen: getOrigen(req),
+                    destino: getDestino(req),
+                    contextoRecurso: getContextoRecurso(req),
+                    codigoRespuesta: 200,
+                    rta: 'Archivos y mensaje subidos exitosamente.',
+                    idChat,
+                    totalArchivos: archivos.length
+                }, 'Archivos adjuntos procesados exitosamente');
                 return res.json({
                     status: 200,
                     type: 'success',
-                    title: dataEstatica.configuracion.responsable,
+                    title: 'ETB - IDARTES',
                     message: 'Archivos y mensaje subidos exitosamente.',
                 });
             }
         } else {
+            logger.warn({
+                contexto: 'controller',
+                recurso: 'mensaje.adjuntarArchivos',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 400,
+                rta: 'El chat no existe en el sistema.',
+                idChatWeb
+            }, 'Adjuntar archivos - chat no existe');
             res.json({
                 status: 400,
                 type: 'warning',
-                title: dataEstatica.configuracion.responsable,
+                title: 'ETB - IDARTES',
                 message: 'El chat no existe en el sistema.'
             });
         }
     } catch (error) {
-        console.log('❌ Error en v1/controllers/widget/mensaje.controller.js → adjuntarArchivos ', error);
+        logger.error({
+            contexto: 'controller',
+            recurso: 'mensaje.adjuntarArchivos',
+            origen: getOrigen(req),
+            destino: getDestino(req),
+            contextoRecurso: getContextoRecurso(req),
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack
+        }, 'Error en v1/controllers/widget/mensaje.controller.js → adjuntarArchivos');
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: dataEstatica.configuracion.responsable,
+            title: 'ETB - IDARTES',
             message: 'No se pudo adjuntar los archivos, por favor intenta de nuevo o comunícate con nosotros.',
             error: error.message
         });
@@ -366,13 +590,31 @@ const adjuntarArchivos = async (req, res) => {
 // * LISTAR CONVERSACIÓN COMPLETA
 const listarConversacion = async (req, res) => {
     try {
+        logger.info({
+            contexto: 'controller',
+            recurso: 'mensaje.listarConversacion',
+            origen: getOrigen(req),
+            destino: getDestino(req),
+            contextoRecurso: getContextoRecurso(req),
+            query: req.query
+        }, 'Controller mensaje.controller.js → listarConversacion');
         // todo: Validar los datos
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            logger.warn({
+                contexto: 'controller',
+                recurso: 'mensaje.listarConversacion',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 400,
+                rta: errors.array()[0].msg,
+                erroresValidacion: errors.array()
+            }, 'Error de validación en mensaje.listarConversacion');
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: dataEstatica.configuracion.responsable,
+                title: 'ETB - IDARTES',
                 message: errors.array()[0].msg
             });
         }
@@ -385,20 +627,40 @@ const listarConversacion = async (req, res) => {
 
         if (result) {
             // todo: Enviar respuesta
+            logger.info({
+                contexto: 'controller',
+                recurso: 'mensaje.listarConversacion',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 200,
+                rta: 'La conversación se ha listado correctamente en el sistema.',
+                totalMensajes: result.length,
+                idChatWeb
+            }, 'Conversación listada exitosamente');
             res.json({
                 status: 200,
                 type: 'success',
-                title: dataEstatica.configuracion.responsable,
+                title: 'ETB - IDARTES',
                 message: 'La conversación se ha listado correctamente en el sistema.',
                 data: result
             });
         }
     } catch (error) {
-        console.log('❌ Error en v1/controllers/widget/mensaje.controller.js → listarConversacion ', error);
+        logger.error({
+            contexto: 'controller',
+            recurso: 'mensaje.listarConversacion',
+            origen: getOrigen(req),
+            destino: getDestino(req),
+            contextoRecurso: getContextoRecurso(req),
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack
+        }, 'Error en v1/controllers/widget/mensaje.controller.js → listarConversacion');
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: dataEstatica.configuracion.responsable,
+            title: 'ETB - IDARTES',
             message: 'No se pudo listar la conversación, por favor intenta de nuevo o comunícate con nosotros.',
             error: error.message
         });
@@ -408,12 +670,30 @@ const listarConversacion = async (req, res) => {
 // * VIGILAR INACTIVIDAD DEL CHAT
 const vigilaInactividadChat = async (req, res) => {
     try {
+        logger.info({
+            contexto: 'controller',
+            recurso: 'mensaje.vigilaInactividadChat',
+            origen: getOrigen(req),
+            destino: getDestino(req),
+            contextoRecurso: getContextoRecurso(req),
+            body: req.body
+        }, 'Controller mensaje.controller.js → vigilaInactividadChat');
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            logger.warn({
+                contexto: 'controller',
+                recurso: 'mensaje.vigilaInactividadChat',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 400,
+                rta: errors.array()[0].msg,
+                erroresValidacion: errors.array()
+            }, 'Error de validación en mensaje.vigilaInactividadChat');
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: dataEstatica.configuracion.responsable,
+                title: 'Chat Web MinTic',
                 message: errors.array()[0].msg
             });
         }
@@ -509,19 +789,38 @@ const vigilaInactividadChat = async (req, res) => {
 
         const mensajesNoLeidos = await model.listarNoLeido(idChatWeb, dataEstatica.configuracion.lecturaMensaje.noLeido);
 
+        logger.info({
+            contexto: 'controller',
+            recurso: 'mensaje.vigilaInactividadChat',
+            origen: getOrigen(req),
+            destino: getDestino(req),
+            contextoRecurso: getContextoRecurso(req),
+            codigoRespuesta: 200,
+            rta: 'Proceso de vigilancia de inactividad completado.',
+            idChatWeb
+        }, 'Vigilancia de inactividad completada');
         res.json({
             status: 200,
             type: 'success',
-            title: dataEstatica.configuracion.responsable,
+            title: 'Chat Web MinTic',
             message: 'Proceso de vigilancia de inactividad completado.',
             data: mensajesNoLeidos
         });
     } catch (error) {
-        console.log('❌ Error en v1/controllers/widget/mensaje.controller.js → vigilaInactividadChat ', error);
+        logger.error({
+            contexto: 'controller',
+            recurso: 'mensaje.vigilaInactividadChat',
+            origen: getOrigen(req),
+            destino: getDestino(req),
+            contextoRecurso: getContextoRecurso(req),
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack
+        }, 'Error en v1/controllers/widget/mensaje.controller.js → vigilaInactividadChat');
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: dataEstatica.configuracion.responsable,
+            title: 'Chat Web MinTic',
             message: 'Error al vigilar la inactividad del chat.',
             error: error.message
         });

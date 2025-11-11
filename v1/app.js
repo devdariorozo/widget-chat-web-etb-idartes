@@ -21,6 +21,9 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, './.env') });
 const Handlebars = require('./helpers/handlebars.js');
 const cors = require('cors');
+const logger = require('./logger');
+const httpLogger = require('./logger/http');
+const uploadLogsToS3 = (process.env.UPLOAD_LOGS_TO_S3 || '').toLowerCase() === 'true';
 
 // ! CONFIGURACIONES
 // * CONFIGURACIÓN DE HORA LOCAL
@@ -49,11 +52,11 @@ const allowedOrigins = allowedOriginsRaw.split(',').map(origin => origin.trim())
 
 const corsOptions = {
     origin: (origin, callback) => {
-        console.log(`■ origin inicial: ${origin}`);
+        logger.info({ contexto: 'cors', origenInicial: origin }, 'Validación de CORS - origen inicial');
         
         // Si ALLOWED_ORIGINS es '*', permitir todos los orígenes
         if (allowedOriginsRaw.trim() === '*') {
-            console.log('■ CORS: Modo abierto (*) - Permitiendo todos los orígenes');
+            logger.info({ contexto: 'cors' }, 'CORS: Modo abierto (*) - Permitiendo todos los orígenes');
             callback(null, true);
             return;
         }
@@ -61,7 +64,7 @@ const corsOptions = {
         if (origin == undefined || origin == null) {
             origin = process.env.APP_URL;
         }
-        console.log(`■ origin final: ${origin}`);
+        logger.info({ contexto: 'cors', origenFinal: origin }, 'Validación de CORS - origen final');
         
         // Permitir solicitudes desde las URLs especificadas
         if (allowedOrigins.includes(origin)) {
@@ -71,9 +74,19 @@ const corsOptions = {
             const now = new Date();
             const formattedDate = `${now.getUTCDate()}/${now.toLocaleString('default', { month: 'short' })}/${now.getUTCFullYear()}:${now.toISOString().substr(11, 8)} +0000`;
             if (origin) {
-                console.log(`■ Backend ${formattedDate} → Validación de CORS • Acceso denegado para: ${origin}`);
+                logger.warn({ 
+                    contexto: 'cors', 
+                    origen, 
+                    codigoRespuesta: 403, 
+                    rta: 'Acceso denegado por CORS' 
+                }, `Validación de CORS • Acceso denegado para: ${origin}`);
             } else {
-                console.log(`■ Backend ${formattedDate} → Validación de CORS • Acceso denegado para el origen desconocido`);
+                logger.warn({ 
+                    contexto: 'cors', 
+                    origen: 'desconocido', 
+                    codigoRespuesta: 403, 
+                    rta: 'Acceso denegado por CORS' 
+                }, 'Validación de CORS • Acceso denegado para el origen desconocido');
             }
             callback(new Error('No se permite el acceso desde el origen especificado...')); // Denegar el origen
         }
@@ -83,7 +96,7 @@ const corsOptions = {
     credentials: true, // Importante para widgets que usen cookies/sesiones
 };
 app.use(cors(corsOptions));
-console.log('■ Configuración de CORS aplicada correctamente');
+logger.info({ contexto: 'configuracion', recurso: 'CORS' }, 'Configuración de CORS aplicada correctamente');
 
 // * CONFIGURACIÓN DEL PUERTO
 const PORT = parseInt(process.env.APP_PORT) || 4000;
@@ -108,20 +121,19 @@ app.use(express.static(path.join(__dirname, 'uploads')));
 
 // ! MIDDLEWARES
 // * MIDDLEWARE MORGAN PARA REGISTRAR SOLICITUDES HTTP
-app.use(morgan('■ ETB IDARTES :localdate → :method → :status • :url → :response-time ms'));
+// app.use(morgan('■ ETB - IDARTES :localdate → :method → :status • :url → :response-time ms'));
+// * MIDDLEWARE PINO-HTTP PARA REGISTRAR SOLICITUDES HTTP
+app.use(httpLogger);
 
 // * MIDDLEWARE PARA ACEPTAR DATOS EN FORMATO JSON
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // ! RUTAS
-console.log('■ Cargando rutas...');
 // * MODULO DE WIDGET
 // TODO: CHAT WEB
-console.log('■ Cargando rutas de Widget chat...');
 app.use('/widget/chat', require('./routes/widget/chat.routes.js'));
 // TODO: MENSAJE
-console.log('■ Cargando rutas de Widget mensaje...');
 app.use('/widget/mensaje', require('./routes/widget/mensaje.routes.js'));
 
 // * RUTA INICIAL
@@ -136,6 +148,14 @@ app.get('/', (req, res) => {
 
 // ! MANEJO DE RUTAS NO ENCONTRADAS
 app.use((req, res, next) => {
+    const { getOrigen, getDestino, getContextoRecurso } = require('./logger/context');
+    logger.warn({
+        origen: getOrigen(req),
+        destino: getDestino(req),
+        contextoRecurso: getContextoRecurso(req),
+        codigoRespuesta: 404,
+        rta: 'Ruta no encontrada'
+    }, `Ruta '${req.url}' no encontrada`);
     res.status(404).json({
         status: 404,
         type: 'error',
@@ -147,8 +167,17 @@ app.use((req, res, next) => {
 
 // ! MANEJO DE ERRORES
 app.use((err, req, res, next) => {
-    res.status(500).json({
-        status: 500,
+    const { getOrigen, getDestino, getContextoRecurso } = require('./logger/context');
+    logger.error({
+        origen: getOrigen(req),
+        destino: getDestino(req),
+        contextoRecurso: getContextoRecurso(req),
+        codigoRespuesta: err.statusCode || 500,
+        errorMensaje: err.message,
+        errorStack: err.stack
+    }, 'Error interno del servidor');
+    res.status(err.statusCode || 500).json({
+        status: err.statusCode || 500,
         type: 'error',
         title: 'Error Interno',
         message: 'Error interno del servidor...',
@@ -179,37 +208,84 @@ function getServerIP() {
 
 // ! INICIAR EL SERVIDOR
 app.listen(PORT, () => {
-    console.log('========================================================================================');
-    console.log('                           ♦♦♦ INICIALIZANDO SISTEMA ♦♦♦');
-    console.log('========================================================================================');
+    // console.log('========================================================================================');
+    // console.log('                           ♦♦♦ INICIALIZANDO SISTEMA ♦♦♦');
+    // console.log('========================================================================================');
 
-    // todo: Imprime la IP del servidor
-    console.log('• IP:', getServerIP());
-    // todo: Imprime el nombre del servidor
-    console.log('• SERVIDOR:', os.hostname());
-    // todo: Imprime el sistema operativo y arquitectura
-    console.log('• SISTEMA:', os.type(), os.arch());
-    // todo: Imprime el cliente
-    console.log(`• CLIENTE: ${process.env.PROJECT_CLIENT}`);
-    // todo: Imprime el tipo de aplicación
-    console.log(`• TIPO: ${process.env.PROJECT_TIPO}`);
-    // todo: Imprime el nombre del proyecto
-    console.log(`• PROYECTO: ${process.env.PROJECT_NAME}`);
-    // todo: Imprime la versión del proyecto
-    console.log(`• VERSION: ${process.env.PROJECT_VERSION}`);
-    // todo: Imprime el ambiente del proyecto
-    console.log(`• AMBIENTE: ${process.env.PROJECT_ENV}`);
-    // todo: Imprime el puerto de la aplicación
-    console.log(`• PUERTO: ${process.env.APP_PORT}`);
-    // todo: Imprime la url de la aplicación
-    console.log(`• URL: ${process.env.APP_URL}`);
-    // todo: Imprime nombre de la base de datos
-    console.log(`• BASE DE DATOS: ${process.env.DB_NAME}`);
-    console.log('========================================================================================');
-    console.log('                           ♦♦♦ INICIALIZANDO SISTEMA ♦♦♦');
-    console.log('========================================================================================');
+    // // todo: Imprime la IP del servidor
+    // console.log('• IP:', getServerIP());
+    // // todo: Imprime el nombre del servidor
+    // console.log('• SERVIDOR:', os.hostname());
+    // // todo: Imprime el sistema operativo y arquitectura
+    // console.log('• SISTEMA:', os.type(), os.arch());
+    // // todo: Imprime el cliente
+    // console.log(`• CLIENTE: ${process.env.PROJECT_CLIENT}`);
+    // // todo: Imprime el tipo de aplicación
+    // console.log(`• TIPO: ${process.env.PROJECT_TIPO}`);
+    // // todo: Imprime el nombre del proyecto
+    // console.log(`• PROYECTO: ${process.env.PROJECT_NAME}`);
+    // // todo: Imprime la versión del proyecto
+    // console.log(`• VERSION: ${process.env.PROJECT_VERSION}`);
+    // // todo: Imprime el ambiente del proyecto
+    // console.log(`• AMBIENTE: ${process.env.PROJECT_ENV}`);
+    // // todo: Imprime el puerto de la aplicación
+    // console.log(`• PUERTO: ${process.env.APP_PORT}`);
+    // // todo: Imprime la url de la aplicación
+    // console.log(`• URL: ${process.env.APP_URL}`);
+    // // todo: Imprime nombre de la base de datos
+    // console.log(`• BASE DE DATOS: ${process.env.DB_NAME}`);
+    // console.log('========================================================================================');
+    // console.log('                           ♦♦♦ INICIALIZANDO SISTEMA ♦♦♦');
+    // console.log('========================================================================================');
+    logger.info({
+        contexto: 'inicio',
+        servidor: {
+            ip: getServerIP(),
+            hostname: os.hostname(),
+            sistema: `${os.type()} ${os.arch()}`
+        },
+        proyecto: {
+            cliente: process.env.PROJECT_CLIENT,
+            tipo: process.env.PROJECT_TIPO,
+            nombre: process.env.PROJECT_NAME,
+            version: process.env.PROJECT_VERSION,
+            ambiente: process.env.PROJECT_ENV,
+            puerto: process.env.APP_PORT,
+            url: process.env.APP_URL,
+            baseDatos: process.env.DB_NAME
+        }
+    }, '♦♦♦ INICIALIZANDO SISTEMA ♦♦♦');
     
     // ! INICIAR SCHEDULERS
-    const cerrarChatsAntiguosScheduler = require('./schedulers/cerrarChatsAntiguos.scheduler.js');
-    cerrarChatsAntiguosScheduler.iniciarScheduler();
+    try {
+        const cerrarChatsAntiguosScheduler = require('./schedulers/cerrarChatsAntiguos.scheduler.js');
+        cerrarChatsAntiguosScheduler.iniciarScheduler();
+        logger.info({ contexto: 'schedulers', nombre: 'cerrarChatsAntiguos' }, 'Scheduler iniciado correctamente');
+    } catch (error) {
+        logger.error({ 
+            contexto: 'schedulers', 
+            nombre: 'cerrarChatsAntiguos',
+            errorMensaje: error.message 
+        }, 'Error al iniciar scheduler');
+    }
+
+    if (uploadLogsToS3) {
+        try {
+            const subidaLogsS3Scheduler = require('./schedulers/subidaLogsS3.scheduler.js');
+            subidaLogsS3Scheduler.iniciarScheduler();
+            logger.info({ contexto: 'schedulers', nombre: 'subidaLogsS3' }, 'Scheduler iniciado correctamente');
+        } catch (error) {
+            logger.error({ 
+                contexto: 'schedulers', 
+                nombre: 'subidaLogsS3',
+                errorMensaje: error.message 
+            }, 'Error al iniciar scheduler');
+        }
+    } else {
+        logger.info({
+            contexto: 'schedulers',
+            nombre: 'subidaLogsS3',
+            habilitado: false
+        }, 'Scheduler de subida de logs a S3 deshabilitado por configuración');
+    }
 });

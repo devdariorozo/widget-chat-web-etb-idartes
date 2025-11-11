@@ -10,6 +10,7 @@
 const pool = require('../../config/database.js');
 const path = require('path');
 require('dotenv').config({ path: './../../.env' });
+const logger = require('../../logger');
 
 // ! MODELOS
 // * NORMALIZAR CONTENIDO PARA EVITAR DUPLICADOS
@@ -25,7 +26,11 @@ const normalizarContenido = (contenido) => {
 
 // * VERIFICAR MENSAJE RECIENTE (EVITAR DUPLICADOS)
 const existeMensajeReciente = async (idChat, remitente, tipoMensaje, contenido, segundos = 10) => {
+    let connMySQL;
     try {
+        // todo: Obtener conexión del pool
+        connMySQL = await pool.getConnection();
+
         const contenidoNormalizado = normalizarContenido(contenido);
         const query = `
             SELECT msg_id, msg_contenido
@@ -37,18 +42,44 @@ const existeMensajeReciente = async (idChat, remitente, tipoMensaje, contenido, 
             ORDER BY msg_id DESC
             LIMIT 5;
         `;
-        const [rows] = await pool.query(query, [idChat, remitente, tipoMensaje, segundos]);
+        const [rows] = await connMySQL.query(query, [idChat, remitente, tipoMensaje, segundos]);
         // Comparar normalizado
         return rows.some(row => normalizarContenido(row.msg_contenido) === contenidoNormalizado);
     } catch (error) {
-        console.log('❌ Error en v1/models/widget/mensaje.model.js → existeMensajeReciente ', error);
+        logger.error({
+            contexto: 'model',
+            recurso: 'mensaje.existeMensajeReciente',
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack,
+            parametros: { idChat, remitente, tipoMensaje, segundos }
+        }, 'Error en v1/models/widget/mensaje.model.js → existeMensajeReciente');
         return false;
+    } finally {
+        // todo: Liberar conexión al pool
+        if (connMySQL) connMySQL.release();
     }
 };
 
 // * CREAR
 const crear = async (idChat, remitente, estadoMensaje, tipoMensaje, contenido, enlaces, lectura, descripcion, estadoRegistro, responsable) => {
+    let connMySQL;
     try {
+        // Permitir duplicados solo si el contenido contiene ciertas clases especiales
+        const permitirDuplicado =
+            (typeof contenido === 'string' &&
+                (contenido.includes('alertaErrorAPIArbol') || contenido.includes('alertaInactividadArbol')));
+        if (!permitirDuplicado) {
+            // Verificar si ya existe un mensaje igual en toda la conversación (normalizado)
+            const mensajes = await listarConversacion(idChat);
+            const contenidoNormalizado = normalizarContenido(contenido);
+            if (mensajes && mensajes.some(msg => normalizarContenido(msg.CONTENIDO) === contenidoNormalizado)) {
+                return false;
+            }
+        }
+        // todo: Obtener conexión del pool
+        connMySQL = await pool.getConnection();
+
         // todo: Sentencia SQL
         const query = `
             INSERT INTO
@@ -66,19 +97,33 @@ const crear = async (idChat, remitente, estadoMensaje, tipoMensaje, contenido, e
                 msg_responsable = ?;
         `;
         // todo: Ejecutar la sentencia y retornar respuesta
-        const [result] = await pool.query(query, [idChat, remitente, estadoMensaje, tipoMensaje, contenido, enlaces, lectura, descripcion, estadoRegistro, responsable]);
+        const [result] = await connMySQL.query(query, [idChat, remitente, estadoMensaje, tipoMensaje, contenido, enlaces, lectura, descripcion, estadoRegistro, responsable]);
         
         return result;
     } catch (error) {
         // todo: Capturar el error
-        console.log('❌ Error en v1/models/widget/mensaje.model.js → crear ', error);
+        logger.error({
+            contexto: 'model',
+            recurso: 'mensaje.crear',
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack,
+            parametros: { idChat, remitente, estadoMensaje, tipoMensaje }
+        }, 'Error en v1/models/widget/mensaje.model.js → crear');
         return false;
+    } finally {
+        // todo: Liberar conexión al pool
+        if (connMySQL) connMySQL.release();
     }
 };
 
 // * CREAR MENSAJE DESDE SOUL CHAT  
 const crearSoulChat = async (idChat, remitente, estado, tipo, contenido, enlaces, lectura, descripcion, registro, responsable) => {
+    let connMySQL;
     try {
+        // todo: Obtener conexión del pool
+        connMySQL = await pool.getConnection();
+
         // todo: Sentencia SQL
         const query = `
             INSERT INTO
@@ -97,19 +142,32 @@ const crearSoulChat = async (idChat, remitente, estado, tipo, contenido, enlaces
         `;
 
         // todo: Ejecutar la sentencia y retornar respuesta
-        const [result] = await pool.query(query, [idChat, remitente, estado, tipo, contenido, enlaces, lectura, descripcion, registro, responsable]);
+        const [result] = await connMySQL.query(query, [idChat, remitente, estado, tipo, contenido, enlaces, lectura, descripcion, registro, responsable]);
         return result;
     } catch (error) {
-
         // todo: Capturar el error
-        console.log('❌ Error en v1/models/widget/mensaje.model.js → crearSoulChat ', error);
+        logger.error({
+            contexto: 'model',
+            recurso: 'mensaje.crearSoulChat',
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack,
+            parametros: { idChat, remitente, estado, tipo }
+        }, 'Error en v1/models/widget/mensaje.model.js → crearSoulChat');
         return false;
+    } finally {
+        // todo: Liberar conexión al pool
+        if (connMySQL) connMySQL.release();
     }
 };
 
 // * LISTAR NO LEÍDOS
 const listarNoLeido = async (idChatWeb, lectura) => {
+    let connMySQL;
     try {
+        // todo: Obtener conexión del pool
+        connMySQL = await pool.getConnection();
+
         // todo: Sentencia SQL
         const query = `
             SELECT
@@ -134,19 +192,32 @@ const listarNoLeido = async (idChatWeb, lectura) => {
         `;
 
         // todo: Ejecutar la sentencia y retornar respuesta
-        const [rows] = await pool.query(query, [idChatWeb, lectura]);
+        const [rows] = await connMySQL.query(query, [idChatWeb, lectura]);
         return rows;
     } catch (error) {
-
         // todo: Capturar el error
-        console.log('❌ Error en v1/models/widget/mensaje.model.js → listarNoLeido ', error);
+        logger.error({
+            contexto: 'model',
+            recurso: 'mensaje.listarNoLeido',
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack,
+            parametros: { idChatWeb, lectura }
+        }, 'Error en v1/models/widget/mensaje.model.js → listarNoLeido');
         return false;
+    } finally {
+        // todo: Liberar conexión al pool
+        if (connMySQL) connMySQL.release();
     }
 };
 
 // * LEER
 const leer = async (idMensaje, lectura) => {
+    let connMySQL;
     try {
+        // todo: Obtener conexión del pool
+        connMySQL = await pool.getConnection();
+
         // todo: Sentencia SQL
         const query = `
             UPDATE
@@ -158,18 +229,31 @@ const leer = async (idMensaje, lectura) => {
         `;
 
         // todo: Ejecutar la sentencia y retornar respuesta
-        return await pool.query(query, [lectura, idMensaje]);
+        return await connMySQL.query(query, [lectura, idMensaje]);
     } catch (error) {
-
         // todo: Capturar el error
-        console.log('❌ Error en v1/models/widget/mensaje.model.js → leer ', error);
+        logger.error({
+            contexto: 'model',
+            recurso: 'mensaje.leer',
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack,
+            parametros: { idMensaje, lectura }
+        }, 'Error en v1/models/widget/mensaje.model.js → leer');
         return false;
+    } finally {
+        // todo: Liberar conexión al pool
+        if (connMySQL) connMySQL.release();
     }
 };
 
 // * LISTAR CONVERSACIÓN COMPLETA
 const listarConversacion = async (idChatWeb) => {
+    let connMySQL;
     try {
+        // todo: Obtener conexión del pool
+        connMySQL = await pool.getConnection();
+
         // todo: Sentencia SQL
         const query = `
             SELECT
@@ -192,18 +276,32 @@ const listarConversacion = async (idChatWeb) => {
         `;
 
         // todo: Ejecutar la sentencia y retornar respuesta
-        const [rows] = await pool.query(query, [idChatWeb]);
+        const [rows] = await connMySQL.query(query, [idChatWeb]);
         return rows;
     } catch (error) {
         // todo: Capturar el error
-        console.log('❌ Error en v1/models/widget/mensaje.model.js → listarConversacion ', error);
+        logger.error({
+            contexto: 'model',
+            recurso: 'mensaje.listarConversacion',
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack,
+            parametros: { idChatWeb }
+        }, 'Error en v1/models/widget/mensaje.model.js → listarConversacion');
         return false;
+    } finally {
+        // todo: Liberar conexión al pool
+        if (connMySQL) connMySQL.release();
     }
 };
 
 // * FILTRAR ULTIMO MENSAJE
 const filtrarUltimoMensaje = async (idChatWeb) => {
+    let connMySQL;
     try {
+        // todo: Obtener conexión del pool
+        connMySQL = await pool.getConnection();
+
         // todo: Sentencia SQL
         const query = `
             SELECT
@@ -228,11 +326,21 @@ const filtrarUltimoMensaje = async (idChatWeb) => {
             LIMIT 1;
         `;
 
-        const [rows] = await pool.query(query, [idChatWeb]);
+        const [rows] = await connMySQL.query(query, [idChatWeb]);
         return rows[0];
     } catch (error) {
-        console.log('❌ Error en v1/models/widget/mensaje.model.js → filtrar ', error);
+        logger.error({
+            contexto: 'model',
+            recurso: 'mensaje.filtrarUltimoMensaje',
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack,
+            parametros: { idChatWeb }
+        }, 'Error en v1/models/widget/mensaje.model.js → filtrarUltimoMensaje');
         return false;
+    } finally {
+        // todo: Liberar conexión al pool
+        if (connMySQL) connMySQL.release();
     }
 };
 
@@ -240,7 +348,11 @@ const filtrarUltimoMensaje = async (idChatWeb) => {
 
 // * FILTRAR ULTIMO MENSAJE ENVIADO
 const filtrarUltimoMensajeEnviado = async (idChatWeb, estadoMensaje, tipoMensaje) => {
+    let connMySQL;
     try {
+        // todo: Obtener conexión del pool
+        connMySQL = await pool.getConnection();
+
         // todo: Sentencia SQL
         const query = `
             SELECT
@@ -269,11 +381,21 @@ const filtrarUltimoMensajeEnviado = async (idChatWeb, estadoMensaje, tipoMensaje
             LIMIT 1;
         `;
 
-        const [rows] = await pool.query(query, [idChatWeb, estadoMensaje, tipoMensaje]);
+        const [rows] = await connMySQL.query(query, [idChatWeb, estadoMensaje, tipoMensaje]);
         return rows[0];
     } catch (error) {
-        console.log('❌ Error en v1/models/widget/mensaje.model.js → filtrarUltimoMensajeEnviado ', error);
+        logger.error({
+            contexto: 'model',
+            recurso: 'mensaje.filtrarUltimoMensajeEnviado',
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack,
+            parametros: { idChatWeb, estadoMensaje, tipoMensaje }
+        }, 'Error en v1/models/widget/mensaje.model.js → filtrarUltimoMensajeEnviado');
         return false;
+    } finally {
+        // todo: Liberar conexión al pool
+        if (connMySQL) connMySQL.release();
     }
 };
 

@@ -11,6 +11,7 @@ const cron = require('node-cron');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const chatController = require('../controllers/widget/chat.controller.js');
+const logger = require('../logger');
 
 // * CONFIGURACIÓN DEL SCHEDULER
 // Ejecutar cada hora (0 minutos de cada hora)
@@ -20,25 +21,36 @@ const CRON_SCHEDULE = process.env.CRON_CERRAR_CHATS_ANTIGUOS || '0 * * * *';
 
 // * FUNCIÓN PARA INICIAR EL SCHEDULER
 const iniciarScheduler = () => {
-    console.log('📅 ===================================================');
-    console.log('📅 SCHEDULER: Cerrar Chats Abiertos Antiguos');
-    console.log('📅 ===================================================');
-    console.log(`⏰ Programación: ${CRON_SCHEDULE}`);
-    console.log(`🕐 Próxima ejecución: ${getNextExecutionTime()}`);
-    console.log(`⚙️  Tiempo límite: ${process.env.TIEMPO_LIMITE_CHAT_ABIERTOS || '24'} horas`);
-    console.log('📅 ===================================================\n');
+    logger.info({
+        contexto: 'scheduler',
+        recurso: 'cerrarChatsAntiguos.iniciarScheduler',
+        configuracion: {
+            cronSchedule: CRON_SCHEDULE,
+            proximaEjecucion: getNextExecutionTime(),
+            tiempoLimiteHoras: process.env.TIEMPO_LIMITE_CHAT_ABIERTOS || '24',
+            timezone: process.env.TZ || 'America/Bogota'
+        }
+    }, 'SCHEDULER: Cerrar Chats Abiertos Antiguos - Iniciando');
 
     // * Validar que el cron schedule sea válido
     if (!cron.validate(CRON_SCHEDULE)) {
-        console.error(`❌ El formato del CRON schedule es inválido: ${CRON_SCHEDULE}`);
+        logger.error({
+            contexto: 'scheduler',
+            recurso: 'cerrarChatsAntiguos.iniciarScheduler',
+            codigoRespuesta: 500,
+            errorMensaje: `El formato del CRON schedule es inválido: ${CRON_SCHEDULE}`,
+            cronSchedule: CRON_SCHEDULE
+        }, 'Error: formato CRON inválido');
         return;
     }
 
     // * Configurar el scheduler
     const task = cron.schedule(CRON_SCHEDULE, async () => {
-        console.log('🚀 ===================================================');
-        console.log(`🚀 Iniciando tarea programada: Cerrar chats antiguos`);
-        console.log('🚀 ===================================================');
+        logger.info({
+            contexto: 'scheduler',
+            recurso: 'cerrarChatsAntiguos.ejecutarTarea',
+            accion: 'iniciando_tarea'
+        }, 'Iniciando tarea programada: Cerrar chats antiguos');
 
         try {
             // Ejecutar la función del controlador
@@ -46,22 +58,33 @@ const iniciarScheduler = () => {
 
             // Mostrar resultado
             if (resultado.success) {
-                console.log('✅ ===================================================');
-                console.log(`✅ Tarea completada exitosamente`);
-                console.log(`✅ Chats cerrados: ${resultado.chatsCerrados}/${resultado.totalChatsEncontrados}`);
-                console.log(`✅ Próxima ejecución: ${getNextExecutionTime()}`);
-                console.log('✅ ===================================================\n');
+                logger.info({
+                    contexto: 'scheduler',
+                    recurso: 'cerrarChatsAntiguos.ejecutarTarea',
+                    codigoRespuesta: 200,
+                    rta: 'Tarea completada exitosamente',
+                    chatsCerrados: resultado.chatsCerrados,
+                    totalChatsEncontrados: resultado.totalChatsEncontrados,
+                    tiempoLimiteHoras: resultado.tiempoLimiteHoras,
+                    proximaEjecucion: getNextExecutionTime()
+                }, 'Tarea completada exitosamente');
             } else {
-                console.log('⚠️  ===================================================');
-                console.log(`⚠️  Tarea completada con errores`);
-                console.log(`⚠️  Error: ${resultado.message}`);
-                console.log('⚠️  ===================================================\n');
+                logger.warn({
+                    contexto: 'scheduler',
+                    recurso: 'cerrarChatsAntiguos.ejecutarTarea',
+                    codigoRespuesta: 500,
+                    rta: resultado.message,
+                    error: resultado.error
+                }, 'Tarea completada con errores');
             }
         } catch (error) {
-            console.log('❌ ===================================================');
-            console.log(`❌ Error ejecutando tarea programada`);
-            console.log(`❌ Error: ${error.message}`);
-            console.log('❌ ===================================================\n');
+            logger.error({
+                contexto: 'scheduler',
+                recurso: 'cerrarChatsAntiguos.ejecutarTarea',
+                codigoRespuesta: 500,
+                errorMensaje: error.message,
+                errorStack: error.stack
+            }, 'Error ejecutando tarea programada');
         }
     }, {
         scheduled: true,
@@ -76,24 +99,41 @@ const iniciarScheduler = () => {
     // Ejecutar inmediatamente al iniciar el servidor
     setTimeout(async () => {
         try {
+            logger.info({
+                contexto: 'scheduler',
+                recurso: 'cerrarChatsAntiguos.ejecucionInicial',
+                accion: 'iniciando_ejecucion_inicial'
+            }, 'Ejecutando verificación inicial de chats antiguos');
+            
             const resultado = await chatController.cerrarChatsAbiertosAntiguos();
             
             if (resultado.success) {
-                console.log('✅ ===================================================');
-                console.log(`✅ Ejecución inicial completada`);
-                console.log(`✅ Chats cerrados: ${resultado.chatsCerrados}/${resultado.totalChatsEncontrados}`);
-                console.log('✅ ===================================================\n');
+                logger.info({
+                    contexto: 'scheduler',
+                    recurso: 'cerrarChatsAntiguos.ejecucionInicial',
+                    codigoRespuesta: 200,
+                    rta: 'Ejecución inicial completada',
+                    chatsCerrados: resultado.chatsCerrados,
+                    totalChatsEncontrados: resultado.totalChatsEncontrados,
+                    tiempoLimiteHoras: resultado.tiempoLimiteHoras
+                }, 'Ejecución inicial completada');
             } else {
-                console.log('⚠️  ===================================================');
-                console.log(`⚠️  Ejecución inicial con errores`);
-                console.log(`⚠️  Error: ${resultado.message}`);
-                console.log('⚠️  ===================================================\n');
+                logger.warn({
+                    contexto: 'scheduler',
+                    recurso: 'cerrarChatsAntiguos.ejecucionInicial',
+                    codigoRespuesta: 500,
+                    rta: resultado.message,
+                    error: resultado.error
+                }, 'Ejecución inicial con errores');
             }
         } catch (error) {
-            console.log('❌ ===================================================');
-            console.log(`❌ Error en ejecución inicial`);
-            console.log(`❌ Error: ${error.message}`);
-            console.log('❌ ===================================================\n');
+            logger.error({
+                contexto: 'scheduler',
+                recurso: 'cerrarChatsAntiguos.ejecucionInicial',
+                codigoRespuesta: 500,
+                errorMensaje: error.message,
+                errorStack: error.stack
+            }, 'Error en ejecución inicial');
         }
     }, 5000); // Ejecutar después de 5 segundos de iniciar el servidor
 

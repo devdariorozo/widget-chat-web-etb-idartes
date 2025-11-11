@@ -8,6 +8,8 @@
 
 // ! REQUIRES
 const mysql2 = require('mysql2/promise');
+const logger = require('../logger');
+const { getOrigen, getDestino, getContextoRecurso } = require('../logger/context');
 
 // ! CONEXIÓN A LA BASE DE DATOS
 let pool;
@@ -24,11 +26,29 @@ try {
 
     // todo: Verificación de la conexión
     pool.on('error', (error) => {
-        console.log('❌ Error en v1/config/database.js → pool ===> ', error);
+        logger.error({
+            contexto: 'database',
+            recurso: 'pool',
+            codigoRespuesta: 500,
+            errorMensaje: error.message
+        }, 'Error en pool de conexiones MySQL');
     });
+    
+    // Log informativo de configuración del pool
+    logger.info({
+        contexto: 'database',
+        host: process.env.DB_HOST,
+        database: process.env.DB_NAME,
+        poolSize: parseInt(process.env.DB_POOL_SIZE)
+    }, 'Pool de conexiones MySQL configurado');
 
 } catch (error) {
-    console.log('❌ Error en v1/config/database.js → mysql2 ===> ', error);
+    logger.error({
+        contexto: 'database',
+        recurso: 'mysql2',
+        codigoRespuesta: 500,
+        errorMensaje: error.message
+    }, 'Error inicializando MySQL');
 }
 
 // ! EXPORTACIONES

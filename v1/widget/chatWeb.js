@@ -7,8 +7,8 @@
 // v1/widget/chatWeb.js
 
 // ! VARIABLES GLOBALES
-// const APP_URL = 'https://???.mysoul.software'; // Producción
-// const APP_URL = 'https://???.mysoul.software'; // 715 QA
+// const APP_URL = '???'; // Producción
+// const APP_URL = 'https://???'; // 715 QA
 const APP_URL = 'http://localhost:5006'; // Desarrollo
 let chatWeb = '';
 let idChatWeb = '';
@@ -65,7 +65,7 @@ function inicializarWidgetChat() {
                     </div>
                     <div class='bar-box bar-box2'>
                         <div class="tituloChatWeb">
-                            <span id="nombreChatWeb">ETB IDARTES</span>
+                            <span id="nombreChatWeb">IDARTES</span>
                             <span id="versionChatWeb">V 1.0.0</span>
                         </div>
                         <div id="estadoChatWeb">
@@ -338,6 +338,18 @@ function inicializarWidgetChat() {
             console.error('❌ Error en v1/widget/chatWeb.js → btnCerrarChatWeb.addEventListener → Error al cerrar chat:', error);
         }
 
+        // todo: Notificar al HTML padre que se cerró el chat para limpiar estado
+        if (window.parent && window.parent !== window) {
+            try {
+                window.parent.postMessage({
+                    type: 'chatCerrado',
+                    idChatWeb: idChatWeb
+                }, '*');
+            } catch (e) {
+                console.error('❌ Error al notificar cierre de chat al parent:', e);
+            }
+        }
+
         // todo: Reiniciar el idChatWeb y el estado de creación
         idChatWeb = '';
         chatWeb = '';
@@ -397,26 +409,26 @@ function inicializarWidgetChat() {
             });
         }
         
-        // else if (data.type === 'enviarFormulario') {
-        //     // El iframe quiere enviar formulario inicial
-        //     enviarPeticion(
-        //         `${APP_URL}/widget/chat/formularioInicial`,
-        //         'POST',
-        //         data.datos
-        //     ).then(response => {
-        //         iframeChatWeb.contentWindow.postMessage({
-        //             type: 'respuestaFormulario',
-        //             id: data.id,
-        //             response: response
-        //         }, window.location.origin);
-        //     }).catch(error => {
-        //         iframeChatWeb.contentWindow.postMessage({
-        //             type: 'respuestaFormulario',
-        //             id: data.id,
-        //             error: error.message
-        //         }, window.location.origin);
-        //     });
-        // }
+        else if (data.type === 'enviarFormulario') {
+            // El iframe quiere enviar formulario inicial
+            enviarPeticion(
+                `${APP_URL}/widget/chat/formularioInicial`,
+                'POST',
+                data.datos
+            ).then(response => {
+                iframeChatWeb.contentWindow.postMessage({
+                    type: 'respuestaFormulario',
+                    id: data.id,
+                    response: response
+                }, window.location.origin);
+            }).catch(error => {
+                iframeChatWeb.contentWindow.postMessage({
+                    type: 'respuestaFormulario',
+                    id: data.id,
+                    error: error.message
+                }, window.location.origin);
+            });
+        }
     });
 }
 
