@@ -537,7 +537,7 @@ const cerrar = async (req, res) => {
             let responsable = dataEstatica.configuracion.responsable;
             const resultMensajeDespedida = await modelMensaje.crear(idChat, remitente, estadoMensaje, tipoMensaje, contenido, enlaces, lectura, descripcion, estadoRegistro, responsable);
 
-            if (resultMensajeDespedida) {
+            if (resultMensajeDespedida || result[0].GESTION === dataEstatica.configuracion.estadoGestion.cerrado) {
                 logger.info({
                     contexto: 'controller',
                     recurso: 'chat.cerrar',

@@ -581,7 +581,8 @@ const cerrar = async (remitente, estadoChat, estadoGestion, arbol, controlApi, d
             // todo: Retornar el id del registro
             const query = `
                 SELECT
-                    cht_id AS ID_CHAT
+                    cht_id AS ID_CHAT,
+                    cht_gestion AS GESTION
                 FROM
                     tbl_chat
                 WHERE
