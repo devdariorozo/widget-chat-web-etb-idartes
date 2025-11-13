@@ -1,3 +1,11 @@
+// ! ================================================================================================================================================
+// !                                                      CONTEXT
+// ! ================================================================================================================================================
+// @author Ramón Dario Rozo Torres
+// @lastModified Ramón Dario Rozo Torres
+// @version 1.0.0
+// v1/logger/context.js
+
 function getOrigen(req) {
     if (!req) return 'desconocido';
     if (req.headers && req.headers['x-forwarded-for']) {

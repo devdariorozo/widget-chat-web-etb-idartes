@@ -1,10 +1,10 @@
 -- ! ================================================================================================================================================
 -- !                                          SQL PARA CREAR TRIGGERS DE LA TABLA CHAT
 -- ! ================================================================================================================================================
--- @author Ramón Dario Rozo Torres (24 de Enero de 2025)
--- @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
+-- @author Ramón Dario Rozo Torres
+-- @lastModified Ramón Dario Rozo Torres
 -- @version 1.0.0
--- v1/migrations/widget/chat/2025_01_24_create_triggers_tbl_chat.sql
+-- v1/migrations/widget/chat/create_triggers_tbl_chat.sql
 
 -- ! ELIMINAR TRIGGERS SI EXISTEN
 DROP TRIGGER IF EXISTS after_tbl_chat_insert;

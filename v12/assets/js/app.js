@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                             APP JS
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres (20 de Junio de 2024)
-// @lastModified Ramón Dario Rozo Torres (20 de Junio de 2024)
+// @author Ramón Dario Rozo Torres
+// @lastModified Ramón Dario Rozo Torres
 // @version 1.0.0
 // frontend/v1/assets/js/app.js
 

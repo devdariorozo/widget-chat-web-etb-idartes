@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                      MODELOS PARA CHAT
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres (24 de Enero de 2025)
-// @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
+// @author Ramón Dario Rozo Torres
+// @lastModified Ramón Dario Rozo Torres
 // @version 1.0.0
 // v1/models/widget/chat.model.js
 

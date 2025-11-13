@@ -1,10 +1,10 @@
 -- ! ================================================================================================================================================
 -- !                                                        SQL PARA CREAR BASE DE DATOS
 -- ! ================================================================================================================================================
--- @author Ramón Dario Rozo Torres (24 de Enero de 2025)
--- @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
+-- @author Ramón Dario Rozo Torres
+-- @lastModified Ramón Dario Rozo Torres
 -- @version 1.0.0
--- v1/migrations/2025_01_24__create_database.sql
+-- v1/migrations/create_database.sql
 
 
 -- ! BASE DE DATOS PARA EL SISTEMA 

@@ -1,10 +1,10 @@
 -- ! ================================================================================================================================================
 -- !                                          SQL PARA CREAR TRIGGERS DE LA TABLA MENSAJE
 -- ! ================================================================================================================================================
--- @author Ramón Dario Rozo Torres (24 de Enero de 2025)
--- @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
+-- @author Ramón Dario Rozo Torres
+-- @lastModified Ramón Dario Rozo Torres
 -- @version 1.0.0
--- v1/migrations/widget/mensaje/2025_01_24_create_triggers_tbl_mensaje.sql
+-- v1/migrations/widget/mensaje/create_triggers_tbl_mensaje.sql
 
 -- ! ELIMINAR TRIGGERS SI EXISTEN
 DROP TRIGGER IF EXISTS after_tbl_mensaje_insert;

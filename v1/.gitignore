@@ -5,8 +5,8 @@
 /node_modules
 /package-lock.json
 
-# CARPETA UPLOADS
-/uploads/*
-!/uploads/.gitkeep
+# CARPETA LOGS
+/uploads/logs/*
+!/uploads/logs/.gitkeep
 
 

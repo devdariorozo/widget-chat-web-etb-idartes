@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                     MIGRACIÓN A VARIABLES SIN ENCRIPTACIÓN
 // ! ================================================================================================================================================
-// @Autor: Ramón Dario Rozo Torres (13 de Febrero de 2025)
-// @Última Modificación: Dario Rozo (13 de Febrero de 2025)
+// @Autor: Ramón Dario Rozo Torres
+// @Última Modificación: Dario Rozo
 // @version 1.0.0
 // v1/utils/migrateToPlainEnv.js
 

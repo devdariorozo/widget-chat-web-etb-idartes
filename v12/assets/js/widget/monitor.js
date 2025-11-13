@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                      JS PARA MONITOR CHATS
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres (14 de Marzo de 2025)
-// @lastModified Ramón Dario Rozo Torres (14 de Marzo de 2025)
+// @author Ramón Dario Rozo Torres
+// @lastModified Ramón Dario Rozo Torres
 // @version 1.0.0
 // v1/assets/js/widget/monitor.js
 

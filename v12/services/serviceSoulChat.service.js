@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                    SERVICIO DE CHAT AI SOUL
 // ! ================================================================================================================================================
-// @autor Ramón Dario Rozo Torres (26 de Enero de 2025)
-// @últimaModificación Ramón Dario Rozo Torres (26 de Enero de 2025)
+// @autor Ramón Dario Rozo Torres
+// @últimaModificación Ramón Dario Rozo Torres
 // @versión 1.0.0
 // v1/services/serviceSoulChat.service.js
 
