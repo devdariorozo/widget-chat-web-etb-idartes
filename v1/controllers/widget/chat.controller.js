@@ -14,6 +14,7 @@ require('dotenv').config({ path: path.join(__dirname, './../../.env') });
 const model = require('../../models/widget/chat.model.js');
 const dataEstatica = require('../../seeds/dataEstatica.js');
 const modelMensaje = require('../../models/widget/mensaje.model.js');
+const serviceSoulChat = require('../../services/serviceSoulChat.service.js');
 const logger = require('../../logger');
 const { getOrigen, getDestino, getContextoRecurso } = require('../../logger/context');
 
@@ -94,23 +95,150 @@ const crear = async (req, res) => {
 
         if (result) {
             const idChat = result[0].insertId;
-            logger.info({
-                contexto: 'controller',
-                recurso: 'chat.crear',
-                origen: getOrigen(req),
-                destino: getDestino(req),
-                contextoRecurso: getContextoRecurso(req),
-                codigoRespuesta: 200,
-                rta: 'El chat se ha creado correctamente en el sistema en modo Paso Directo Soul Chat.',
-                idChat: result[0].insertId
-            }, 'Chat creado exitosamente (Paso Directo Soul Chat)');
-            return res.json({
-                status: 200,
-                type: 'success',
-                title: 'ETB - IDARTES',
-                message: 'El chat se ha creado correctamente en el sistema.',
-                idChat
-            });
+            
+            // todo: Preparar datos del chat (valores por defecto ya que no se reciben del formulario en el crear)
+            const chatData = {
+                controlApi: dataEstatica.configuracion.controlApi.success,
+                controlPeticiones: 0,
+                resultadoApi: '-',
+                nombres: '-',
+                apellidos: '-',
+                numeroCedula: '-',
+                paisResidencia: '-',
+                ciudadResidencia: '-',
+                indicativoPais: '-',
+                numeroCelular: '-',
+                correoElectronico: '-',
+                autorizacionDatosPersonales: '-',
+                adjuntos: '-',
+                rutaAdjuntos: '-',
+                descripcion: descripcion,
+                estadoRegistro: estadoRegistro,
+                responsable: responsable
+            };
+
+            // todo: Mensaje inicial para AI Soul (vacío o mensaje de inicio)
+            const contenido = '';
+
+            // todo: Enviar consumir servicio de AI Soul
+            const estructuraMensaje = {
+                provider: "web",
+                canal: 3,
+                idChat: idChat,
+                remitente: remitente,
+                estado: "START",
+                mensaje: contenido,
+                type: "TEXT",
+                nombres: chatData.nombres,
+                apellidos: chatData.apellidos,
+                numeroCedula: chatData.numeroCedula,
+                paisResidencia: chatData.paisResidencia,
+                ciudadResidencia: chatData.ciudadResidencia,
+                indicativoPais: chatData.indicativoPais,
+                numeroCelular: chatData.numeroCelular,
+                correoElectronico: chatData.correoElectronico,
+                autorizacionDatosPersonales: chatData.autorizacionDatosPersonales,
+                responsable: dataEstatica.configuracion.responsable
+            };
+
+            try {
+                const response = await serviceSoulChat.enviarMensajeSoulChat(estructuraMensaje);
+                console.log('response servicio Soul Chat', response);
+                
+                if (response.status === 200 || response.status === 202) {
+                    const pasoArbol = dataEstatica.arbol.pasoDirectoSoulChat;
+                    chatData.controlApi = dataEstatica.configuracion.controlApi.success;
+                    chatData.resultadoApi = JSON.stringify(response.data || {});
+                    chatData.descripcion = 'AI Soul ha recibido el mensaje, se encuentra procesando la respuesta.';
+                    
+                    await model.actualizar(idChat, pasoArbol, chatData);
+
+                    logger.info({
+                        contexto: 'controller',
+                        recurso: 'chat.crear',
+                        origen: getOrigen(req),
+                        destino: getDestino(req),
+                        contextoRecurso: getContextoRecurso(req),
+                        codigoRespuesta: 200,
+                        rta: 'El chat se ha creado correctamente en el sistema en modo Paso Directo Soul Chat.',
+                        idChat: idChat
+                    }, 'Chat creado exitosamente (Paso Directo Soul Chat)');
+                    
+                    return res.json({
+                        status: 200,
+                        type: 'success',
+                        title: 'ETB - IDARTES',
+                        message: 'El chat se ha creado correctamente en el sistema.',
+                        idChat
+                    });
+                } else {
+                    // Variables
+                    const pasoArbol = dataEstatica.arbol.pasoDirectoSoulChat;
+                    chatData.controlPeticiones++;
+                    chatData.controlApi = dataEstatica.configuracion.controlApi.error;
+                    chatData.resultadoApi = JSON.stringify({
+                        status: response.status,
+                        message: 'Respuesta inesperada del servicio AI Soul'
+                    });
+                    chatData.descripcion = 'AI Soul esta presentando una novedad o incidencia técnica.';
+                    
+                    // Actualizar el chat
+                    await model.actualizar(idChat, pasoArbol, chatData);
+
+                    logger.warn({
+                        contexto: 'controller',
+                        recurso: 'chat.crear',
+                        origen: getOrigen(req),
+                        destino: getDestino(req),
+                        contextoRecurso: getContextoRecurso(req),
+                        codigoRespuesta: response.status,
+                        rta: 'AI Soul respondió con un estado inesperado.',
+                        idChat: idChat,
+                        statusResponse: response.status
+                    }, 'Respuesta inesperada de AI Soul');
+
+                    return res.status(500).json({
+                        status: 500,
+                        type: 'error',
+                        title: 'ETB - IDARTES',
+                        message: 'No se pudo procesar el mensaje inicial con AI Soul, por favor intenta de nuevo.',
+                    });
+                }
+            } catch (error) {
+                // Manejar error al consumir el servicio
+                const pasoArbol = dataEstatica.arbol.pasoDirectoSoulChat;
+                chatData.controlPeticiones++;
+                chatData.controlApi = dataEstatica.configuracion.controlApi.error;
+                chatData.resultadoApi = JSON.stringify({
+                    status: error.response?.status || 500,
+                    message: error.message || 'Error desconocido al consumir servicio AI Soul',
+                    error: error.response?.data || error.toString()
+                });
+                chatData.descripcion = 'Error al consumir servicio de AI Soul.';
+
+                await model.actualizar(idChat, pasoArbol, chatData);
+
+                logger.error({
+                    contexto: 'controller',
+                    recurso: 'chat.crear',
+                    origen: getOrigen(req),
+                    destino: getDestino(req),
+                    contextoRecurso: getContextoRecurso(req),
+                    codigoRespuesta: error.response?.status || 500,
+                    errorMensaje: error.message,
+                    errorStack: error.stack,
+                    idChat: idChat,
+                    remitente: remitente
+                }, 'Error al consumir servicio AI Soul en chat.crear');
+
+                return res.status(500).json({
+                    status: 500,
+                    type: 'error',
+                    title: 'ETB - IDARTES',
+                    message: 'No se pudo procesar el mensaje inicial con AI Soul, por favor intenta de nuevo.',
+                    error: error.message
+                });
+            }
         }
     } catch (error) {
         logger.error({

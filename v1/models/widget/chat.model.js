@@ -481,8 +481,8 @@ const actualizar = async (idChat, pasoArbol, chatData) => {
         // todo: Obtener conexión del pool
         connMySQL = await pool.getConnection();
 
-        // todo: Sentencia SQL
-        const query = `
+        // todo: Intentar primero con todas las columnas según migración
+        let query = `
             UPDATE
                 tbl_chat
             SET
@@ -508,32 +508,78 @@ const actualizar = async (idChat, pasoArbol, chatData) => {
                 cht_id = ?;
         `;
 
-        // todo: Parametros de la sentencia
-        const params = [
+        let params = [
             pasoArbol,
-            chatData.controlApi,
-            chatData.controlPeticiones,
-            chatData.resultadoApi,
-            chatData.nombres,
-            chatData.apellidos,
-            chatData.numeroCedula,
-            chatData.paisResidencia,
-            chatData.ciudadResidencia,
-            chatData.indicativoPais,
-            chatData.numeroCelular,
-            chatData.correoElectronico,
-            chatData.autorizacionDatosPersonales,
-            chatData.adjuntos,
-            chatData.rutaAdjuntos,
-            chatData.descripcion,
-            chatData.estadoRegistro,
-            chatData.responsable,
+            chatData.controlApi || '-',
+            chatData.controlPeticiones || 0,
+            typeof chatData.resultadoApi === 'string' ? chatData.resultadoApi : JSON.stringify(chatData.resultadoApi || {}),
+            chatData.nombres || '-',
+            chatData.apellidos || '-',
+            chatData.numeroCedula || '-',
+            chatData.paisResidencia || '-',
+            chatData.ciudadResidencia || '-',
+            chatData.indicativoPais || '-',
+            chatData.numeroCelular || '-',
+            chatData.correoElectronico || '-',
+            chatData.autorizacionDatosPersonales || 'No',
+            chatData.adjuntos || 'No',
+            chatData.rutaAdjuntos || '-',
+            chatData.descripcion || '-',
+            chatData.estadoRegistro || 'Activo',
+            chatData.responsable || 'Chat Web ETB - IDARTES',
             idChat
         ];
 
         // todo: Ejecutar la sentencia
-        const [rows] = await connMySQL.query(query, params);
-        return rows[0];
+        try {
+            const [rows] = await connMySQL.query(query, params);
+            return rows[0];
+        } catch (updateError) {
+            // Si falla por columnas inexistentes, intentar solo con columnas básicas
+            if (updateError.message && updateError.message.includes('Unknown column')) {
+                logger.warn({
+                    contexto: 'model',
+                    recurso: 'chat.actualizar',
+                    codigoRespuesta: 500,
+                    errorMensaje: updateError.message,
+                    parametros: { idChat, pasoArbol },
+                    accion: 'Intentando actualización con columnas básicas'
+                }, 'Columnas de formulario no existen, actualizando solo columnas básicas');
+
+                // Query solo con columnas básicas que siempre existen
+                query = `
+                    UPDATE
+                        tbl_chat
+                    SET
+                        cht_arbol = ?,
+                        cht_control_api = ?,
+                        cht_control_peticiones = ?,
+                        cht_resultado_api = ?,
+                        cht_descripcion = ?,
+                        cht_registro = ?,
+                        cht_responsable = ?
+                    WHERE
+                        cht_id = ?;
+                `;
+
+                params = [
+                    pasoArbol,
+                    chatData.controlApi || '-',
+                    chatData.controlPeticiones || 0,
+                    typeof chatData.resultadoApi === 'string' ? chatData.resultadoApi : JSON.stringify(chatData.resultadoApi || {}),
+                    chatData.descripcion || '-',
+                    chatData.estadoRegistro || 'Activo',
+                    chatData.responsable || 'Chat Web ETB - IDARTES',
+                    idChat
+                ];
+
+                const [rows] = await connMySQL.query(query, params);
+                return rows[0];
+            } else {
+                // Si es otro tipo de error, lanzarlo
+                throw updateError;
+            }
+        }
     } catch (error) {
         // todo: Capturar el error
         logger.error({

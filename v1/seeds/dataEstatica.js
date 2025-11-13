@@ -406,7 +406,7 @@ const estadoRegistro = {
 };
 
 // * RESPONSABLE
-const responsable = 'ETB - IDARTES';
+const responsable = 'Chat Web ETB - IDARTES';
 
 // ! EXPORTACIONES ORGANIZADAS POR CATEGORÍAS
 module.exports = {
