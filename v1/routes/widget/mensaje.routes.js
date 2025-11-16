@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                             ENRUTADOR DE MENSAJE
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres
-// @lastModified Ramón Dario Rozo Torres
+// @author Ramón Dario Rozo Torres (24 de Enero de 2025)
+// @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
 // @version 1.0.0
 // v1/routes/widget/mensaje.routes.js
 

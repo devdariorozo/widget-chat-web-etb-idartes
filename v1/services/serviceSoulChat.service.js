@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
-// !                                                    SERVICIO DE CHAT AI SOUL
+// !                                                    SERVICIO DE SOUL CHAT
 // ! ================================================================================================================================================
-// @autor Ramón Dario Rozo Torres
-// @últimaModificación Ramón Dario Rozo Torres
+// @autor Ramón Dario Rozo Torres (26 de Enero de 2025)
+// @últimaModificación Ramón Dario Rozo Torres (26 de Enero de 2025)
 // @versión 1.0.0
 // v1/services/serviceSoulChat.service.js
 
@@ -12,9 +12,9 @@ const path = require('path');
 require('dotenv').config({ path: './../../.env' });
 const logger = require('../logger');
 
-// ! PROCESAR MENSAJE AI SOUL
+// ! PROCESAR MENSAJE SOUL CHAT
 // * CONSUMO API
-const enviarMensajeSoulChat = async (estructuraMensaje) => {
+const procesarMensajeAISoul = async (estructuraMensaje) => {
     const url = `${process.env.URL_API_SOUL_CHAT}/v1/messenger/in-message`;
     try {
         const response = await axios.post(url, estructuraMensaje, {
@@ -26,7 +26,7 @@ const enviarMensajeSoulChat = async (estructuraMensaje) => {
     } catch (error) {
         logger.error({
             contexto: 'service',
-            recurso: 'serviceSoulChat.enviarMensajeSoulChat',
+            recurso: 'serviceSoulChat.procesarMensajeAISoul',
             codigoRespuesta: error.response?.status || 500,
             errorMensaje: error.message || error.response?.data?.message || 'Error desconocido',
             errorStack: error.stack,
@@ -38,7 +38,7 @@ const enviarMensajeSoulChat = async (estructuraMensaje) => {
                 type: estructuraMensaje.type
             },
             errorResponse: error.response?.data || null
-        }, 'Error al procesar mensaje AI Soul');
+        }, 'Error al procesar mensaje Soul Chat');
         throw error;
     }
 };
@@ -46,5 +46,5 @@ const enviarMensajeSoulChat = async (estructuraMensaje) => {
 
 // ! EXPORTACIONES
 module.exports = {
-    enviarMensajeSoulChat,
+    procesarMensajeAISoul,
 };

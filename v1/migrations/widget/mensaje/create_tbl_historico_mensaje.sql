@@ -2,7 +2,6 @@
 -- !                                                   SQL PARA CREAR TABLA HISTORICO MENSAJE
 -- ! ================================================================================================================================================
 -- @author Ramón Dario Rozo Torres
--- @lastModified Ramón Dario Rozo Torres
 -- @version 1.0.0
 -- v1/migrations/widget/mensaje/create_tbl_historico_mensaje.sql
 

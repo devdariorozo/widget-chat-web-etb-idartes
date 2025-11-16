@@ -31,7 +31,7 @@ CREATE TABLE `tbl_chat` (
   `cht_descripcion` varchar(255) NOT NULL DEFAULT '-',
   `cht_registro` varchar(45) NOT NULL DEFAULT 'Activo',
   `cht_actualizacion` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `cht_responsable` varchar(45) NOT NULL DEFAULT 'Chat Web ETB - IDARTES',
+  `cht_responsable` varchar(45) NOT NULL DEFAULT 'Widget Chat Web ETB - IDARTES',
   PRIMARY KEY (`cht_id`)
 ) ENGINE=InnoDB CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 

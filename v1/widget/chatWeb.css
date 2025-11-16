@@ -8,6 +8,10 @@
     v1/widget/chatWeb.css
 */
 
+/* ! FUENTES */
+@import url(https://fonts.googleapis.com/css2?family=Poppins&display=swap);
+
+
 html, body {
     margin: 0;
     padding: 0;
@@ -15,8 +19,22 @@ html, body {
     overflow-x: hidden;
 }
 
-/* ! FUENTES */
-@import url(https://fonts.googleapis.com/css2?family=Poppins&display=swap);
+
+:root {
+  /* Distancia del botón flotante al borde derecho de la ventana */
+  --chat-btn-right: 2.5rem;
+  /* Distancia del botón flotante al borde inferior de la ventana */
+  --chat-btn-bottom: 1.3rem;
+  /* Ancho del ícono del botón flotante (puede sobreescribirse por breakpoint) */
+  --chat-btn-width: 3.7rem;
+  /* Alto del ícono del botón flotante (puede sobreescribirse por breakpoint) */
+  --chat-btn-height: 3.7rem;
+  /* Distancia del contenedor del chat al borde derecho de la ventana */
+  --chat-widget-right: 1.5rem;
+  /* Distancia del contenedor del chat al borde inferior de la ventana */
+  --chat-widget-bottom: 1.5rem;
+}
+
 
 /* ! ESTILO PARA EL CONTENEDOR DEL CHAT */
 #contenedorWidget {
@@ -90,8 +108,9 @@ html, body {
 
 /* ! ESTILO PARA EL ÍCONO DEL BOTÓN DE TOGGLE DEL CHAT */
 #contenedorWidget .img-btn {
-  height: 3.6rem;
-  margin-right: -1rem;
+  width: var(--chat-btn-width);
+  height: var(--chat-btn-height);
+  margin-right: 0rem;
 }
 
 /* Media queries para diferentes tamaños de pantalla */
@@ -124,12 +143,14 @@ html, body {
   }
 
   #contenedorWidget .btn-chat-pau {
-    bottom: 3.3rem !important; /* Sugerencia del cliente */
-    right: 1rem !important; /* Sugerencia del cliente */
+    bottom: var(--chat-btn-bottom) !important;
+    right: var(--chat-btn-right) !important;
   }
 
   #contenedorWidget .img-btn {
-    height: 7rem;
+    /* Mantener tamaño por variables también en móviles */
+    width: var(--chat-btn-width);
+    height: var(--chat-btn-height);
   }
 
   .tituloChatWeb {
@@ -189,7 +210,8 @@ html, body {
   }
 
   #contenedorWidget .img-btn {
-    height: 6rem;
+  width: var(--chat-btn-width);
+  height: var(--chat-btn-height);
   }
 
   .tituloChatWeb {
@@ -449,46 +471,10 @@ html, body {
   z-index: 999; /* Debe estar debajo del chat pero encima del resto */
   display: none;
 }
-:root {
-  --chat-widget-right: 1.5rem;
-  --chat-widget-bottom: 1.5rem;
-  --chat-btn-right: 2.5rem;
-  --chat-btn-bottom: 2.5rem;
-}
 
 #contenedorWidget .cont-chat {
   right: var(--chat-widget-right) !important;
   bottom: var(--chat-widget-bottom) !important;
-}
-
-/* Para pantallas grandes */
-@media screen and (min-width: 769px) {
-  :root {
-    --chat-widget-right: 1.5rem;
-    --chat-widget-bottom: 1.5rem;
-    --chat-btn-right: 2.5rem;
-    --chat-btn-bottom: 2.5rem;
-  }
-}
-
-/* Para pantallas medianas */
-@media screen and (max-width: 768px) and (min-width: 481px) {
-  :root {
-    --chat-widget-right: 1rem;
-    --chat-widget-bottom: 1rem;
-    --chat-btn-right: 2.5rem;
-    --chat-btn-bottom: 2.5rem;
-  }
-}
-
-/* Para pantallas pequeñas */
-@media screen and (max-width: 480px) {
-  :root {
-    --chat-widget-right: 0.5rem;
-    --chat-widget-bottom: 0.5rem;
-    --chat-btn-right: 2.5rem;
-    --chat-btn-bottom: 2.5rem;
-  }
 }
 
 /* ! ESTILOS PARA ERROR 429 */

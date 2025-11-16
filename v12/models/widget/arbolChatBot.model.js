@@ -691,7 +691,7 @@ const clienteDesiste = async (idChat, remitente) => {
         );
     } catch (error) {
         // todo: Enviar mensaje de error por API
-        const api = 'Chat Web ETB - IDARTES ';
+        const api = 'Widget Chat Web ETB - IDARTES ';
         const procesoApi = 'Cliente Desiste';
         console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → clienteDesiste', error);
         return await errorAPI(api, procesoApi, error, idChat, remitente);

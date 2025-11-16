@@ -2,11 +2,58 @@
     ! ================================================================================================================================================
     !                                                             CHAT WEB
     ! ================================================================================================================================================    
-    @author Ramón Dario Rozo Torres
-    @lastModified Ramón Dario Rozo Torres
+    @author Ramón Dario Rozo Torres (24 de Enero de 2025)
+    @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
     @version 1.0.0
     v2/assets/css/widget/chat.css
 */
+
+/* Variables globales para colores y tipografías */
+:root {
+    /* Tipografía base */
+    --font-family-base: 'Arial', Redounded LT Pro, sans-serif;
+
+    /* Colores de texto */
+    --color-text-base: #000000; /* Color de texto base */
+    --color-text-strong: #000000; /* Color de texto fuerte */
+    --color-text-secondary: #333333; /* Color de texto secundario */
+    --color-text-muted: #666666; /* Color de texto muteado */
+    --color-text-inverted: #ffffff; /* Color de texto invertido */
+
+    /* Colores de enlaces */
+    --color-link: #214780; /* Color de enlace */
+    --color-link-hover: #003057; /* Color de enlace al pasar el mouse */
+
+    /* Colores de fondos principales */
+    --app-bg: #f5f5f5; /* Color de fondo principal */
+    --panel-bg: #E4E8F0; /* Color de fondo del panel */
+    --panel-border: #AAB8D0; /* Color de borde del panel */
+
+    /* Burbujas de chat */
+    --bubble-received-bg: #DADADA; /* Color de fondo de la burbuja recibida */  
+    --bubble-sent-bg: #ACA2CE; /* Color de fondo de la burbuja enviada */
+
+    /* Typing indicator */
+    --typing-bg: #ACA2CE; /* Fondo del typing indicator */
+
+    /* Marca / acentos */
+    --brand-primary: #ACA2CE; /* Color de la marca principal */
+    --brand-primary-soft: #ACA2CE; /* Color de la marca principal suave */
+    /* Botones principales */
+    --button-primary-bg: #372564; /* Fondo botón principal (Enviar) */
+    --button-primary-hover-bg: #2c1763; /* Fondo al hover (Enviar) */
+
+    /* Inputs */
+    --input-border-default: #bdbdbd; /* Color de borde del input por defecto */
+    --input-border-focus: #11ce73; /* Color de borde del input al enfocar */
+
+    /* Estados y acciones */
+    --accent-orange: #FF6523; /* Color de accento naranja */
+
+    /* Error 429 */
+    --error-429-bg: #ff4444; /* Color de fondo del error 429 */
+    --error-429-border: #ff6666; /* Color de borde del error 429 */
+}
 
 html, body {
     height: 100%;
@@ -36,7 +83,7 @@ html, body {
     flex: 1 1 auto;
     overflow-y: auto; /* Solo aquí el scroll */
     width: 100%;
-    background-color: #f5f5f5;
+    background-color: var(--app-bg);
     border-radius: 0.7rem;
     padding: 1rem;
     min-height: 0; /* Importante para que flexbox no rompa el scroll */
@@ -46,8 +93,8 @@ html, body {
 /* Estilo para el mensaje recibido */
 .mensaje-recibido {
     position: relative;
-    background-color: #DADADA; /* Color de fondo */
-    color: #000; /* Color del texto */
+    background-color: var(--bubble-received-bg); /* Color de fondo */
+    color: var(--color-text-base); /* Color del texto */
     border-radius: 10px; /* Bordes redondeados */
     padding: 0.7rem 1.2rem;
     margin: 0.3rem 0 1rem 0; /* Solo margen inferior */
@@ -57,7 +104,6 @@ html, body {
     align-self: flex-end; /* Alinear a la derecha */
     position: relative; /* Para el pseudo-elemento */    
     font-family: 'Arial', Redounded LT Pro !important;
-    font-size: 1.1rem;
     word-wrap: break-word; /* Permite que las palabras largas se dividan */
     overflow-wrap: break-word; /* Asegura que el texto se ajuste al contenedor */
     white-space: normal; /* Mantiene los saltos de línea y ajusta el texto */
@@ -68,13 +114,13 @@ html, body {
     display: block;
     font-size: 0.75rem;
     font-weight: bold;
-    color: #666;
+    color: var(--color-text-muted);
     margin-bottom: 0.3rem;
     letter-spacing: 0.5px;
 }
 .label-fuerte {
     font-family: 'Arial Black', sans-serif;
-    color: black;
+    color: var(--color-text-strong);
   }
   
 /* Agregar un pseudo-elemento para simular la burbuja */
@@ -85,14 +131,14 @@ html, body {
     right: 10px; /* Ajustar la posición */
     border-width: 10px;
     border-style: solid;
-    border-color: #DADADA transparent transparent transparent; /* Triángulo invertido */
+    border-color: var(--bubble-received-bg) transparent transparent transparent; /* Triángulo invertido */
 }
 
 /* Estilo para el mensaje enviado */
 .mensaje-enviado {
     position: relative;
-    background-color: #ACA2CE ; /* Color de fondo */
-    color: #000000; /* Color del texto */
+    background-color: var(--bubble-sent-bg); /* Color de fondo */
+    color: var(--color-text-base); /* Color del texto */
     border-radius: 10px; /* Bordes redondeados */
     padding: 0.7rem 1.2rem;
     margin: 0.3rem 0 1rem 0; /* Solo margen inferior */
@@ -102,7 +148,6 @@ html, body {
     align-self: flex-start; /* Alinear a la izquierda */
     position: relative; /* Para el pseudo-elemento */
     font-family: 'Arial', Redounded LT Pro !important;
-    font-size: 1.1rem;
     word-wrap: break-word; /* Permite que las palabras largas se dividan */
     overflow-wrap: break-word; /* Asegura que el texto se ajuste al contenedor */
 }
@@ -112,7 +157,7 @@ html, body {
     display: block;
     font-size: 0.75rem;
     font-weight: bold;
-    color: #333;
+    color: var(--color-text-secondary);
     margin-bottom: 0.3rem;
     letter-spacing: 0.5px;
 }
@@ -125,14 +170,14 @@ html, body {
     left: 10px; /* Ajustar la posición */
     border-width: 7px;
     border-style: solid;
-    border-color: transparent transparent #ACA2CE  transparent; /* Triángulo */
+    border-color: transparent transparent var(--bubble-sent-bg) transparent; /* Triángulo */
 }
 
 /* ! INDICADOR DE ESCRIBIENDO (TYPING INDICATOR) */
 .typing-indicator {
     position: relative;
-    background-color: #ACA2CE; /* Mismo color que mensaje-enviado */
-    color: #000000;
+    background-color: var(--typing-bg); /* Mismo color que mensaje-enviado */
+    color: var(--color-text-base);
     border-radius: 10px;
     padding: 0.7rem 1.2rem;
     margin: 0.3rem 0 1rem 0;
@@ -152,7 +197,7 @@ html, body {
     left: 10px;
     border-width: 7px;
     border-style: solid;
-    border-color: transparent transparent #ACA2CE transparent;
+    border-color: transparent transparent var(--typing-bg) transparent;
 }
 
 /* Contenedor de los puntos */
@@ -205,13 +250,14 @@ html, body {
 
 /* Estilo para las etiquetas <a> */
 a {
-    color: #214780; /* Color azul */
+    color: var(--color-link); /* Color azul */
     font-weight: bold; /* Negrita */
     text-decoration: none; /* Sin subrayado */
 }
 
 a:hover {
     text-decoration: underline; /* Subrayar al pasar el mouse */
+    color: var(--color-link-hover);
 }
 
 /* * FORMULARIO DE CHAT */
@@ -247,16 +293,15 @@ a:hover {
 
 /* * CAMPO DE TEXTO */
 #txt_mensaje {
-    min-height: 2.75rem;
     max-height: 8rem;
     overflow-y: auto !important;
     resize: none;
     font-family: 'Arial', Redounded LT Pro !important;
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 400;
-    color: #000;
+    color: var(--color-text-base);
     border: none;
-    border-bottom: 1px solid #bdbdbd !important; /* Gris claro por defecto */
+    border-bottom: 1px solid var(--input-border-default) !important; /* Gris claro por defecto */
     margin-bottom: 0 !important;
     box-sizing: border-box;
     background: #fff;
@@ -265,7 +310,7 @@ a:hover {
 
 #txt_mensaje:focus {
     outline: none !important;
-    border-bottom: 1px solid #11ce73 !important; /* Azul Materialize al enfocar */
+    border-bottom: 1px solid var(--input-border-focus) !important; /* Color al enfocar */
     background: #fff;
 }
 
@@ -290,24 +335,33 @@ a:hover {
 
 @media only screen and (max-width: 320px){
     textarea#txt_mensaje {
-        font-size: 0.99rem;
+        font-size: 0.9rem;
         min-height: 30px;
     }
 }
 
 /* * BOTONES */
-#btnEnviar {
-    background: #372564  !important;
+#btnEnviar,
+button#btnEnviar,
+.btn#btnEnviar,
+#btnEnviar.btn {
+    background: var(--button-primary-bg) !important;
+    cursor: pointer;
+    transition: background 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-#btnEnviar:hover {
+#btnEnviar:hover,
+button#btnEnviar:hover,
+.btn#btnEnviar:hover,
+#btnEnviar.btn:hover {
+    background: var(--button-primary-hover-bg) !important;
     animation: btnEnviar 0.5s ease-in-out, scaleUp 0.3s ease-in-out; /* Efecto de escalado */
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4); /* Sombra más pronunciada */
-    transform: translateY(-1px); /* Elevar ligeramente el botón */
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.45); /* Sombra más pronunciada */
+    filter: brightness(1.12); /* Aumento de brillo para notar el hover */
 }
 
 #btn_Continuar {
-    background: #372564  !important;
+    background: #0077B6  !important;
   /*  box-shadow: 0 8px 16px rgba(255, 254, 254, 0.4);  Sombra más pronunciada */
     transform: translateY(-1px); /* Elevar ligeramente el botón */
 }
@@ -319,7 +373,7 @@ a:hover {
 }
 
 #btnAdjuntos {
-    background: #372564  !important;
+    background: #0077B6  !important;
 }
 
 #btnAdjuntos:hover {
@@ -329,15 +383,15 @@ a:hover {
 }
 
 @keyframes btnEnviar {
-    0% { background: #ACA2CE ; }
-    50% { background: #ACA2CE ; }
-    100% { background: #ACA2CE ; }
+    0% { background: var(--button-primary-hover-bg); }
+    50% { background: var(--button-primary-hover-bg); }
+    100% { background: var(--button-primary-hover-bg); }
 }
 
 /* Estilos personalizados para Dropify */
 .file-item {
-    background-color: #DADADA;
-    color: #333333;
+    background-color: var(--bubble-received-bg);
+    color: var(--color-text-secondary);
     padding: 5px;
     margin-bottom: 5px;
     border-radius: 5px;
@@ -394,10 +448,10 @@ a:hover {
     font-size: 14px;
     line-height: 22px;
     color: #777;
-    background-color: #E4E8F0;
+    background-color: var(--panel-bg);
     background-image: none;
     text-align: center;
-    border: 2px solid #AAB8D0;
+    border: 2px solid var(--panel-border);
     -webkit-transition: border-color .15s linear;
     transition: border-color .15s linear;
 }
@@ -480,10 +534,10 @@ a:hover {
     height: 70vh;
     padding: 0.5rem;
     border-radius: 0.5rem;
-    font-size: 1.05rem;
+    font-size: 0.95rem;
   }
   .mensaje-recibido, .mensaje-enviado {
-    font-size: 1.05rem;
+    font-size: 0.95rem;
     padding: 0.5rem 0.7rem;
     border-radius: 0.5rem;
   }
@@ -522,7 +576,7 @@ a:hover {
 
 .modal {
   z-index: 1125001 !important;
-  background: #ACA2CE !important;
+  background: #6d94cd85 !important;
   color: #000000 !important;
   border-radius: 12px;
   max-height: 90vh; /* Limita la altura máxima al 90% de la pantalla */
@@ -675,7 +729,7 @@ color: #000000 !important;
     display: none !important;
 }
 .select2-dropdown {
-    background: #ACA2CE !important;
+    background: #6d94cd85 !important;
     color: #000000 !important;
     z-index: 1200000 !important;
 }
@@ -745,9 +799,9 @@ color: #000000 !important;
 
 /* Mensaje de error 429 más legible */
 .mensaje-error-429 {
-    background-color: #ff4444 !important;
-    color: #ffffff !important;
-    border: 2px solid #ff6666;
+    background-color: var(--error-429-bg) !important;
+    color: var(--color-text-inverted) !important;
+    border: 2px solid var(--error-429-border);
     text-align: center;
     font-weight: bold;
     padding: 1rem;
@@ -764,32 +818,32 @@ color: #000000 !important;
 
 /* Estilos específicos para el contenido del mensaje de error */
 .mensaje-error-429 .texto {
-    color: #ffffff !important;
+    color: var(--color-text-inverted) !important;
 }
 
 .mensaje-error-429 .remitente {
-    color: #ffffff !important;
+    color: var(--color-text-inverted) !important;
     font-weight: bold;
 }
 
 .mensaje-error-429 p {
-    color: #ffffff !important;
+    color: var(--color-text-inverted) !important;
     font-weight: bold;
     margin: 0.5rem 0;
 }
 
 .mensaje-error-429 strong {
-    color: #ffffff !important;
+    color: var(--color-text-inverted) !important;
     font-weight: bold;
 }
 
 .mensaje-error-429 small {
-    color: #ffffff !important;
+    color: var(--color-text-inverted) !important;
     font-weight: normal;
 }
 
 .mensaje-error-429 #countdown-429 {
-    color: #ffffff !important;
+    color: var(--color-text-inverted) !important;
     font-weight: bold;
     font-size: 1.1em;
 }

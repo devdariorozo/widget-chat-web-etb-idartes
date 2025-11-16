@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                     HERRAMIENTA DE DESENCRIPTACIÓN VARIABLES DE ENTORNO
 // ! ================================================================================================================================================
-// @Autor: Ramón Dario Rozo Torres
-// @Última Modificación: Dario Rozo
+// @Autor: Ramón Dario Rozo Torres (13 de Febrero de 2025)
+// @Última Modificación: Dario Rozo (13 de Febrero de 2025)
 // @version 1.0.0
 // v1/utils/decryptEnv.js
 

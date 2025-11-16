@@ -7,8 +7,8 @@
 // v1/widget/chatWeb.js
 
 // ! VARIABLES GLOBALES
-// const APP_URL = '???'; // Producción
-// const APP_URL = 'https://???'; // 715 QA
+// const APP_URL = 'https://idcexteriorchatbot.mysoul.software'; // Producción
+// const APP_URL = 'https://???.mysoul.software'; // 715 QA
 const APP_URL = 'http://localhost:5006'; // Desarrollo
 let chatWeb = '';
 let idChatWeb = '';
@@ -131,17 +131,40 @@ function inicializarWidgetChat() {
                 // * Enviar mensaje al iframe inmediatamente para restaurar el chat
                 if (iframeChatWeb.contentWindow) {
                     try {
+                        // Determinar el targetOrigin para postMessage
+                        let targetOrigin = APP_URL;
+                        try {
+                            const iframeOrigin = iframeChatWeb.contentWindow.location.origin;
+                            if (iframeOrigin && iframeOrigin !== 'null' && iframeOrigin !== 'about:blank') {
+                                targetOrigin = iframeOrigin;
+                            } else {
+                                targetOrigin = '*';
+                            }
+                        } catch (e) {
+                            // Si hay error de same-origin, usar '*' como fallback
+                            targetOrigin = '*';
+                        }
+                        
                         // Usar 'Minimizar' para cargar la conversación completa existente
                         iframeChatWeb.contentWindow.postMessage(
                             { 
                                 chatWeb: 'Minimizar', 
                                 idWidgetChatWeb: idChatWeb 
                             }, 
-                            APP_URL
+                            targetOrigin
                         );
                         // console.log('✅ Mensaje de restauración enviado al iframe con ID:', idChatWeb);
                     } catch (e) {
                         console.error('❌ Error al enviar mensaje para restaurar chat:', e);
+                        // Intentar con '*' como fallback
+                        try {
+                            iframeChatWeb.contentWindow.postMessage(
+                                { chatWeb: 'Minimizar', idWidgetChatWeb: idChatWeb }, 
+                                '*'
+                            );
+                        } catch (e2) {
+                            console.error('❌ Error incluso con fallback:', e2);
+                        }
                     }
                 }
                 return; // Salir aquí - chat restaurado
@@ -170,17 +193,39 @@ function inicializarWidgetChat() {
                     // * Enviar mensaje al iframe para restaurar el chat con el ID existente
                     if (iframeChatWeb.contentWindow) {
                         try {
+                            // Determinar el targetOrigin para postMessage
+                            let targetOrigin = APP_URL;
+                            try {
+                                const iframeOrigin = iframeChatWeb.contentWindow.location.origin;
+                                if (iframeOrigin && iframeOrigin !== 'null' && iframeOrigin !== 'about:blank') {
+                                    targetOrigin = iframeOrigin;
+                                } else {
+                                    targetOrigin = '*';
+                                }
+                            } catch (e) {
+                                targetOrigin = '*';
+                            }
+                            
                             // Usar 'Minimizar' para cargar la conversación completa existente
                             iframeChatWeb.contentWindow.postMessage(
                                 { 
                                     chatWeb: 'Minimizar', 
                                     idWidgetChatWeb: idChatWeb 
                                 }, 
-                                APP_URL
+                                targetOrigin
                             );
                             // console.log('✅ Mensaje de restauración enviado al iframe con ID:', idChatWeb);
                         } catch (e) {
                             console.error('❌ Error al enviar mensaje para restaurar chat:', e);
+                            // Intentar con '*' como fallback
+                            try {
+                                iframeChatWeb.contentWindow.postMessage(
+                                    { chatWeb: 'Minimizar', idWidgetChatWeb: idChatWeb }, 
+                                    '*'
+                                );
+                            } catch (e2) {
+                                console.error('❌ Error incluso con fallback:', e2);
+                            }
                         }
                     }
                 }, 1000); // Dar tiempo para que el iframe se inicialice
@@ -310,14 +355,45 @@ function inicializarWidgetChat() {
 
     // * Minimizar el chat web
     btnMinimizarChatWeb.addEventListener('click', () => {
-        
-        iframeChatWeb.contentWindow.postMessage(
-            { 
-                chatWeb: 'Minimizar', 
-                idWidgetChatWeb: idChatWeb 
-            }, 
-            window.location.origin
-        );
+        try {
+            // Determinar el targetOrigin para postMessage
+            let targetOrigin = window.location.origin || APP_URL;
+            if (!targetOrigin || targetOrigin === 'null' || targetOrigin === 'file://') {
+                try {
+                    const iframeOrigin = iframeChatWeb.contentWindow?.location?.origin;
+                    if (iframeOrigin && iframeOrigin !== 'null' && iframeOrigin !== 'about:blank') {
+                        targetOrigin = iframeOrigin;
+                    } else {
+                        targetOrigin = '*';
+                    }
+                } catch (e) {
+                    targetOrigin = '*';
+                }
+            }
+            
+            if (iframeChatWeb.contentWindow) {
+                iframeChatWeb.contentWindow.postMessage(
+                    { 
+                        chatWeb: 'Minimizar', 
+                        idWidgetChatWeb: idChatWeb 
+                    }, 
+                    targetOrigin
+                );
+            }
+        } catch (e) {
+            console.error('❌ Error al enviar mensaje de minimizar:', e);
+            // Intentar con '*' como fallback
+            try {
+                if (iframeChatWeb.contentWindow) {
+                    iframeChatWeb.contentWindow.postMessage(
+                        { chatWeb: 'Minimizar', idWidgetChatWeb: idChatWeb }, 
+                        '*'
+                    );
+                }
+            } catch (e2) {
+                console.error('❌ Error incluso con fallback:', e2);
+            }
+        }
         
         toggleChatState(false);
     });
@@ -409,26 +485,26 @@ function inicializarWidgetChat() {
             });
         }
         
-        else if (data.type === 'enviarFormulario') {
-            // El iframe quiere enviar formulario inicial
-            enviarPeticion(
-                `${APP_URL}/widget/chat/formularioInicial`,
-                'POST',
-                data.datos
-            ).then(response => {
-                iframeChatWeb.contentWindow.postMessage({
-                    type: 'respuestaFormulario',
-                    id: data.id,
-                    response: response
-                }, window.location.origin);
-            }).catch(error => {
-                iframeChatWeb.contentWindow.postMessage({
-                    type: 'respuestaFormulario',
-                    id: data.id,
-                    error: error.message
-                }, window.location.origin);
-            });
-        }
+        // else if (data.type === 'enviarFormulario') {
+        //     // El iframe quiere enviar formulario inicial
+        //     enviarPeticion(
+        //         `${APP_URL}/widget/chat/formularioInicial`,
+        //         'POST',
+        //         data.datos
+        //     ).then(response => {
+        //         iframeChatWeb.contentWindow.postMessage({
+        //             type: 'respuestaFormulario',
+        //             id: data.id,
+        //             response: response
+        //         }, window.location.origin);
+        //     }).catch(error => {
+        //         iframeChatWeb.contentWindow.postMessage({
+        //             type: 'respuestaFormulario',
+        //             id: data.id,
+        //             error: error.message
+        //         }, window.location.origin);
+        //     });
+        // }
     });
 }
 

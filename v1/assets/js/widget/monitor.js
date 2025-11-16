@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                      JS PARA MONITOR CHATS
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres
-// @lastModified Ramón Dario Rozo Torres
+// @author Ramón Dario Rozo Torres (14 de Marzo de 2025)
+// @lastModified Ramón Dario Rozo Torres (14 de Marzo de 2025)
 // @version 1.0.0
 // v1/assets/js/widget/monitor.js
 
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     } catch (error) {
         // todo: notificamos
-        controlNotificaciones('error', 'ETB - IDARTES', 'Error al listar las opciones de control API, por favor inténtelo de nuevo y/o comuníquese con nosotros.');
+        controlNotificaciones('error', 'Widget Chat Web ETB - IDARTES', 'Error al listar las opciones de control API, por favor inténtelo de nuevo y/o comuníquese con nosotros.');
     }
 
     // * CONFIGURACION DATATABLE CON PAGUINACION EN EL SERVIDOR
@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         page: 'all' // Exportar todos los registros
                     }
                 },
-                filename: 'Reporte Widget ETB - IDARTES',
+                filename: 'Reporte Widget Thomas Greg y Sons',
                 charset: 'utf-8'
             },
             {
@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 },
                 bom: true,
-                filename: 'Reporte Widget ETB - IDARTES',
+                filename: 'Reporte Widget Thomas Greg y Sons',
                 charset: 'utf-8'
             },
             {
@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 },
                 bom: true,
-                filename: 'Reporte Widget ETB - IDARTES',
+                filename: 'Reporte Widget Thomas Greg y Sons',
                 charset: 'utf-8'
             }
         ],
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('content_form').classList.remove('hide');
         document.getElementById('content_preload').classList.add('hide');
         // Notificamos
-        controlNotificaciones('success', 'ETB - IDARTES', 'Se listaron correctamente los registros en el sistema.');
+        controlNotificaciones('success', 'Widget Chat Web ETB - IDARTES', 'Se listaron correctamente los registros en el sistema.');
     });
 
 
@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // todo: alerta de confirmacion
         swal.fire({
             position: 'center',
-            title: 'ETB - IDARTES',
+            title: 'Widget Chat Web ETB - IDARTES',
             html: `<i class="fas fa-hand-point-right"></i> Monitorear Chats?`,
             icon: 'info',
             showCancelButton: true,
@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.getElementById('content_preload').classList.remove('hide');
 
                 // todo: notificamos
-                controlNotificaciones('info', 'ETB - IDARTES', 'Consultando registros, por favor espere...');
+                controlNotificaciones('info', 'Widget Chat Web ETB - IDARTES', 'Consultando registros, por favor espere...');
 
                 // todo: blindeje de campos
                 if (document.getElementById('txt_fechaInicial').value && document.getElementById('txt_fechaFinal').value && document.getElementById('txt_controlApi').value) {
@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     document.getElementById('content_preload').classList.add('hide');
                     document.getElementById('content_form').classList.remove('hide');
                     // todo: notificamos
-                    controlNotificaciones('warning', 'ETB - IDARTES', 'Tienes campos incorrectos en el formulario...');
+                    controlNotificaciones('warning', 'Widget Chat Web ETB - IDARTES', 'Tienes campos incorrectos en el formulario...');
                     return;
                 }
 
@@ -391,7 +391,7 @@ async function listarRegistros(data, callback) {
             document.getElementById('total_error').textContent = await formatearNumeroMiles(result.data.filter(item => item.CONTROL_API === 'Error').length);
         } else {
             // todo: notificamos
-            controlNotificaciones('warning', 'ETB - IDARTES', result.message);
+            controlNotificaciones('warning', 'Widget Chat Web ETB - IDARTES', result.message);
 
             // todo: Llamamos las funciones de validación
             valida_txt_fechaInicial();
@@ -400,7 +400,7 @@ async function listarRegistros(data, callback) {
         }
     } catch (error) {
         // todo: notificamos
-        controlNotificaciones('error', 'ETB - IDARTES', 'Error al listar los registros, por favor inténtelo de nuevo y/o comuníquese con nosotros.');
+        controlNotificaciones('error', 'Widget Chat Web ETB - IDARTES', 'Error al listar los registros, por favor inténtelo de nuevo y/o comuníquese con nosotros.');
     }
 }
 

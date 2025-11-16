@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                      CONTROLADORES PARA MENSAJE
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres
-// @lastModified Ramón Dario Rozo Torres
+// @author Ramón Dario Rozo Torres (24 de Enero de 2025)
+// @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
 // @version 1.0.0
 // v1/controllers/widget/mensaje.controller.js
 
@@ -48,7 +48,7 @@ const crear = async (req, res) => {
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: errors.array()[0].msg
             });
         }
@@ -101,7 +101,7 @@ const crear = async (req, res) => {
                     return res.json({
                         status: 200,
                         type: 'success',
-                        title: 'ETB - IDARTES',
+                        title: 'Widget Chat Web ETB - IDARTES',
                         message: 'El mensaje se ha creado correctamente en el sistema.',
                     });
                 }
@@ -121,7 +121,7 @@ const crear = async (req, res) => {
             res.json({
                 status: 400,
                 type: 'warning',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: 'El chat no existe en el sistema.'
             });
         }
@@ -139,7 +139,7 @@ const crear = async (req, res) => {
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: 'ETB - IDARTES',
+            title: 'Widget Chat Web ETB - IDARTES',
             message: 'No se pudo crear el mensaje, por favor intenta de nuevo o comunícate con nosotros.',
             error: error.message
         });
@@ -173,7 +173,7 @@ const crearSoulChat = async (req, res) => {
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: errors.array()[0].msg
             });
         }
@@ -214,7 +214,7 @@ const crearSoulChat = async (req, res) => {
             return res.json({
                 status: 200,
                 type: 'success',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: 'El mensaje se ha creado correctamente en el sistema.',
             });
         }
@@ -232,7 +232,7 @@ const crearSoulChat = async (req, res) => {
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: 'ETB - IDARTES',
+            title: 'Widget Chat Web ETB - IDARTES',
             message: 'No se pudo crear el mensaje, por favor intenta de nuevo o comunícate con nosotros.',
             error: error.message
         });
@@ -266,7 +266,7 @@ const listarNoLeido = async (req, res) => {
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: errors.array()[0].msg
             });
         }
@@ -298,7 +298,7 @@ const listarNoLeido = async (req, res) => {
             res.json({
                 status: 200,
                 type: 'success',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: 'Los mensajes se han listado correctamente en el sistema.',
                 data: result
             });
@@ -317,7 +317,7 @@ const listarNoLeido = async (req, res) => {
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: 'ETB - IDARTES',
+            title: 'Widget Chat Web ETB - IDARTES',
             message: 'No se pudo listar los mensajes, por favor intenta de nuevo o comunícate con nosotros.',
             error: error.message
         });
@@ -351,7 +351,7 @@ const leer = async (req, res) => {
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: errors.array()[0].msg
             });
         }
@@ -382,7 +382,7 @@ const leer = async (req, res) => {
         res.json({
             status: 200,
                 type: 'success',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: 'El mensaje se ha leído correctamente en el sistema.',
             });
         }
@@ -400,7 +400,7 @@ const leer = async (req, res) => {
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: 'ETB - IDARTES',
+            title: 'Widget Chat Web ETB - IDARTES',
             message: 'No se pudo leer el mensaje, por favor intenta de nuevo o comunícate con nosotros.',
             error: error.message
         });
@@ -434,7 +434,7 @@ const adjuntarArchivos = async (req, res) => {
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: errors.array()[0].msg
             });
         }
@@ -456,7 +456,7 @@ const adjuntarArchivos = async (req, res) => {
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: 'No se han recibido archivos.'
             });
         }
@@ -481,7 +481,7 @@ const adjuntarArchivos = async (req, res) => {
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: 'Algunos archivos tienen extensiones no permitidas.'
             });
         }
@@ -544,7 +544,7 @@ const adjuntarArchivos = async (req, res) => {
                 return res.json({
                     status: 200,
                     type: 'success',
-                    title: 'ETB - IDARTES',
+                    title: 'Widget Chat Web ETB - IDARTES',
                     message: 'Archivos y mensaje subidos exitosamente.',
                 });
             }
@@ -562,7 +562,7 @@ const adjuntarArchivos = async (req, res) => {
             res.json({
                 status: 400,
                 type: 'warning',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: 'El chat no existe en el sistema.'
             });
         }
@@ -580,7 +580,7 @@ const adjuntarArchivos = async (req, res) => {
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: 'ETB - IDARTES',
+            title: 'Widget Chat Web ETB - IDARTES',
             message: 'No se pudo adjuntar los archivos, por favor intenta de nuevo o comunícate con nosotros.',
             error: error.message
         });
@@ -614,7 +614,7 @@ const listarConversacion = async (req, res) => {
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: errors.array()[0].msg
             });
         }
@@ -641,7 +641,7 @@ const listarConversacion = async (req, res) => {
             res.json({
                 status: 200,
                 type: 'success',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: 'La conversación se ha listado correctamente en el sistema.',
                 data: result
             });
@@ -660,7 +660,7 @@ const listarConversacion = async (req, res) => {
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: 'ETB - IDARTES',
+            title: 'Widget Chat Web ETB - IDARTES',
             message: 'No se pudo listar la conversación, por favor intenta de nuevo o comunícate con nosotros.',
             error: error.message
         });

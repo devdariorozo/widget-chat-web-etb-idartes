@@ -1,0 +1,58 @@
+{
+	"info": {
+		"_postman_id": "d0f778d3-1a12-4e23-8582-6fb837787680",
+		"name": "Widget_Chat_Web_Thomas_Gregysons",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "18922285"
+	},
+	"item": [
+		{
+			"name": "Filtrar Chat AI",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5000/widget/chat/filtrar?idChatWeb=wtkphjh39qs",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"widget",
+						"chat",
+						"filtrar"
+					],
+					"query": [
+						{
+							"key": "idChatWeb",
+							"value": "wtkphjh39qs"
+						},
+						{
+							"key": "idChat",
+							"value": "10",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Crear Mensaje AI",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "Cerrar Chat AI",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	]
+}

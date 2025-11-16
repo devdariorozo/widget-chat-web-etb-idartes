@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                      MODELOS PARA MENSAJE
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres
-// @lastModified Ramón Dario Rozo Torres
+// @author Ramón Dario Rozo Torres (24 de Enero de 2025)
+// @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
 // @version 1.0.0
 // v1/models/widget/mensaje.model.js
 
@@ -65,18 +65,18 @@ const existeMensajeReciente = async (idChat, remitente, tipoMensaje, contenido, 
 const crear = async (idChat, remitente, estadoMensaje, tipoMensaje, contenido, enlaces, lectura, descripcion, estadoRegistro, responsable) => {
     let connMySQL;
     try {
-        // Permitir duplicados solo si el contenido contiene ciertas clases especiales
-        const permitirDuplicado =
-            (typeof contenido === 'string' &&
-                (contenido.includes('alertaErrorAPIArbol') || contenido.includes('alertaInactividadArbol')));
-        if (!permitirDuplicado) {
-            // Verificar si ya existe un mensaje igual en toda la conversación (normalizado)
-            const mensajes = await listarConversacion(idChat);
-            const contenidoNormalizado = normalizarContenido(contenido);
-            if (mensajes && mensajes.some(msg => normalizarContenido(msg.CONTENIDO) === contenidoNormalizado)) {
-                return false;
-            }
-        }
+        // // Permitir duplicados solo si el contenido contiene ciertas clases especiales
+        // const permitirDuplicado =
+        //     (typeof contenido === 'string' &&
+        //         (contenido.includes('alertaErrorAPIArbol') || contenido.includes('alertaInactividadArbol')));
+        // if (!permitirDuplicado) {
+        //     // Verificar si ya existe un mensaje igual en toda la conversación (normalizado)
+        //     const mensajes = await listarConversacion(idChat);
+        //     const contenidoNormalizado = normalizarContenido(contenido);
+        //     if (mensajes && mensajes.some(msg => normalizarContenido(msg.CONTENIDO) === contenidoNormalizado)) {
+        //         return false;
+        //     }
+        // }
         // todo: Obtener conexión del pool
         connMySQL = await pool.getConnection();
 

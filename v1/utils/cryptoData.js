@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                          HERAMIENTA DE CIFRADO Y DESCIFRADO DE DATOS
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres
-// @lastModified Ramón Dario Rozo Torres
+// @author Ramón Dario Rozo Torres (30 de Julio de 2024)
+// @lastModified Ramón Dario Rozo Torres (30 de Julio de 2024)
 // @version 1.0.0
 // backend/v1/utils/cryptoData.js
 

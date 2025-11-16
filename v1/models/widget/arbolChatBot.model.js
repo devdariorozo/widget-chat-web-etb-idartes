@@ -18,42 +18,30 @@ const logger = require('../../logger');
 
 // ! VARIABLES GLOBALES
 let chatData = {
-    controlApi: '-',
-    controlPeticiones: '-',
+    controlApi: dataEstatica.configuracion.controlApi.success,
+    controlPeticiones: 0,
     resultadoApi: '-',
-    nombres: '-',
-    apellidos: '-',
-    numeroCedula: '-',
-    paisResidencia: '-',
-    ciudadResidencia: '-',
-    indicativoPais: '-',
-    numeroCelular: '-',
+    nombresApellidos: '-',
+    genero: '-',
     correoElectronico: '-',
-    autorizacionDatosPersonales: '-',
-    adjuntos: '-',
-    rutaAdjuntos: '-',
+    telefono: '-',
+    localidad: '-',
+    enQuePodemosAyudarle: '-',
+    rangoEdad: '-',
+    autorizacionTratamientoDatos: '-',
     descripcion: '-',
-    estadoRegistro: '-',
-    responsable: '-',
+    estadoRegistro: dataEstatica.configuracion.estadoRegistro.activo,
+    responsable: dataEstatica.configuracion.responsable,
 };
 
 // ! MODELOS
 // * ARBOL CHAT BOT
 const arbolChatBot = async (remitente, contenido) => {
-    
     // Variables
     const defaultData = '-';
     const chat = await modelChat.filtrar(remitente);
-    if (!chat || chat.length === 0) {
-        logger.warn({
-            contexto: 'model',
-            recurso: 'arbolChatBot.arbolChatBot',
-            remitente
-        }, 'No se encontró chat asociado al remitente');
-        return false;
-    }
-
     const idChat = chat[0].ID_CHAT;
+    const arbolChat = chat[0].ARBOL;
     const estadoGestionChat = chat[0].GESTION;
 
     // Deserializar los datos después de recuperarlos
@@ -66,121 +54,534 @@ const arbolChatBot = async (remitente, contenido) => {
     } catch (e) {
         chatData.resultadoApi = chat[0].RESULTADO_API || defaultData;
     }
-    chatData.nombres = chat[0].NOMBRES || defaultData;
-    chatData.apellidos = chat[0].APELLIDOS || defaultData;
-    chatData.numeroCedula = chat[0].NUMERO_CEDULA || defaultData;
-    chatData.paisResidencia = chat[0].PAIS_RESIDENCIA || defaultData;
-    chatData.ciudadResidencia = chat[0].CIUDAD_RESIDENCIA || defaultData;
-    chatData.indicativoPais = chat[0].INDICATIVO_PAIS || defaultData;
-    chatData.numeroCelular = chat[0].NUMERO_CELULAR || defaultData;
+    chatData.nombresApellidos = chat[0].NOMBRES_APELLIDOS || defaultData;
+    chatData.genero = chat[0].GENERO || defaultData;
     chatData.correoElectronico = chat[0].CORREO_ELECTRONICO || defaultData;
-    chatData.autorizacionDatosPersonales = chat[0].AUTORIZACION_DATOS_PERSONALES || defaultData;
-    chatData.adjuntos = chat[0].ADJUNTOS || defaultData;
-    chatData.rutaAdjuntos = chat[0].RUTA_ADJUNTOS || defaultData;
+    chatData.telefono = chat[0].TELEFONO || defaultData;
+    chatData.localidad = chat[0].LOCALIDAD || defaultData;
+    chatData.enQuePodemosAyudarle = chat[0].EN_QUE_PODEMOS_AYUDARLE || defaultData;
+    chatData.rangoEdad = chat[0].RANGO_EDAD || defaultData;
+    chatData.autorizacionTratamientoDatos = chat[0].AUTORIZACION_TRATAMIENTO_DATOS || defaultData;
     chatData.descripcion = chat[0].DESCRIPCION || defaultData;
     chatData.estadoRegistro = chat[0].REGISTRO || defaultData;
     chatData.responsable = chat[0].RESPONSABLE || defaultData;
 
-    if (estadoGestionChat === 'Cerrado') {
-        return await chatCerrado(idChat, remitente);
-    }
+    if (estadoGestionChat !== 'Cerrado') {
+        try {
+            // todo: Saludo Arbol
+            if (arbolChat === 'Saludo' || arbolChat === 'Alerta No Entiendo - Saludo') {
+                    
+                // todo: Solicitar Nombres y Apellidos
+                return await solicitarNombresApellidos(idChat, remitente);                
+            }
 
-    try {
-        // ! Siempre se envía el mensaje directamente a AI Soul
-        const result = await enviarMensajeSoulChat(idChat, remitente, contenido);
-        return result || true;
-    } catch (error) {
-        const api = 'Chat Web ETB - IDARTES ';
-        const procesoApi = 'Arbol Chat Bot';
-        logger.error({
-            contexto: 'model',
-            recurso: 'arbolChatBot.arbolChatBot',
-            codigoRespuesta: 500,
-            errorMensaje: error.message,
-            errorStack: error.stack,
-            idChat,
-            remitente,
-            api,
-            procesoApi
-        }, 'Error en v1/models/widget/arbolChatBot.model.js → arbolChatBot');
-        return await errorAPI(api, procesoApi, error, idChat, remitente);
+            // todo: Nombres y Apellidos Arbol
+            if (arbolChat === 'Solicitar Nombres Apellidos' || arbolChat === 'Alerta No Entiendo - Solicitar Nombres Apellidos') {
+                // ? Procesar Nombres y Apellidos
+                return await procesarNombresApellidos(idChat, remitente, contenido);
+            }
+
+            // todo: Género Arbol
+            if (arbolChat === 'Solicitar Genero' || arbolChat === 'Alerta No Entiendo - Solicitar Genero') {
+                // ? Procesar Género
+                return await procesarGenero(idChat, remitente, contenido);
+            }
+
+            // todo: Correo Electrónico Arbol
+            if (arbolChat === 'Solicitar Correo Electrónico' || arbolChat === 'Alerta No Entiendo - Solicitar Correo Electrónico') {
+                // ? Procesar Correo Electrónico
+                return await procesarCorreoElectronico(idChat, remitente, contenido);
+            }
+
+            // todo: Número de Teléfono Arbol
+            if (arbolChat === 'Solicitar Numero Telefono' || arbolChat === 'Alerta No Entiendo - Solicitar Numero Telefono') {
+                // ? Procesar Número de Teléfono
+                return await procesarNumeroTelefono(idChat, remitente, contenido);
+            }
+
+            // todo: Localidad Arbol
+            if (arbolChat === 'Solicitar Localidad' || arbolChat === 'Alerta No Entiendo - Solicitar Localidad') {
+                // ? Procesar Localidad
+                return await procesarLocalidad(idChat, remitente, contenido);
+            }
+
+            // todo: En Que Podemos Ayudarle Arbol
+            if (arbolChat === 'Solicitar En Que Podemos Ayudarle' || arbolChat === 'Alerta No Entiendo - Solicitar En Que Podemos Ayudarle') {
+                // ? Procesar En Que Podemos Ayudarle
+                return await procesarEnQuePodemosAyudarle(idChat, remitente, contenido);
+            }
+
+            // todo: Rango Edad Arbol
+            if (arbolChat === 'Solicitar Rango Edad' || arbolChat === 'Alerta No Entiendo - Solicitar Rango Edad') {
+                // ? Procesar Rango Edad
+                return await procesarRangoEdad(idChat, remitente, contenido);
+            }
+
+            // todo: Autorizacion Tratamiento Datos Arbol
+            if (arbolChat === 'Solicitar Autorizacion Tratamiento Datos' || arbolChat === 'Alerta No Entiendo - Solicitar Autorizacion Tratamiento Datos') {
+                // ? Procesar Autorizacion Tratamiento Datos
+                return await procesarAutorizacionTratamientoDatos(idChat, remitente, contenido);
+            }
+
+            // todo: Paso Asesor Arbol
+            if (arbolChat === 'Solicitar Paso Asesor' || arbolChat === 'Alerta No Entiendo - Solicitar Paso Asesor') {
+                // ? Procesar Paso Asesor
+                return await procesarPasoAsesorSoulChat(idChat, remitente, contenido);
+            }
+
+            return true;
+        } catch (error) {
+            // todo: Enviar mensaje de error por API
+            const api = dataEstatica.configuracion.responsable;
+            const procesoApi = 'Arbol Chat Bot';
+            console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → arbolChatBot: ', error);
+            return await errorAPI(api, procesoApi, error, idChat, remitente);
+        }
+    } else {
+        return await chatCerrado(idChat, remitente);
     }
 };
 
 // ! FUNCIONES AUXILIARES
-// todo: Cliente Desiste Arbol
-const clienteDesiste = async (idChat, remitente) => {
+
+// todo: Solicitar Nombres y Apellidos Arbol
+const solicitarNombresApellidos = async (idChat, remitente) => {
     try {
-        const pasoArbol = dataEstatica.arbol.clienteDesiste;
-        chatData.descripcion = 'Cliente desiste de continuar con la atención en el sistema.';
-
-        await modelChat.actualizar(idChat, pasoArbol, chatData);
-
-        await crearMensaje(
-            idChat,
-            remitente,
-            dataEstatica.configuracion.estadoMensaje.enviado,
-            dataEstatica.configuracion.tipoMensaje.texto,
-            dataEstatica.mensajes.clienteDesiste,
-            chatData.descripcion
-        );
-
-        await modelChat.cerrar(
-            remitente,
-            dataEstatica.configuracion.estadoChat.recibido,
-            dataEstatica.configuracion.estadoGestion.cerrado,
-            dataEstatica.arbol.despedida,
-            dataEstatica.configuracion.controlApi.success,
-            chatData.descripcion,
-            dataEstatica.configuracion.estadoRegistro.activo,
-            dataEstatica.configuracion.responsable
-        );
-
-        chatData.descripcion = 'Se envía mensaje de despedida.';
-        return await crearMensaje(
-            idChat,
-            remitente,
-            dataEstatica.configuracion.estadoMensaje.enviado,
-            dataEstatica.configuracion.tipoMensaje.finChat,
-            dataEstatica.mensajes.despedida,
-            chatData.descripcion
-        );
+        const solicitarNombresApellidosArbol = dataEstatica.arbol.solicitarNombresApellidos;
+        chatData.descripcion = 'Se solicitan los nombres y apellidos.';
+        await modelChat.actualizar(idChat, solicitarNombresApellidosArbol, chatData);
+        const resultadoMensaje = await crearMensaje(idChat, remitente, dataEstatica.configuracion.estadoMensaje.enviado, dataEstatica.configuracion.tipoMensaje.texto, dataEstatica.mensajes.solicitarNombresApellidos, chatData.descripcion);
+        return resultadoMensaje;
     } catch (error) {
-        // todo: Enviar mensaje de error por API
-        const api = 'Chat Web ETB - IDARTES ';
-        const procesoApi = 'Cliente Desiste';
-        logger.error({
-            contexto: 'model',
-            recurso: 'arbolChatBot.clienteDesiste',
-            codigoRespuesta: 500,
-            errorMensaje: error.message,
-            errorStack: error.stack,
-            idChat,
-            remitente,
-            api,
-            procesoApi
-        }, 'Error en v1/models/widget/arbolChatBot.model.js → clienteDesiste');
+        // ? Error api  
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion solicitarNombresApellidos';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → solicitarNombresApellidos: ', error);
         return await errorAPI(api, procesoApi, error, idChat, remitente);
     }
 };
 
-// todo: Solicitar Formulario Inicial Arbol
-const solicitarFormularioInicial = async (idChat, remitente) => {
-    const solicitarFormularioInicialArbol = dataEstatica.arbol.solicitarFormularioInicial;
-    chatData.descripcion = 'Se solicita el formulario inicial.';
-    await modelChat.actualizar(idChat, solicitarFormularioInicialArbol, chatData);
-    return await crearMensaje(
-        idChat,
-        remitente,
-        dataEstatica.configuracion.estadoMensaje.enviado,
-        dataEstatica.configuracion.tipoMensaje.formulario,
-        dataEstatica.mensajes.solicitarFormularioInicial,
-        chatData.descripcion
-    );
+// todo: Procesar Nombres y Apellidos Arbol
+const procesarNombresApellidos = async (idChat, remitente, contenido) => {
+    try {
+        // Validar que el contenido tenga al menos dos palabras (nombres y apellidos)
+        if (typeof contenido === 'string') {
+            const palabras = contenido.trim().split(/\s+/).filter(Boolean);
+            if (palabras.length >= 2) {
+                // Pasar cada palabra a Capital (primera letra mayúscula, resto minúscula) antes de guardar
+                const nombresApellidosCapital = palabras
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                    .join(' ');
+                    console.log('nombresApellidosCapital: ', nombresApellidosCapital);
+                chatData.nombresApellidos = nombresApellidosCapital;
+
+                // Solicitar Género
+                return await solicitarGenero(idChat, remitente);
+            }
+        }
+        // Si no es válido, llamamos la función para cuando no entiende
+        const pasoArbol = 'Alerta No Entiendo - Solicitar Nombres Apellidos';
+            const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
+            ⚠️ <i>Por favor ingresar minimo un nombre y un apellido.</i></p>`;
+
+        const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+        console.log('resultado manejarNoEntiendo: ', resultado);
+        if (resultado) {
+            // Mostrar nuevamente el mensaje de solicitud para que el usuario vea qué se le está pidiendo
+            const resultadoSolicitar = await solicitarNombresApellidos(idChat, remitente);
+            return resultadoSolicitar;
+        }
+        return false;
+    } catch (error) {
+        // ? Error api  
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion procesarNombresApellidos';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → procesarNombresApellidos: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
 };
 
-// todo: Procesar Mensaje AI Soul Arbol
-const enviarMensajeSoulChat = async (idChat, remitente, contenido) => {
+// todo: Solicitar Genero Arbol
+const solicitarGenero = async (idChat, remitente) => {
+    try {
+        const solicitarGeneroArbol = dataEstatica.arbol.solicitarGenero;
+        chatData.descripcion = 'Se solicita el género.';
+        await modelChat.actualizar(idChat, solicitarGeneroArbol, chatData);
+        return await crearMensaje(idChat, remitente, dataEstatica.configuracion.estadoMensaje.enviado, dataEstatica.configuracion.tipoMensaje.texto, dataEstatica.mensajes.solicitarGenero, chatData.descripcion);
+    } catch (error) {
+        // ? Error api  
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion solicitarGenero';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → solicitarGenero: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Procesar Género Arbol
+const procesarGenero = async (idChat, remitente, contenido) => {
+    try {
+        // ? Procesar Género
+        if (contenido === '1') {
+            chatData.genero = 'Femenino';
+            return await solicitarCorreoElectronico(idChat, remitente);
+        } else if (contenido === '2') {
+            chatData.genero = 'Masculino';
+            return await solicitarCorreoElectronico(idChat, remitente);
+        } else if (contenido === '3') {
+            chatData.genero = 'Transgénero';
+            return await solicitarCorreoElectronico(idChat, remitente);
+        } else {
+            const pasoArbol = 'Alerta No Entiendo - Solicitar Genero';
+            const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
+            ⚠️ <i>Por favor seleccionar una opción válida para continuar.</i></p>`;
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                // Mostrar nuevamente el mensaje de solicitud para que el usuario vea qué se le está pidiendo
+                return await solicitarGenero(idChat, remitente);
+            }
+            return false;
+        }
+    } catch (error) {
+        // ? Error api  
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion procesarGenero';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → procesarGenero: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Solicitar Correo Electrónico Arbol
+const solicitarCorreoElectronico = async (idChat, remitente) => {
+    try {
+        const solicitarCorreoElectronicoArbol = dataEstatica.arbol.solicitarCorreoElectronico;
+        chatData.descripcion = 'Se solicita el correo electrónico.';
+        await modelChat.actualizar(idChat, solicitarCorreoElectronicoArbol, chatData);
+        return await crearMensaje(idChat, remitente, dataEstatica.configuracion.estadoMensaje.enviado, dataEstatica.configuracion.tipoMensaje.texto, dataEstatica.mensajes.solicitarCorreoElectronico, chatData.descripcion);
+    } catch (error) {
+        // ? Error api
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion solicitarCorreoElectronico';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → solicitarCorreoElectronico: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Procesar Correo Electrónico Arbol
+const procesarCorreoElectronico = async (idChat, remitente, contenido) => {
+    try {
+        console.log('contenido: ', contenido);
+        // Validar correo electrónico usando expresión regular robusta
+        // Esta regex permite emails estándar (RFC 5322 simplificada)
+        const emailRegex = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
+
+        if (emailRegex.test(contenido.trim())) {
+            chatData.correoElectronico = contenido.trim();
+            return await solicitarNumeroTelefono(idChat, remitente);
+        } else {
+            const pasoArbol = 'Alerta No Entiendo - Solicitar Correo Electrónico';
+            const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
+            ⚠️ <i>Por favor ingrese un correo electrónico válido.</i></p>`;
+
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                // Mostrar nuevamente el mensaje de solicitud para que el usuario vea qué se le está pidiendo
+                return await solicitarCorreoElectronico(idChat, remitente);
+            }
+            return false;
+        }
+    } catch (error) {
+        // ? Error api  
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion procesarCorreoElectronico';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → procesarCorreoElectronico: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Solicitar Número de Teléfono Arbol
+const solicitarNumeroTelefono = async (idChat, remitente) => {
+    try {
+        const solicitarNumeroTelefonoArbol = dataEstatica.arbol.solicitarNumeroTelefono;
+        chatData.descripcion = 'Se solicita el número de teléfono.';
+        await modelChat.actualizar(idChat, solicitarNumeroTelefonoArbol, chatData);
+        return await crearMensaje(idChat, remitente, dataEstatica.configuracion.estadoMensaje.enviado, dataEstatica.configuracion.tipoMensaje.texto, dataEstatica.mensajes.solicitarNumeroTelefono, chatData.descripcion);
+    } catch (error) {
+
+        // ? Error api  
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion solicitarNumeroTelefono';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → solicitarNumeroTelefono: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Procesar Número de Teléfono Arbol
+const procesarNumeroTelefono = async (idChat, remitente, contenido) => {
+    try {
+        // Solo aceptar números, permitir entre 10 y 15 dígitos, solo numérico
+        // Eliminar espacios, guiones u otros caracteres y verificar que el input solo sean números
+
+        // Eliminar espacios en blanco y guiones, luego validar que solo contenga números
+        const limpio = contenido.replace(/\s|-/g, '');
+
+        // Revisar que la cadena resultante solo tenga dígitos
+        const soloNumeros = /^\d+$/;
+
+        if (soloNumeros.test(limpio) && limpio.length >= 10 && limpio.length <= 15) {
+            chatData.telefono = limpio;
+            return await solicitarLocalidad(idChat, remitente);
+        } else {
+            const pasoArbol = 'Alerta No Entiendo - Solicitar Numero Telefono';
+            const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
+            ⚠️ <i>Por favor ingrese un número de teléfono válido. Sólo use números, entre 10 y 15 dígitos.<br/>
+            <b>Ejemplos válidos:</b> <br/>
+            3216549870, 6015235568, 573214569870, 93212351256
+            </i></p>`;
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                // Mostrar nuevamente el mensaje de solicitud para que el usuario vea qué se le está pidiendo
+                return await solicitarNumeroTelefono(idChat, remitente);
+            }
+            return false;
+        }
+    } catch (error) {
+        // ? Error api  
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion procesarNumeroTelefono';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → procesarNumeroTelefono: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Solicitar Localidad Arbol
+const solicitarLocalidad = async (idChat, remitente) => {
+    try {
+        const solicitarLocalidadArbol = dataEstatica.arbol.solicitarLocalidad;
+        chatData.descripcion = 'Se solicita la localidad.';
+        await modelChat.actualizar(idChat, solicitarLocalidadArbol, chatData);
+        return await crearMensaje(idChat, remitente, dataEstatica.configuracion.estadoMensaje.enviado, dataEstatica.configuracion.tipoMensaje.texto, dataEstatica.mensajes.solicitarLocalidad, chatData.descripcion);
+    } catch (error) {
+        // ? Error api
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion solicitarLocalidad';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → solicitarLocalidad: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Procesar Localidad Arbol
+const procesarLocalidad = async (idChat, remitente, contenido) => {
+    try {
+        // Limpiar y trim para evitar espacios en blanco extras
+        const localidadInput = contenido ? contenido.trim() : "";
+        if (localidadInput.length >= 3 && localidadInput.length <= 250) {
+            console.log('localidadInput: ', localidadInput);
+            // Capitalizar cada palabra de la localidad (primera letra mayúscula)
+            const localidadCapital = localidadInput
+                .split(/\s+/)
+                .filter(Boolean)
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .join(' ');
+            chatData.localidad = localidadCapital;
+            return await solicitarEnQuePodemosAyudarle(idChat, remitente);
+        } else {
+            console.log('localidadInput: ', localidadInput);
+            const pasoArbol = 'Alerta No Entiendo - Solicitar Localidad';
+            const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
+            ⚠️ <i>Por favor ingrese una localidad válida (mínimo 3, máximo 250 caracteres).</i></p>`;
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                // Mostrar nuevamente el mensaje de solicitud para que el usuario vea qué se le está pidiendo
+                return await solicitarLocalidad(idChat, remitente);
+            }
+            return false;
+        }
+    }
+    catch (error) {
+        // ? Error api
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion procesarLocalidad';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → procesarLocalidad: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Solicitar En Que Podemos Ayudarle Arbol
+const solicitarEnQuePodemosAyudarle = async (idChat, remitente) => {
+    try {
+        const solicitarEnQuePodemosAyudarleArbol = dataEstatica.arbol.solicitarEnQuePodemosAyudarle;
+        chatData.descripcion = 'Se solicita en que podemos ayudarle.';
+        await modelChat.actualizar(idChat, solicitarEnQuePodemosAyudarleArbol, chatData);
+        return await crearMensaje(idChat, remitente, dataEstatica.configuracion.estadoMensaje.enviado, dataEstatica.configuracion.tipoMensaje.texto, dataEstatica.mensajes.solicitarEnQuePodemosAyudarle, chatData.descripcion);
+    } catch (error) {
+        // ? Error api
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion solicitarEnQuePodemosAyudarle';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → solicitarEnQuePodemosAyudarle: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Procesar En Que Podemos Ayudarle Arbol
+const procesarEnQuePodemosAyudarle = async (idChat, remitente, contenido) => {
+    try {
+        // Validar mínimo 3 caracteres y máximo 1000 caracteres
+        const texto = contenido ? contenido.trim() : '';
+        if (texto.length >= 3 && texto.length <= 1000) {
+            // Separar palabras y capitalizar solo la primera; el resto como llegue
+            const palabras = texto.split(/\s+/);
+            if (palabras.length > 0) {
+                const primeraCapital = palabras[0].charAt(0).toUpperCase() + palabras[0].slice(1).toLowerCase();
+                const resto = palabras.slice(1).join(' ');
+                const resultado = resto.length > 0 ? `${primeraCapital} ${resto}` : primeraCapital;
+                chatData.enQuePodemosAyudarle = resultado;
+            } else {
+                chatData.enQuePodemosAyudarle = '';
+            }
+            return await solicitarRangoEdad(idChat, remitente);
+        } else {
+            const pasoArbol = 'Alerta No Entiendo - Solicitar En Que Podemos Ayudarle';
+            const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
+            ⚠️ <i>Por favor escriba al menos 3 caracteres (máx 1000) y vuelva a intentarlo.</i></p>`;
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                // Mostrar nuevamente el mensaje de solicitud para que el usuario vea qué se le está pidiendo
+                return await solicitarEnQuePodemosAyudarle(idChat, remitente);
+            }
+            return false;
+        }
+    }
+    catch (error) {
+        // ? Error api
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion procesarEnQuePodemosAyudarle';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → procesarEnQuePodemosAyudarle: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Solicitar Rango Edad Arbol
+const solicitarRangoEdad = async (idChat, remitente) => {
+    try {
+        const solicitarRangoEdadArbol = dataEstatica.arbol.solicitarRangoEdad;
+        chatData.descripcion = 'Se solicita el rango de edad.';
+        await modelChat.actualizar(idChat, solicitarRangoEdadArbol, chatData);
+        return await crearMensaje(idChat, remitente, dataEstatica.configuracion.estadoMensaje.enviado, dataEstatica.configuracion.tipoMensaje.texto, dataEstatica.mensajes.solicitarRangoEdad, chatData.descripcion);
+    } catch (error) {
+        // ? Error api
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion solicitarRangoEdad';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → solicitarRangoEdad: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Procesar Rango Edad Arbol
+const procesarRangoEdad = async (idChat, remitente, contenido) => {
+    try {
+        // ? Procesar Rango Edad
+        if (contenido === '1') {
+            chatData.rangoEdad = '0 a 11 años';
+            return await solicitarAutorizacionTratamientoDatos(idChat, remitente);
+        } else if (contenido === '2') {
+            chatData.rangoEdad = '12 a 18 años';
+            return await solicitarAutorizacionTratamientoDatos(idChat, remitente);
+        } else if (contenido === '3') {
+            chatData.rangoEdad = '19 a 29 años';
+            return await solicitarAutorizacionTratamientoDatos(idChat, remitente);
+        } else if (contenido === '4') {
+            chatData.rangoEdad = '30 a 50 años';
+            return await solicitarAutorizacionTratamientoDatos(idChat, remitente);
+        } else if (contenido === '5') {
+            chatData.rangoEdad = 'Más de 50 años';
+            return await solicitarAutorizacionTratamientoDatos(idChat, remitente);
+        } else {
+            const pasoArbol = 'Alerta No Entiendo - Solicitar Rango Edad';
+            const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
+            ⚠️ <i>Por favor seleccione una opción válida para continuar.</i></p>`;
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                // Mostrar nuevamente el mensaje de solicitud para que el usuario vea qué se le está pidiendo
+                return await solicitarRangoEdad(idChat, remitente);
+            }
+            return false;
+        }
+    } catch (error) {
+        // ? Error api
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion procesarRangoEdad';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → procesarRangoEdad: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Solicitar Autorizacion Tratamiento Datos Arbol
+const solicitarAutorizacionTratamientoDatos = async (idChat, remitente) => {
+    try {
+        const solicitarAutorizacionTratamientoDatosArbol = dataEstatica.arbol.solicitarAutorizacionTratamientoDatos;
+        chatData.descripcion = 'Se solicita la autorización de tratamiento de datos.';
+        await modelChat.actualizar(idChat, solicitarAutorizacionTratamientoDatosArbol, chatData);
+        return await crearMensaje(idChat, remitente, dataEstatica.configuracion.estadoMensaje.enviado, dataEstatica.configuracion.tipoMensaje.texto, dataEstatica.mensajes.solicitarAutorizacionTratamientoDatos, chatData.descripcion);
+    } catch (error) {
+        // ? Error api
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion solicitarAutorizacionTratamientoDatos';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → solicitarAutorizacionTratamientoDatos: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Procesar Autorizacion Tratamiento Datos Arbol
+const procesarAutorizacionTratamientoDatos = async (idChat, remitente, contenido) => {
+    try {
+        // ? Procesar Autorizacion Tratamiento Datos
+        if (contenido === '1') {
+            chatData.autorizacionTratamientoDatos = 'Si';
+            return await solicitarPasoAsesor(idChat, remitente, contenido);
+        } else if (contenido === '2') {
+            chatData.autorizacionTratamientoDatos = 'No';
+            return await clienteDesiste(idChat, remitente);
+        } else {
+            const pasoArbol = 'Alerta No Entiendo - Solicitar Autorizacion Tratamiento Datos';
+            const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
+            ⚠️ <i>Por favor seleccione una opción válida para continuar.</i></p>`;
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                // Mostrar nuevamente el mensaje de solicitud para que el usuario vea qué se le está pidiendo
+                return await solicitarAutorizacionTratamientoDatos(idChat, remitente);
+            }
+            return false;
+        }
+    }
+    catch (error) {
+        // ? Error api
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion procesarAutorizacionTratamientoDatos';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → procesarAutorizacionTratamientoDatos: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Solicitar Paso Asesor Arbol
+const solicitarPasoAsesor = async (idChat, remitente, contenido) => {
+    try {
+        const solicitarPasoAsesorArbol = dataEstatica.arbol.solicitarPasoAsesor;
+        chatData.descripcion = 'Se solicita el paso asesor.';
+        await modelChat.actualizar(idChat, solicitarPasoAsesorArbol, chatData);
+        await crearMensaje(idChat, remitente, dataEstatica.configuracion.estadoMensaje.enviado, dataEstatica.configuracion.tipoMensaje.texto, dataEstatica.mensajes.solicitarPasoAsesor, chatData.descripcion);
+        
+        return await procesarPasoAsesorSoulChat(idChat, remitente, contenido);
+    } catch (error) {
+        // ? Error api
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion solicitarPasoAsesor';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → solicitarPasoAsesor: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Procesar Paso Asesor Arbol - Mensajes hacia Soul Chat
+const procesarPasoAsesorSoulChat = async (idChat, remitente, contenido) => {
     
     try {
         const estructuraMensaje = {
@@ -189,87 +590,86 @@ const enviarMensajeSoulChat = async (idChat, remitente, contenido) => {
             idChat: idChat,
             remitente: remitente,  // Este es el valor del remitente
             estado: "START",  // Estado del mensaje, por ejemplo, "START" O "ATTENDING" O "END"
-            mensaje: contenido,  // El mensaje que envías
+            // Mensaje legible con saltos de línea para Soul Chat
+            mensaje: [
+                'Cliente solicita su ayuda, estos son los datos del cliente:',
+                `• Nombres y Apellidos: ${chatData.nombresApellidos}`,
+                `• Género: ${chatData.genero}`,
+                `• Correo Electrónico: ${chatData.correoElectronico}`,
+                `• Teléfono: ${chatData.telefono}`,
+                `• Localidad: ${chatData.localidad}`,
+                `• En qué podemos ayudarle: ${chatData.enQuePodemosAyudarle}`,
+                `• Rango de Edad: ${chatData.rangoEdad}`,
+                `• Autorización Tratamiento de Datos: ${chatData.autorizacionTratamientoDatos}`
+            ].join('\n'),
             type: "TEXT",  // Tipo de mensaje, por ejemplo, "TEXT" o "MEDIA" o "VOICE"
             // Pasamos los datos del formulario para que la AI Soul los tenga en cuenta
-            nombres: chatData.nombres, // nombre del cliente
-            apellidos: chatData.apellidos, // apellido del cliente
-            numeroCedula: chatData.numeroCedula, // numero de cedula del cliente
-            paisResidencia: chatData.paisResidencia, // pais de residencia del cliente
-            ciudadResidencia: chatData.ciudadResidencia, // ciudad de residencia del cliente
-            indicativoPais: chatData.indicativoPais, // indicativo de pais del cliente
-            numeroCelular: chatData.numeroCelular, // numero de celular del cliente
+            nombres: chatData.nombresApellidos, // nombre del cliente
+            genero: chatData.genero, // genero del cliente
             correoElectronico: chatData.correoElectronico, // correo electronico del cliente
-            autorizacionDatosPersonales: chatData.autorizacionDatosPersonales, // autorizacion de datos personales del cliente
+            telefono: chatData.telefono, // telefono del cliente
+            localidad: chatData.localidad, // localidad del cliente
+            enQuePodemosAyudarle: chatData.enQuePodemosAyudarle, // en que podemos ayudarle del cliente
+            rangoEdad: chatData.rangoEdad, // rango de edad del cliente
+            autorizacionTratamientoDatos: chatData.autorizacionTratamientoDatos, // autorizacion de tratamiento de datos del cliente
             responsable: dataEstatica.configuracion.responsable // responsable del cliente
         };
         
         // Control de intentos
-        if (chatData.controlPeticiones <= 5) {
+        if (chatData.controlPeticiones <= 2) {
             
-            // ? Consumir servicio de AI Soul
-            const response = await serviceSoulChat.enviarMensajeSoulChat(estructuraMensaje);
+            // ? Consumir servicio de Soul Chat
+            const response = await serviceSoulChat.procesarMensajeAISoul(estructuraMensaje);
             chatData.resultadoApi = response.data;
 
             // Si la respuesta tiene status 200 o 202
             if (response.status === 200 || response.status === 202) {
                 // Variables
-                const pasoArbol = dataEstatica.arbol.pasoDirectoSoulChat;
+                const solicitarPasoAsesorArbol = dataEstatica.arbol.solicitarPasoAsesor;
                 chatData.controlApi = dataEstatica.configuracion.controlApi.success;
-                chatData.descripcion = 'AI Soul ha recibido el mensaje, se encuentra procesando la respuesta.';
+                chatData.descripcion = 'Soul Chat ha recibido el mensaje, se encuentra procesando la respuesta.';
 
                 // Actualizar el chat
-                const updateResult = await modelChat.actualizar(idChat, pasoArbol, chatData);
+                const updateResult = await modelChat.actualizar(idChat, solicitarPasoAsesorArbol, chatData);
                 return updateResult || true; // Asegurar que siempre retorne algo válido
             } else {
                 // Variables
-                const pasoArbol = dataEstatica.arbol.pasoDirectoSoulChat;
+                const solicitarPasoAsesorArbol = dataEstatica.arbol.solicitarPasoAsesor;
                 chatData.controlPeticiones++;
-                chatData.descripcion = 'AI Soul esta presentando una novedad o incidencia técnica.';
+                chatData.descripcion = 'Soul Chat está presentando una novedad o incidencia técnica.';
+                
                 
                 // Actualizar el chat
-                await modelChat.actualizar(idChat, pasoArbol, chatData);
+                await modelChat.actualizar(idChat, solicitarPasoAsesorArbol, chatData);
 
                 // todo: Enviar mensaje de error por API
                 const api = 'Soul Chat';
-                const procesoApi = 'Procesar Mensaje AI';
+                const procesoApi = 'Procesar Paso Asesor';
                 const error = response;
                 const errorResult = await errorAPI(api, procesoApi, error, idChat, remitente);
+            
                 return errorResult || false;
             }
 
         } else {
-            chatData.descripcion = 'Se presenta novedad con el servicio de AI Soul, se procede a cerrar el chat por limite de intentos.';
-            // Crear mensaje de novedad o incidencia técnica
-            await crearMensaje(
-                idChat,
-                remitente,
-                dataEstatica.configuracion.estadoMensaje.enviado,
-                dataEstatica.configuracion.tipoMensaje.texto,
-                dataEstatica.mensajes.novedadIncidenciaTecnica,
-                chatData.descripcion
-            );
-
-            // Solicitar cerrar el chat
-            await modelChat.cerrar(
-                remitente,
-                dataEstatica.configuracion.estadoChat.recibido,
-                dataEstatica.configuracion.estadoGestion.cerrado,
-                dataEstatica.arbol.despedida,
-                dataEstatica.configuracion.controlApi.error,
-                chatData.descripcion,
-                dataEstatica.configuracion.estadoRegistro.activo,
-                dataEstatica.configuracion.responsable
-            );
-            return false;
+            return await cerrarNovedadTecnicaLimiteIntentos(idChat, remitente);
         }
 
     } catch (error) {
+        // Variables
+        const solicitarPasoAsesorArbol = dataEstatica.arbol.solicitarPasoAsesor;
+        chatData.controlPeticiones++;
+        chatData.descripcion = 'Soul Chat está presentando una novedad o incidencia técnica.';
+        
+        
+        // Actualizar el chat
+        await modelChat.actualizar(idChat, solicitarPasoAsesorArbol, chatData);
+        
         const api = 'Soul Chat';
-        const procesoApi = 'Procesar Mensaje AI';
+        const procesoApi = 'Procesar Paso Asesor';
         logger.error({
             contexto: 'model',
-            recurso: 'arbolChatBot.enviarMensajeSoulChat',
+            recurso: 'arbolChatBot.procesarPasoAsesorSoulChat',
             codigoRespuesta: 500,
             errorMensaje: error.message,
             errorStack: error.stack,
@@ -278,8 +678,13 @@ const enviarMensajeSoulChat = async (idChat, remitente, contenido) => {
             api,
             procesoApi,
             controlPeticiones: chatData.controlPeticiones
-        }, 'Error en v1/models/widget/arbolChatBot.model.js → enviarMensajeSoulChat');
+        }, 'Error en v1/models/widget/arbolChatBot.model.js → procesarPasoAsesorSoulChat');
         const errorResult = await errorAPI(api, procesoApi, error, idChat, remitente);
+
+        // Si al incrementar el contador se superó el límite, cerrar inmediatamente
+        if (chatData.controlPeticiones > 2) {
+            return await cerrarNovedadTecnicaLimiteIntentos(idChat, remitente);
+        }
         return errorResult || false;
     }
 };
@@ -353,6 +758,8 @@ const enviarMensajeSoulChat = async (idChat, remitente, contenido) => {
 const manejarNoEntiendo = async (idChat, remitente, pasoArbol, alertaNoEntiendo) => {
     try {
         chatData.descripcion = 'Se notifica que no se entiende el mensaje.';
+        // Marcar el control de API como Warning en este caso
+        chatData.controlApi = dataEstatica.configuracion.controlApi.warning;
         await modelChat.actualizar(idChat, pasoArbol, chatData);
         await crearMensaje(idChat, remitente, dataEstatica.configuracion.estadoMensaje.enviado, dataEstatica.configuracion.tipoMensaje.texto, alertaNoEntiendo, chatData.descripcion);
         return true;
@@ -363,6 +770,52 @@ const manejarNoEntiendo = async (idChat, remitente, pasoArbol, alertaNoEntiendo)
         console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → manejarNoEntiendo: ', error);
         await errorAPI(api, procesoApi, error, idChat, remitente);
         return false;
+    }
+};
+
+// todo: Cliente Desiste Arbol
+const clienteDesiste = async (idChat, remitente) => {
+    try {
+        const pasoArbol = dataEstatica.arbol.clienteDesiste;
+        chatData.descripcion = 'Cliente desiste de continuar con la atención en el sistema.';
+
+        await modelChat.actualizar(idChat, pasoArbol, chatData);
+
+        await crearMensaje(
+            idChat,
+            remitente,
+            dataEstatica.configuracion.estadoMensaje.enviado,
+            dataEstatica.configuracion.tipoMensaje.texto,
+            dataEstatica.mensajes.clienteDesiste,
+            chatData.descripcion
+        );
+
+        await modelChat.cerrar(
+            remitente,
+            dataEstatica.configuracion.estadoChat.recibido,
+            dataEstatica.configuracion.estadoGestion.cerrado,
+            dataEstatica.arbol.despedida,
+            dataEstatica.configuracion.controlApi.success,
+            chatData.descripcion,
+            dataEstatica.configuracion.estadoRegistro.activo,
+            dataEstatica.configuracion.responsable
+        );
+
+        chatData.descripcion = 'Se envía mensaje de despedida.';
+        return await crearMensaje(
+            idChat,
+            remitente,
+            dataEstatica.configuracion.estadoMensaje.enviado,
+            dataEstatica.configuracion.tipoMensaje.finChat,
+            dataEstatica.mensajes.despedida,
+            chatData.descripcion
+        );
+    } catch (error) {
+        // todo: Enviar mensaje de error por API
+        const api = 'Widget Chat Web ETB - IDARTES ';
+        const procesoApi = 'Cliente Desiste';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → clienteDesiste', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
     }
 };
 
@@ -422,22 +875,63 @@ const errorAPI = async (api, procesoApi, error, idChat, remitente) => {
 
         await crearMensaje(idChat, remitente, estadoMensaje, tipoMensaje, contenidoAlertaErrorAPI, descripcion);
     } catch (error) {
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → errorAPI ', error);
+    }
+    return false;
+};
+
+// todo: Cerrar por límite de intentos con mensaje de novedad técnica (Fin Chat)
+const cerrarNovedadTecnicaLimiteIntentos = async (idChat, remitente) => {
+    try {
+        chatData.descripcion = 'Se presenta novedad con el servicio de Soul Chat, se procede a cerrar el chat por limite de intentos.';
+        // Log informativo previo al cierre
+        logger.info({
+            contexto: 'model',
+            recurso: 'arbolChatBot.cerrarNovedadTecnicaLimiteIntentos',
+            idChat,
+            remitente,
+            controlPeticiones: chatData.controlPeticiones,
+            descripcion: chatData.descripcion
+        }, 'Cierre por límite de intentos');
+        await crearMensaje(
+            idChat,
+            remitente,
+            dataEstatica.configuracion.estadoMensaje.enviado,
+            dataEstatica.configuracion.tipoMensaje.finChat,
+            dataEstatica.mensajes.novedadIncidenciaTecnica,
+            chatData.descripcion
+        );
+        await modelChat.cerrar(
+            remitente,
+            dataEstatica.configuracion.estadoChat.recibido,
+            dataEstatica.configuracion.estadoGestion.cerrado,
+            dataEstatica.arbol.despedida,
+            dataEstatica.configuracion.controlApi.error,
+            chatData.descripcion,
+            dataEstatica.configuracion.estadoRegistro.activo,
+            dataEstatica.configuracion.responsable
+        );
+        // Log de éxito de cierre
+        logger.info({
+            contexto: 'model',
+            recurso: 'arbolChatBot.cerrarNovedadTecnicaLimiteIntentos',
+            idChat,
+            remitente,
+            resultado: 'cerrado'
+        }, 'Chat cerrado por límite de intentos');
+        return false;
+    } catch (error) {
         logger.error({
             contexto: 'model',
-            recurso: 'arbolChatBot.errorAPI',
+            recurso: 'arbolChatBot.cerrarNovedadTecnicaLimiteIntentos',
             codigoRespuesta: 500,
             errorMensaje: error.message,
             errorStack: error.stack,
             idChat,
-            remitente,
-            api,
-            procesoApi
-        }, 'Error en v1/models/widget/arbolChatBot.model.js → errorAPI');
-    } finally {
-        // todo: Liberar conexión al pool
-        if (connMySQL) connMySQL.release();
+            remitente
+        }, 'Error en v1/models/widget/arbolChatBot.model.js → cerrarNovedadTecnicaLimiteIntentos');
+        return false;
     }
-    return false;
 };
 
 // todo: Crear alerta de inactividad

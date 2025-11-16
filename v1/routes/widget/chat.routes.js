@@ -24,7 +24,7 @@ router.get('/web', (req, res) => {
 router.post('/crear', crearChatLimiter, validator.crear, controller.crear);
 
 // TODO: ACTUALIZAR - RECIBE DATOS DE FORMULARIO INICIAL
-router.post('/formularioInicial', formLimiter, validator.formularioInicial, controller.formularioInicial);
+// router.post('/formularioInicial', formLimiter, validator.formularioInicial, controller.formularioInicial);
 
 // TODO: OPCIONES CONTROL API
 router.get('/opcionesControlApi', controller.opcionesControlApi);

@@ -1,17 +1,8 @@
-// ! ================================================================================================================================================
-// !                                                      LOGGER
-// ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres
-// @lastModified Ramón Dario Rozo Torres
-// @version 1.0.0
-// v1/logger/index.js
-
 const pino = require('pino');
 const fs = require('fs');
 const path = require('path');
 
 const isProduction = process.env.PROJECT_ENV === 'PRO';
-const uploadLogsToS3 = (process.env.UPLOAD_LOGS_TO_S3 || '').toLowerCase() === 'true';
 
 const baseOptions = {
     level: process.env.LOG_LEVEL || 'info',
@@ -24,10 +15,9 @@ const baseOptions = {
 
 // Configuración de transport según el ambiente
 let transport;
-let loggerInstance;
 
-if (isProduction && uploadLogsToS3) {
-    // En producción con subida a S3 habilitada: escribir logs a archivo en v1/uploads/logs/
+if (isProduction) {
+    // En producción: escribir logs a archivo en v1/uploads/logs/
     const logsDir = path.join(__dirname, '../uploads/logs');
     
     try {
@@ -135,16 +125,15 @@ if (isProduction && uploadLogsToS3) {
             { stream: rotatingStream, level: 'info' } // archivo con rotación diaria automática
         ];
         
-        loggerInstance = pino(baseOptions, pino.multistream(streams));
+        const loggerInstance = pino(baseOptions, pino.multistream(streams));
+        module.exports = loggerInstance;
     } catch (error) {
         // Si hay error creando directorio o archivo, usar solo stdout
         console.error('Error configurando logger de archivo:', error.message);
         console.error('Usando solo logger stdout (Grafana)');
-        loggerInstance = pino(baseOptions);
+        const loggerInstance = pino(baseOptions);
+        module.exports = loggerInstance;
     }
-} else if (isProduction) {
-    // En producción sin subida a S3: enviar logs solo a stdout
-    loggerInstance = pino(baseOptions);
 } else {
     // En desarrollo/QA: formato legible con pino-pretty
     transport = pino.transport({
@@ -156,7 +145,8 @@ if (isProduction && uploadLogsToS3) {
         }
     });
     
-    loggerInstance = pino(baseOptions, transport);
+    const loggerInstance = pino(baseOptions, transport);
+    module.exports = loggerInstance;
 }
 
-module.exports = loggerInstance;
+

@@ -2,7 +2,6 @@
 -- !                                                        SQL PARA CREAR BASE DE DATOS
 -- ! ================================================================================================================================================
 -- @author Ramón Dario Rozo Torres
--- @lastModified Ramón Dario Rozo Torres
 -- @version 1.0.0
 -- v1/migrations/create_database.sql
 
@@ -14,15 +13,15 @@
 
 
 -- ? ELIMINAR LA BASE DE DATOS SI EXISTE
-DROP DATABASE IF EXISTS `dbd_widget_chat_web_thomas_gregysons`;
+DROP DATABASE IF EXISTS `dbd_widget_chat_web_etb_idartes`;
 
 
 
 -- ? CREAR LA BASE DE DATOS
-CREATE DATABASE `dbd_widget_chat_web_thomas_gregysons`;
+CREATE DATABASE `dbd_widget_chat_web_etb_idartes`;
 
 
 -- ? USAR LA BASE DE DATOS
-USE `dbd_widget_chat_web_thomas_gregysons`;
+USE `dbd_widget_chat_web_etb_idartes`;
 
 

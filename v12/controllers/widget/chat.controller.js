@@ -360,7 +360,7 @@ const filtrar = async (req, res) => {
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: errors.array()[0].msg
             });
         }

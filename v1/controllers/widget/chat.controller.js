@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                      CONTROLADORES PARA CHAT
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres
-// @lastModified Ramón Dario Rozo Torres
+// @author Ramón Dario Rozo Torres (05 de Marzo de 2025)
+// @lastModified Ramón Dario Rozo Torres (05 de Marzo de 2025)
 // @version 1.0.0
 // v1/controllers/widget/chat.controller.js
 
@@ -14,7 +14,6 @@ require('dotenv').config({ path: path.join(__dirname, './../../.env') });
 const model = require('../../models/widget/chat.model.js');
 const dataEstatica = require('../../seeds/dataEstatica.js');
 const modelMensaje = require('../../models/widget/mensaje.model.js');
-const serviceSoulChat = require('../../services/serviceSoulChat.service.js');
 const logger = require('../../logger');
 const { getOrigen, getDestino, getContextoRecurso } = require('../../logger/context');
 
@@ -46,7 +45,7 @@ const crear = async (req, res) => {
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: errors.array()[0].msg
             });
         }
@@ -61,11 +60,11 @@ const crear = async (req, res) => {
         let remitente = idChatWeb;
         let estadoChat = dataEstatica.configuracion.estadoChat.recibido;
         let estadoGestion = dataEstatica.configuracion.estadoGestion.abierto;
-        let arbol = dataEstatica.arbol.pasoDirectoSoulChat;
+        let arbol = dataEstatica.arbol.saludo;
         let controlApi = dataEstatica.configuracion.controlApi.success;
         let controlPeticiones = 0;
         let resultadoApi = '-';
-        let descripcion = 'Se crea el chat habilitado para Paso Directo Soul Chat.';
+        let descripcion = 'Se crea el chat con éxito.';
         let estadoRegistro = dataEstatica.configuracion.estadoRegistro.activo;
         let responsable = dataEstatica.configuracion.responsable;
 
@@ -85,7 +84,7 @@ const crear = async (req, res) => {
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: 'El chat ya existe en el sistema.'
             });
         }
@@ -94,149 +93,92 @@ const crear = async (req, res) => {
         const result = await model.crear(tipoGestion, remitente, estadoChat, estadoGestion, arbol, controlApi, controlPeticiones, resultadoApi, descripcion, estadoRegistro, responsable);
 
         if (result) {
-            const idChat = result[0].insertId;
+            // todo: Crear el mensaje de bienvenida
+            let idChat = result[0].insertId;
+            let estadoMensaje = dataEstatica.configuracion.estadoMensaje.enviado;
+            let tipoMensaje = dataEstatica.configuracion.tipoMensaje.texto;
+            let contenido = dataEstatica.mensajes.saludo;
+            let enlaces = '-';
+            let lectura = dataEstatica.configuracion.lecturaMensaje.noLeido;
+            let descripcion = 'Se crea el mensaje de bienvenida.';
+            let estadoRegistro = dataEstatica.configuracion.estadoRegistro.activo;
+            let responsable = dataEstatica.configuracion.responsable;
+            const resultMensajeBienvenida = await modelMensaje.crear(idChat, remitente, estadoMensaje, tipoMensaje, contenido, enlaces, lectura, descripcion, estadoRegistro, responsable);
             
-            // todo: Preparar datos del chat (valores por defecto ya que no se reciben del formulario en el crear)
-            const chatData = {
+            // ? Ahora enviamos el mensaje solicitando nombres y apellidos
+            // Actualizamos el chat
+            const solicitarNombresApellidos = dataEstatica.arbol.solicitarNombresApellidos;
+            let controlApi = dataEstatica.configuracion.controlApi.success;
+            let controlPeticiones = 0;
+            let resultadoApi = `{
+                "status": 200,
+                "type": "success",
+                "title": "Widget Chat Web ETB - IDARTES",
+                "message": "Se solicitan los nombres y apellidos."
+            }`;
+            let nombresApellidos = '-';
+            let genero = '-';
+            let correoElectronico = '-';
+            let telefono = '-';
+            let localidad = '-';
+            let enQuePodemosAyudarle = '-';
+            let rangoEdad = '-';
+            let autorizacionTratamientoDatos = '-';
+            descripcion = 'Se solicitan los nombres y apellidos.';
+            estadoRegistro = dataEstatica.configuracion.estadoRegistro.activo;
+            responsable = dataEstatica.configuracion.responsable;
+
+            let chatData = {
                 controlApi: dataEstatica.configuracion.controlApi.success,
                 controlPeticiones: 0,
                 resultadoApi: '-',
-                nombres: '-',
-                apellidos: '-',
-                numeroCedula: '-',
-                paisResidencia: '-',
-                ciudadResidencia: '-',
-                indicativoPais: '-',
-                numeroCelular: '-',
+                nombresApellidos: '-',
+                genero: '-',
                 correoElectronico: '-',
-                autorizacionDatosPersonales: '-',
-                adjuntos: '-',
-                rutaAdjuntos: '-',
-                descripcion: descripcion,
-                estadoRegistro: estadoRegistro,
-                responsable: responsable
+                telefono: '-',
+                localidad: '-',
+                enQuePodemosAyudarle: '-',
+                rangoEdad: '-',
+                autorizacionTratamientoDatos: '-',
+                descripcion: 'Se solicitan los nombres y apellidos.',
+                estadoRegistro: dataEstatica.configuracion.estadoRegistro.activo,
+                responsable: dataEstatica.configuracion.responsable,
             };
 
-            // todo: Mensaje inicial para AI Soul (vacío o mensaje de inicio)
-            const contenido = '';
+            const resultActualizar = await model.actualizar(idChat, solicitarNombresApellidos, chatData);
 
-            // todo: Enviar consumir servicio de AI Soul
-            const estructuraMensaje = {
-                provider: "web",
-                canal: 3,
-                idChat: idChat,
-                remitente: remitente,
-                estado: "START",
-                mensaje: contenido,
-                type: "TEXT",
-                nombres: chatData.nombres,
-                apellidos: chatData.apellidos,
-                numeroCedula: chatData.numeroCedula,
-                paisResidencia: chatData.paisResidencia,
-                ciudadResidencia: chatData.ciudadResidencia,
-                indicativoPais: chatData.indicativoPais,
-                numeroCelular: chatData.numeroCelular,
-                correoElectronico: chatData.correoElectronico,
-                autorizacionDatosPersonales: chatData.autorizacionDatosPersonales,
-                responsable: dataEstatica.configuracion.responsable
-            };
+            // Creamos el mensaje solicitando los nombres y apellidos
+            contenido = dataEstatica.mensajes.solicitarNombresApellidos;
+            const resultMensajeNombresApellidos = await modelMensaje.crear(
+                idChat,
+                remitente,
+                dataEstatica.configuracion.estadoMensaje.enviado,
+                dataEstatica.configuracion.tipoMensaje.texto,
+                contenido,
+                enlaces,
+                lectura,
+                descripcion,
+                estadoRegistro,
+                responsable
+            );
 
-            try {
-                const response = await serviceSoulChat.enviarMensajeSoulChat(estructuraMensaje);
-                console.log('response servicio Soul Chat', response);
-                
-                if (response.status === 200 || response.status === 202) {
-                    const pasoArbol = dataEstatica.arbol.pasoDirectoSoulChat;
-                    chatData.controlApi = dataEstatica.configuracion.controlApi.success;
-                    chatData.resultadoApi = JSON.stringify(response.data || {});
-                    chatData.descripcion = 'AI Soul ha recibido el mensaje, se encuentra procesando la respuesta.';
-                    
-                    await model.actualizar(idChat, pasoArbol, chatData);
-
-                    logger.info({
-                        contexto: 'controller',
-                        recurso: 'chat.crear',
-                        origen: getOrigen(req),
-                        destino: getDestino(req),
-                        contextoRecurso: getContextoRecurso(req),
-                        codigoRespuesta: 200,
-                        rta: 'El chat se ha creado correctamente en el sistema en modo Paso Directo Soul Chat.',
-                        idChat: idChat
-                    }, 'Chat creado exitosamente (Paso Directo Soul Chat)');
-                    
-                    return res.json({
-                        status: 200,
-                        type: 'success',
-                        title: 'ETB - IDARTES',
-                        message: 'El chat se ha creado correctamente en el sistema.',
-                        idChat
-                    });
-                } else {
-                    // Variables
-                    const pasoArbol = dataEstatica.arbol.pasoDirectoSoulChat;
-                    chatData.controlPeticiones++;
-                    chatData.controlApi = dataEstatica.configuracion.controlApi.error;
-                    chatData.resultadoApi = JSON.stringify({
-                        status: response.status,
-                        message: 'Respuesta inesperada del servicio AI Soul'
-                    });
-                    chatData.descripcion = 'AI Soul esta presentando una novedad o incidencia técnica.';
-                    
-                    // Actualizar el chat
-                    await model.actualizar(idChat, pasoArbol, chatData);
-
-                    logger.warn({
-                        contexto: 'controller',
-                        recurso: 'chat.crear',
-                        origen: getOrigen(req),
-                        destino: getDestino(req),
-                        contextoRecurso: getContextoRecurso(req),
-                        codigoRespuesta: response.status,
-                        rta: 'AI Soul respondió con un estado inesperado.',
-                        idChat: idChat,
-                        statusResponse: response.status
-                    }, 'Respuesta inesperada de AI Soul');
-
-                    return res.status(500).json({
-                        status: 500,
-                        type: 'error',
-                        title: 'ETB - IDARTES',
-                        message: 'No se pudo procesar el mensaje inicial con AI Soul, por favor intenta de nuevo.',
-                    });
-                }
-            } catch (error) {
-                // Manejar error al consumir el servicio
-                const pasoArbol = dataEstatica.arbol.pasoDirectoSoulChat;
-                chatData.controlPeticiones++;
-                chatData.controlApi = dataEstatica.configuracion.controlApi.error;
-                chatData.resultadoApi = JSON.stringify({
-                    status: error.response?.status || 500,
-                    message: error.message || 'Error desconocido al consumir servicio AI Soul',
-                    error: error.response?.data || error.toString()
-                });
-                chatData.descripcion = 'Error al consumir servicio de AI Soul.';
-
-                await model.actualizar(idChat, pasoArbol, chatData);
-
-                logger.error({
+            if (resultMensajeBienvenida && resultMensajeNombresApellidos) {
+                // todo: Enviar respuesta
+                logger.info({
                     contexto: 'controller',
                     recurso: 'chat.crear',
                     origen: getOrigen(req),
                     destino: getDestino(req),
                     contextoRecurso: getContextoRecurso(req),
-                    codigoRespuesta: error.response?.status || 500,
-                    errorMensaje: error.message,
-                    errorStack: error.stack,
-                    idChat: idChat,
-                    remitente: remitente
-                }, 'Error al consumir servicio AI Soul en chat.crear');
-
-                return res.status(500).json({
-                    status: 500,
-                    type: 'error',
-                    title: 'ETB - IDARTES',
-                    message: 'No se pudo procesar el mensaje inicial con AI Soul, por favor intenta de nuevo.',
-                    error: error.message
+                    codigoRespuesta: 200,
+                    rta: 'El chat se ha creado correctamente en el sistema.',
+                    idChat: result[0].insertId
+                }, 'Chat creado exitosamente');
+                res.json({
+                    status: 200,
+                    type: 'success',
+                    title: 'Widget Chat Web ETB - IDARTES',
+                    message: 'El chat se ha creado correctamente en el sistema.',
                 });
             }
         }
@@ -254,7 +196,7 @@ const crear = async (req, res) => {
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: 'ETB - IDARTES',
+            title: 'Widget Chat Web ETB - IDARTES',
             message: 'No se pudo crear el chat, por favor intenta de nuevo o comunícate con nosotros.',
             error: error.message
         });
@@ -262,23 +204,154 @@ const crear = async (req, res) => {
 };
 
 // * FORMULARIO INICIAL
-const formularioInicial = async (req, res) => {
-    logger.info({
-        contexto: 'controller',
-        recurso: 'chat.formularioInicial',
-        origen: getOrigen(req),
-        destino: getDestino(req),
-        contextoRecurso: getContextoRecurso(req),
-        body: req.body
-    }, 'Intento de utilizar formularioInicial en modo Paso Directo Soul Chat');
+// const formularioInicial = async (req, res) => {
+//     try {
+//         logger.info({
+//             contexto: 'controller',
+//             recurso: 'chat.formularioInicial',
+//             origen: getOrigen(req),
+//             destino: getDestino(req),
+//             contextoRecurso: getContextoRecurso(req),
+//             body: req.body
+//         }, 'Controller chat.controller.js → formularioInicial');
+//         // todo: Validar los datos
+//         const errors = validationResult(req);
+//         if (!errors.isEmpty()) {
+//             logger.warn({
+//                 contexto: 'controller',
+//                 recurso: 'chat.formularioInicial',
+//                 origen: getOrigen(req),
+//                 destino: getDestino(req),
+//                 contextoRecurso: getContextoRecurso(req),
+//                 codigoRespuesta: 400,
+//                 rta: errors.array()[0].msg,
+//                 erroresValidacion: errors.array()
+//             }, 'Error de validación en chat.formularioInicial');
+//             return res.status(400).json({
+//                 status: 400,
+//                 type: 'warning',
+//                 title: 'Widget Chat Web ETB - IDARTES',
+//                 message: errors.array()[0].msg
+//             });
+//         }
 
-    return res.status(410).json({
-        status: 410,
-        type: 'warning',
-        title: 'ETB - IDARTES',
-        message: 'El formulario inicial ha sido deshabilitado. La atención es directa con AI Soul.'
-    });
-};
+//         // todo: Obtener los datos de la petición
+//         const {
+//             idChatWeb,
+//             camposFormulario
+//         } = req.body;
+
+//         // todo: Preparamos los datos
+//         let pasoArbol = dataEstatica.arbol.procesarFormularioInicial;
+//         let nombres = camposFormulario.nombres;
+//         let apellidos = camposFormulario.apellidos;
+//         let numeroCedula = camposFormulario.numeroCedula;
+//         let paisResidencia = camposFormulario.paisResidencia;
+//         let ciudadResidencia = camposFormulario.ciudadResidencia;
+//         let indicativoPais = camposFormulario.indicativoPais;
+//         let numeroCelular = camposFormulario.numeroCelular;
+//         let correoElectronico = camposFormulario.correoElectronico;
+//         let autorizacionDatosPersonales = camposFormulario.autorizacionDatosPersonales;
+//         let descripcion = 'Se diligenció el formulario inicial.';
+
+//         // todo: Crear el mensaje de formulario inicial
+//         const result = await model.formularioInicial(idChatWeb, pasoArbol, nombres, apellidos, numeroCedula, paisResidencia, ciudadResidencia, indicativoPais, numeroCelular, correoElectronico, autorizacionDatosPersonales, descripcion);
+//         // todo: Enviar respuesta
+//         if (result) {
+
+//             // todo: Crear el mensaje de formulario inicial diligenciado
+//             const idChat = result[0].ID_CHAT;
+//             let remitente = idChatWeb;
+//             let estadoMensaje = dataEstatica.configuracion.estadoMensaje.recibido;
+//             let tipoMensaje = dataEstatica.configuracion.tipoMensaje.texto;
+//             let contenido = `
+//             <p class="datos-diligenciados">📝 <strong class="label-fuerte">Datos diligenciados:</strong><br/><br/>
+//                 <strong class="label-fuerte">Nombres:</strong> ${camposFormulario.nombres}<br/>
+//                 <strong class="label-fuerte">Apellidos:</strong> ${camposFormulario.apellidos}<br/>
+//                 <strong class="label-fuerte">Número de cédula:</strong> ${camposFormulario.numeroCedula}<br/>
+//                 <strong class="label-fuerte">País de residencia:</strong> ${camposFormulario.paisResidencia}<br/>
+//                 <strong class="label-fuerte">Ciudad de residencia:</strong> ${camposFormulario.ciudadResidencia}<br/>
+//                 <strong class="label-fuerte">Indicativo de país:</strong> ${camposFormulario.indicativoPais}<br/>
+//                 <strong class="label-fuerte">Número de celular:</strong> ${camposFormulario.numeroCelular}<br/>
+//                 <strong class="label-fuerte">Correo electrónico:</strong> ${camposFormulario.correoElectronico}<br/>
+//                 <strong class="label-fuerte">Autorización datos personales:</strong> ${camposFormulario.autorizacionDatosPersonales}<br/>
+//             </p>
+//           `;
+
+//             let enlaces = '-';
+//             let lectura = dataEstatica.configuracion.lecturaMensaje.noLeido;
+//             let estadoRegistro = dataEstatica.configuracion.estadoRegistro.activo;
+//             let responsable = dataEstatica.configuracion.responsable;
+//             const resultMensajeFormularioInicialDiligenciado = await modelMensaje.crear(idChat, remitente, estadoMensaje, tipoMensaje, contenido, enlaces, lectura, descripcion, estadoRegistro, responsable);
+
+//             if (resultMensajeFormularioInicialDiligenciado) {
+//                 // todo: Crear el mensaje de saludo al usuario
+//                 let remitente = idChatWeb;
+//                 let estadoMensaje = dataEstatica.configuracion.estadoMensaje.enviado;
+//                 let tipoMensaje = dataEstatica.configuracion.tipoMensaje.texto;
+//                 let contenido = `
+//                     <p class="saludoUsuario">🤝 <b> Hola, ${camposFormulario.nombres} ${camposFormulario.apellidos}</b><br/><br/>
+//                         <i>¿En que puedo ayudarlo?</i><br/><br/>
+//                         👉 <i>Escriba una pregunta.</i>
+//                     </p>
+//                 `;
+//                 let enlaces = '-';
+//                 let lectura = dataEstatica.configuracion.lecturaMensaje.noLeido;
+//                 let estadoRegistro = dataEstatica.configuracion.estadoRegistro.activo;
+//                 let responsable = dataEstatica.configuracion.responsable;
+//                 const resultMensajeSaludoUsuario = await modelMensaje.crear(idChat, remitente, estadoMensaje, tipoMensaje, contenido, enlaces, lectura, descripcion, estadoRegistro, responsable);
+
+//                 if (resultMensajeSaludoUsuario) {
+//                     // todo: Vamos a actualizar el chat dando paso a la IA
+//                     // todo: Preparamos los datos
+//                     pasoArbol = dataEstatica.arbol.interaccionAISoul;
+//                     descripcion = 'Se brinda paso AI Soul';
+
+//                     // todo: Crear el mensaje de formulario inicial
+//                     const result = await model.formularioInicial(idChatWeb, pasoArbol, nombres, apellidos, numeroCedula, paisResidencia, ciudadResidencia, indicativoPais, numeroCelular, correoElectronico, autorizacionDatosPersonales, descripcion);
+
+//                     if (result) {
+//                         // todo: Enviar respuesta
+//                         logger.info({
+//                             contexto: 'controller',
+//                             recurso: 'chat.formularioInicial',
+//                             origen: getOrigen(req),
+//                             destino: getDestino(req),
+//                             contextoRecurso: getContextoRecurso(req),
+//                             codigoRespuesta: 200,
+//                             rta: 'El formulario inicial se ha diligenciado correctamente en el sistema y se ha enviado el saludo al usuario, se brinda paso AI Soul.',
+//                             idChat: idChat
+//                         }, 'Formulario inicial procesado exitosamente');
+//                         res.json({
+//                             status: 200,
+//                             type: 'success',
+//                             title: 'Widget Chat Web ETB - IDARTES',
+//                             message: 'El formulario inicial se ha diligenciado correctamente en el sistema y se ha enviado el saludo al usuario, se brinda paso AI Soul.',
+//                         });
+//                     }
+//                 }
+//             }
+//         }
+//     } catch (error) {
+//         logger.error({
+//             contexto: 'controller',
+//             recurso: 'chat.formularioInicial',
+//             origen: getOrigen(req),
+//             destino: getDestino(req),
+//             contextoRecurso: getContextoRecurso(req),
+//             codigoRespuesta: 500,
+//             errorMensaje: error.message,
+//             errorStack: error.stack
+//         }, 'Error en v1/controllers/widget/chat.controller.js → formularioInicial');
+//         res.status(500).json({
+//             status: 500,
+//             type: 'error',
+//             title: 'Widget Chat Web ETB - IDARTES',
+//             message: 'No se pudo diligenciar el formulario inicial, por favor intenta de nuevo o comunícate con nosotros.',
+//             error: error.message
+//         });
+//     }
+// };
 
 // * OPCIONES CONTROL API
 const opcionesControlApi = async (req, res) => {
@@ -307,7 +380,7 @@ const opcionesControlApi = async (req, res) => {
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: errors.array()[0].msg
             });
         }
@@ -332,7 +405,7 @@ const opcionesControlApi = async (req, res) => {
             res.json({
                 status: 200,
                 type: 'success',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: 'Opciones de control api listadas correctamente.',
                 data: result
             });
@@ -351,7 +424,7 @@ const opcionesControlApi = async (req, res) => {
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: 'ETB - IDARTES',
+            title: 'Widget Chat Web ETB - IDARTES',
             message: 'No se pudo listar las opciones de control api, por favor intenta de nuevo o comunícate con nosotros.',
             error: error.message
         });
@@ -385,7 +458,7 @@ const monitor = async (req, res) => {
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: errors.array()[0].msg
             });
         }
@@ -424,7 +497,7 @@ const monitor = async (req, res) => {
             res.json({
                 status: 200,
                 type: 'success',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: 'Chats listados correctamente.',
                 data: result.data,
                 totalCount: result.totalCount,
@@ -445,7 +518,7 @@ const monitor = async (req, res) => {
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: 'ETB - IDARTES',
+            title: 'Widget Chat Web ETB - IDARTES',
             message: 'No se pudo listar los chats, por favor intenta de nuevo o comunícate con nosotros.',
             error: error.message
         });
@@ -479,7 +552,7 @@ const listarArchivosAdjuntos = async (req, res) => {
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: errors.array()[0].msg
             });
         }
@@ -508,7 +581,7 @@ const listarArchivosAdjuntos = async (req, res) => {
             res.json({
                 status: 200,
                 type: 'success',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: 'Archivos adjuntos listados correctamente.',
                 data: result
             });
@@ -527,7 +600,7 @@ const listarArchivosAdjuntos = async (req, res) => {
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: 'ETB - IDARTES',
+            title: 'Widget Chat Web ETB - IDARTES',
             message: 'No se pudo listar los archivos adjuntos, por favor intenta de nuevo o comunícate con nosotros.',
             error: error.message
         });
@@ -561,7 +634,7 @@ const filtrar = async (req, res) => {
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: errors.array()[0].msg
             });
         }
@@ -596,7 +669,7 @@ const filtrar = async (req, res) => {
             res.json({
                 status: 200,
                 type: 'success',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: 'Chat filtrado correctamente.',
                 data: result
             });
@@ -615,7 +688,7 @@ const filtrar = async (req, res) => {
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: 'ETB - IDARTES',
+            title: 'Widget Chat Web ETB - IDARTES',
             message: 'No se pudo filtrar el chat, por favor intenta de nuevo o comunícate con nosotros.',
             error: error.message
         });
@@ -649,7 +722,7 @@ const cerrar = async (req, res) => {
 
         // todo: Cerrar el chat
         const result = await model.cerrar(remitente, estadoChat, estadoGestion, arbol, controlApi, descripcion, estadoRegistro, responsable);
-
+        
         // todo: Enviar respuesta
         if (result) {
 
@@ -680,7 +753,7 @@ const cerrar = async (req, res) => {
                 res.json({
                     status: 200,
                     type: 'success',
-                    title: 'ETB - IDARTES',
+                    title: 'Widget Chat Web ETB - IDARTES',
                     message: 'El chat se ha cerrado correctamente en el sistema.',
                 });
             }
@@ -700,7 +773,7 @@ const cerrar = async (req, res) => {
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: 'ETB - IDARTES',
+            title: 'Widget Chat Web ETB - IDARTES',
             message: 'No se pudo cerrar el chat, por favor intenta de nuevo o comunícate con nosotros.',
             error: error.message
         });
@@ -734,7 +807,7 @@ const cerrarSoulChat = async (req, res) => {
             return res.status(400).json({
                 status: 400,
                 type: 'warning',
-                title: 'ETB - IDARTES',
+                title: 'Widget Chat Web ETB - IDARTES',
                 message: errors.array()[0].msg
             });
         }
@@ -786,7 +859,7 @@ const cerrarSoulChat = async (req, res) => {
                 res.json({
                     status: 200,
                     type: 'success',
-                    title: 'ETB - IDARTES',
+                    title: 'Widget Chat Web ETB - IDARTES',
                     message: 'El chat se ha cerrado correctamente en el sistema.',
                 });
             }
@@ -806,7 +879,7 @@ const cerrarSoulChat = async (req, res) => {
         res.status(500).json({
             status: 500,
             type: 'error',
-            title: 'ETB - IDARTES',
+            title: 'Widget Chat Web ETB - IDARTES',
             message: 'No se pudo cerrar el chat, por favor intenta de nuevo o comunícate con nosotros.',
             error: error.message
         });
@@ -947,7 +1020,7 @@ const cerrarChatsAbiertosAntiguos = async () => {
 // ! EXPORTACIONES
 module.exports = {
     crear,
-    formularioInicial,
+    // formularioInicial,
     opcionesControlApi,
     monitor,
     listarArchivosAdjuntos,

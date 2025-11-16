@@ -1,11 +1,3 @@
-// ! ================================================================================================================================================
-// !                                                      HTTP
-// ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres
-// @lastModified Ramón Dario Rozo Torres
-// @version 1.0.0
-// v1/logger/http.js
-
 const pinoHttp = require('pino-http');
 const logger = require('./index');
 const { getOrigen, getDestino, getContextoRecurso } = require('./context');

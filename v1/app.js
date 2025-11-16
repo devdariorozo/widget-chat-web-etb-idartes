@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                          LEVANTAR SERVIDOR EXPRESS
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres
-// @lastModified Ramón Dario Rozo Torres
+// @author Ramón Dario Rozo Torres (24 de Enero de 2025)
+// @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
 // @version 1.0.0
 // v1/app.js
 
@@ -23,7 +23,6 @@ const Handlebars = require('./helpers/handlebars.js');
 const cors = require('cors');
 const logger = require('./logger');
 const httpLogger = require('./logger/http');
-const uploadLogsToS3 = (process.env.UPLOAD_LOGS_TO_S3 || '').toLowerCase() === 'true';
 
 // ! CONFIGURACIONES
 // * CONFIGURACIÓN DE HORA LOCAL
@@ -121,9 +120,128 @@ app.use(express.static(path.join(__dirname, 'uploads')));
 
 // ! MIDDLEWARES
 // * MIDDLEWARE MORGAN PARA REGISTRAR SOLICITUDES HTTP
-// app.use(morgan('■ ETB - IDARTES :localdate → :method → :status • :url → :response-time ms'));
+// app.use(morgan('■ Thomas Greg y Sons :localdate → :method → :status • :url → :response-time ms'));
 // * MIDDLEWARE PINO-HTTP PARA REGISTRAR SOLICITUDES HTTP
 app.use(httpLogger);
+
+// * MIDDLEWARE PARA CONFIGURAR CONTENT SECURITY POLICY
+app.use((req, res, next) => {
+    // Obtener valores del .env
+    const appUrl = process.env.APP_URL || '';
+    const allowedOrigins = process.env.ALLOWED_ORIGINS || '';
+    const urlApiSoulChat = process.env.URL_API_SOUL_CHAT || '';
+    
+    // Función auxiliar para limpiar URLs y validarlas
+    const limpiarUrl = (url) => {
+        if (!url) return '';
+        // Remover todos los espacios, saltos de línea, tabs y caracteres de control no ASCII
+        // Las URLs no deben contener espacios
+        return url.trim()
+            .replace(/[\r\n\t\s]+/g, '')     // Remover todos los espacios, saltos de línea y tabs
+            .replace(/[^\x21-\x7E]/g, '')    // Remover caracteres de control no ASCII (mantener ! y ~)
+            .trim();
+    };
+    
+    // Construir connect-src
+    let connectSrc = "'self'";
+    if (appUrl) {
+        const urlLimpia = limpiarUrl(appUrl);
+        if (urlLimpia) connectSrc += ` ${urlLimpia}`;
+    }
+    if (urlApiSoulChat) {
+        try {
+            const urlObj = new URL(urlApiSoulChat);
+            const originLimpio = limpiarUrl(urlObj.origin);
+            if (originLimpio && !connectSrc.includes(originLimpio)) {
+                connectSrc += ` ${originLimpio}`;
+            }
+        } catch (e) {
+            const urlLimpia = limpiarUrl(urlApiSoulChat);
+            if (urlLimpia && !connectSrc.includes(urlLimpia)) {
+                connectSrc += ` ${urlLimpia}`;
+            }
+        }
+    }
+    
+    // Procesar ALLOWED_ORIGINS para connect-src
+    if (allowedOrigins && allowedOrigins !== '*') {
+        const origins = allowedOrigins.split(',')
+            .map(o => limpiarUrl(o))
+            .filter(o => o && o !== 'file://' && o !== 'null' && o !== '');
+        origins.forEach(origin => {
+            if (origin && !origin.includes('*') && !connectSrc.includes(origin)) {
+                connectSrc += ` ${origin}`;
+            }
+        });
+    }
+    
+    // Construir frame-src y child-src (para iframes internos)
+    let frameSrc = "'self'";
+    if (appUrl) {
+        const urlLimpia = limpiarUrl(appUrl);
+        if (urlLimpia) frameSrc += ` ${urlLimpia}`;
+    }
+    
+    // Construir frame-ancestors (dónde se puede embebear el widget)
+    let frameAncestors = "'self'";
+    
+    // Incluir siempre file: para permitir apertura desde file:// (útil para desarrollo y pruebas locales)
+    // No representa riesgo de seguridad ya que solo permite que archivos locales abran el widget
+    const incluirFile = true;
+    
+    // Procesar ALLOWED_ORIGINS para frame-ancestors
+    if (allowedOrigins && allowedOrigins !== '*') {
+        const origins = allowedOrigins.split(',')
+            .map(o => limpiarUrl(o))
+            .filter(o => o && o !== 'file://' && o !== 'null' && o !== '');
+        origins.forEach(origin => {
+            if (origin && !origin.includes('*') && !frameAncestors.includes(origin)) {
+                frameAncestors += ` ${origin}`;
+            } else if (origin && origin.includes('*') && !frameAncestors.includes(origin)) {
+                frameAncestors += ` ${origin}`;
+            }
+        });
+        // Agregar file: siempre si está habilitado y no está ya en la lista
+        if (incluirFile && !frameAncestors.includes('file:')) {
+            frameAncestors += ' file:';
+        }
+    } else if (allowedOrigins === '*') {
+        // Si es *, construir una política permisiva
+        if (appUrl) {
+            const urlLimpia = limpiarUrl(appUrl);
+            if (incluirFile) {
+                frameAncestors = `'self' file: ${urlLimpia} *`;
+            } else {
+                frameAncestors = `'self' ${urlLimpia} *`;
+            }
+        } else {
+            if (incluirFile) {
+                frameAncestors = "'self' file: *";
+            } else {
+                frameAncestors = "'self' *";
+            }
+        }
+    }
+    
+    // Construir CSP asegurando que no haya espacios extras o caracteres inválidos
+    const csp = [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
+        "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com",
+        "font-src 'self' data: https://cdnjs.cloudflare.com https://fonts.gstatic.com https://fonts.googleapis.com",
+        "img-src 'self' data: https:",
+        `connect-src ${connectSrc}`,
+        `frame-src ${frameSrc}`,
+        `child-src ${frameSrc}`,
+        `frame-ancestors ${frameAncestors}`
+    ].join('; ') + ';';
+    
+    // Limpiar el CSP final para asegurar que no tenga espacios extras
+    const cspLimpio = csp.replace(/\s+/g, ' ').trim();
+    
+    res.setHeader('Content-Security-Policy', cspLimpio);
+    next();
+});
 
 // * MIDDLEWARE PARA ACEPTAR DATOS EN FORMATO JSON
 app.use(bodyParser.json());
@@ -269,23 +387,15 @@ app.listen(PORT, () => {
         }, 'Error al iniciar scheduler');
     }
 
-    if (uploadLogsToS3) {
-        try {
-            const subidaLogsS3Scheduler = require('./schedulers/subidaLogsS3.scheduler.js');
-            subidaLogsS3Scheduler.iniciarScheduler();
-            logger.info({ contexto: 'schedulers', nombre: 'subidaLogsS3' }, 'Scheduler iniciado correctamente');
-        } catch (error) {
-            logger.error({ 
-                contexto: 'schedulers', 
-                nombre: 'subidaLogsS3',
-                errorMensaje: error.message 
-            }, 'Error al iniciar scheduler');
-        }
-    } else {
-        logger.info({
-            contexto: 'schedulers',
+    try {
+        const subidaLogsS3Scheduler = require('./schedulers/subidaLogsS3.scheduler.js');
+        subidaLogsS3Scheduler.iniciarScheduler();
+        logger.info({ contexto: 'schedulers', nombre: 'subidaLogsS3' }, 'Scheduler iniciado correctamente');
+    } catch (error) {
+        logger.error({ 
+            contexto: 'schedulers', 
             nombre: 'subidaLogsS3',
-            habilitado: false
-        }, 'Scheduler de subida de logs a S3 deshabilitado por configuración');
+            errorMensaje: error.message 
+        }, 'Error al iniciar scheduler');
     }
 });

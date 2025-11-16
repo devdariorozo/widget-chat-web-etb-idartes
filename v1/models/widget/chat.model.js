@@ -1,8 +1,8 @@
-// ! ================================================================================================================================================
+                                                                                                                                                                                                                // ! ================================================================================================================================================
 // !                                                      MODELOS PARA CHAT
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres
-// @lastModified Ramón Dario Rozo Torres
+// @author Ramón Dario Rozo Torres (24 de Enero de 2025)
+// @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
 // @version 1.0.0
 // v1/models/widget/chat.model.js
 
@@ -121,17 +121,14 @@ const filtrar = async (idChatWeb) => {
                 cht_control_api AS CONTROL_API,
                 cht_control_peticiones AS CONTROL_PETICIONES,
                 cht_resultado_api AS RESULTADO_API,
-                '-' AS NOMBRES,
-                '-' AS APELLIDOS,
-                '-' AS NUMERO_CEDULA,
-                '-' AS PAIS_RESIDENCIA,
-                '-' AS CIUDAD_RESIDENCIA,
-                '-' AS INDICATIVO_PAIS,
-                '-' AS NUMERO_CELULAR,
-                '-' AS CORREO_ELECTRONICO,
-                '-' AS AUTORIZACION_DATOS_PERSONALES,
-                '-' AS ADJUNTOS,
-                '-' AS RUTA_ADJUNTOS,
+                cht_nombres_apellidos AS NOMBRES_APELLIDOS, 
+                cht_genero AS GENERO,
+                cht_correo_electronico AS CORREO_ELECTRONICO,
+                cht_telefono AS TELEFONO,
+                cht_localidad AS LOCALIDAD,
+                cht_en_que_podemos_ayudarle AS EN_QUE_PODEMOS_AYUDARLE,
+                cht_rango_edad AS RANGO_EDAD,
+                cht_autorizacion_tratamiento_datos AS AUTORIZACION_TRATAMIENTO_DATOS,
                 cht_descripcion AS DESCRIPCION,
                 cht_registro AS REGISTRO,
                 cht_actualizacion AS FECHA_ACTUALIZACION,
@@ -165,62 +162,62 @@ const filtrar = async (idChatWeb) => {
 };
 
 // * FORMULARIO INICIAL
-const formularioInicial = async (idChatWeb, pasoArbol, nombres, apellidos, numeroCedula, paisResidencia, ciudadResidencia, indicativoPais, numeroCelular, correoElectronico, autorizacionDatosPersonales, descripcion) => {
-    let connMySQL;
-    try {
-        // todo: Obtener conexión del pool
-        connMySQL = await pool.getConnection();
+// const formularioInicial = async (idChatWeb, pasoArbol, nombres, apellidos, numeroCedula, paisResidencia, ciudadResidencia, indicativoPais, numeroCelular, correoElectronico, autorizacionDatosPersonales, descripcion) => {
+//     let connMySQL;
+//     try {
+//         // todo: Obtener conexión del pool
+//         connMySQL = await pool.getConnection();
 
-        // todo: Sentencia SQL
-        const query = `
-            UPDATE
-                tbl_chat
-            SET
-                cht_arbol = ?,
-                cht_nombres = ?,
-                cht_apellidos = ?,
-                cht_numero_cedula = ?,
-                cht_pais_residencia = ?,
-                cht_ciudad_residencia = ?,
-                cht_indicativo_pais = ?,
-                cht_numero_celular = ?,
-                cht_correo_electronico = ?,
-                cht_autorizacion_datos_personales = ?,
-                cht_descripcion = ?
-            WHERE
-                cht_remitente = ?;
-        `;
+//         // todo: Sentencia SQL
+//         const query = `
+//             UPDATE
+//                 tbl_chat
+//             SET
+//                 cht_arbol = ?,
+//                 cht_nombres = ?,
+//                 cht_apellidos = ?,
+//                 cht_numero_cedula = ?,
+//                 cht_pais_residencia = ?,
+//                 cht_ciudad_residencia = ?,
+//                 cht_indicativo_pais = ?,
+//                 cht_numero_celular = ?,
+//                 cht_correo_electronico = ?,
+//                 cht_autorizacion_datos_personales = ?,
+//                 cht_descripcion = ?
+//             WHERE
+//                 cht_remitente = ?;
+//         `;
 
-        // todo: Ejecutar la sentencia y retornar respuesta
-        const result = await connMySQL.query(query, [pasoArbol, nombres, apellidos, numeroCedula, paisResidencia, ciudadResidencia, indicativoPais, numeroCelular, correoElectronico, autorizacionDatosPersonales, descripcion, idChatWeb]);
+//         // todo: Ejecutar la sentencia y retornar respuesta
+//         const result = await connMySQL.query(query, [pasoArbol, nombres, apellidos, numeroCedula, paisResidencia, ciudadResidencia, indicativoPais, numeroCelular, correoElectronico, autorizacionDatosPersonales, descripcion, idChatWeb]);
 
-        // todo: Obtener el id del chat
-        const queryIdChat = `
-            SELECT
-                cht_id AS ID_CHAT
-            FROM
-                tbl_chat
-            WHERE
-                cht_remitente = ?;
-        `;
-        const [rows] = await connMySQL.query(queryIdChat, [idChatWeb]);
-        return rows;
-    } catch (error) {
-        // todo: Capturar el error
-        logger.error({
-            contexto: 'model',
-            recurso: 'chat.formularioInicial',
-            codigoRespuesta: 500,
-            errorMensaje: error.message,
-            errorStack: error.stack,
-            parametros: { idChatWeb, pasoArbol }
-        }, 'Error en v1/models/widget/chat.model.js → formularioInicial');
-        return false;
-    } finally {
-        // todo: Liberar conexión al pool
-        if (connMySQL) connMySQL.release();
-    }
-};
+//         // todo: Obtener el id del chat
+//         const queryIdChat = `
+//             SELECT
+//                 cht_id AS ID_CHAT
+//             FROM
+//                 tbl_chat
+//             WHERE
+//                 cht_remitente = ?;
+//         `;
+//         const [rows] = await connMySQL.query(queryIdChat, [idChatWeb]);
+//         return rows;
+//     } catch (error) {
+//         // todo: Capturar el error
+//         logger.error({
+//             contexto: 'model',
+//             recurso: 'chat.formularioInicial',
+//             codigoRespuesta: 500,
+//             errorMensaje: error.message,
+//             errorStack: error.stack,
+//             parametros: { idChatWeb, pasoArbol }
+//         }, 'Error en v1/models/widget/chat.model.js → formularioInicial');
+//         return false;
+//     } finally {
+//         // todo: Liberar conexión al pool
+//         if (connMySQL) connMySQL.release();
+//     }
+// };
 
 // * FILTRAR ENLACES
 const filtrarEnlaces = async (idChat) => {
@@ -347,17 +344,14 @@ const monitor = async (fechaInicial, fechaFinal, opcionControlApi, numeroLimite,
                 cht_control_api AS CONTROL_API,
                 cht_control_peticiones AS CONTROL_PETICIONES,
                 cht_resultado_api AS RESULTADO_API,
-                cht_nombres AS NOMBRES,
-                cht_apellidos AS APELLIDOS,
-                cht_numero_cedula AS NUMERO_CEDULA,
-                cht_pais_residencia AS PAIS_RESIDENCIA,
-                cht_ciudad_residencia AS CIUDAD_RESIDENCIA,
-                cht_indicativo_pais AS INDICATIVO_PAIS,
-                cht_numero_celular AS NUMERO_CELULAR,
+                cht_nombres_apellidos AS NOMBRES_APELLIDOS,
+                cht_genero AS GENERO,
                 cht_correo_electronico AS CORREO_ELECTRONICO,
-                cht_autorizacion_datos_personales AS AUTORIZACION_DATOS_PERSONALES,
-                cht_adjuntos AS ADJUNTOS,
-                cht_ruta_adjuntos AS RUTA_ADJUNTOS,
+                cht_telefono AS TELEFONO,
+                cht_localidad AS LOCALIDAD,
+                cht_en_que_podemos_ayudarle AS EN_QUE_PODEMOS_AYUDARLE,
+                cht_rango_edad AS RANGO_EDAD,
+                cht_autorizacion_tratamiento_datos AS AUTORIZACION_TRATAMIENTO_DATOS,
                 cht_descripcion AS DESCRIPCION,
                 cht_registro AS REGISTRO,
                 cht_actualizacion AS FECHA_ACTUALIZACION,
@@ -481,8 +475,8 @@ const actualizar = async (idChat, pasoArbol, chatData) => {
         // todo: Obtener conexión del pool
         connMySQL = await pool.getConnection();
 
-        // todo: Intentar primero con todas las columnas según migración
-        let query = `
+        // todo: Sentencia SQL
+        const query = `
             UPDATE
                 tbl_chat
             SET
@@ -490,17 +484,14 @@ const actualizar = async (idChat, pasoArbol, chatData) => {
                 cht_control_api = ?,
                 cht_control_peticiones = ?,
                 cht_resultado_api = ?,
-                cht_nombres = ?,
-                cht_apellidos = ?,
-                cht_numero_cedula = ?,
-                cht_pais_residencia = ?,
-                cht_ciudad_residencia = ?,
-                cht_indicativo_pais = ?,
-                cht_numero_celular = ?,
+                cht_nombres_apellidos = ?,
+                cht_genero = ?,
                 cht_correo_electronico = ?,
-                cht_autorizacion_datos_personales = ?,
-                cht_adjuntos = ?,
-                cht_ruta_adjuntos = ?,
+                cht_telefono = ?,
+                cht_localidad = ?,
+                cht_en_que_podemos_ayudarle = ?,
+                cht_rango_edad = ?,
+                cht_autorizacion_tratamiento_datos = ?,
                 cht_descripcion = ?,
                 cht_registro = ?,
                 cht_responsable = ?
@@ -508,78 +499,39 @@ const actualizar = async (idChat, pasoArbol, chatData) => {
                 cht_id = ?;
         `;
 
-        let params = [
+        // todo: Preparar resultadoApi de forma segura (string o JSON stringificado)
+        const resultadoApiString = typeof chatData.resultadoApi === 'string'
+            ? chatData.resultadoApi
+            : JSON.stringify(chatData.resultadoApi || '-');
+
+        // todo: Asegurar tipos válidos para campos numéricos
+        const controlPeticionesNumber = Number.isFinite(chatData.controlPeticiones)
+            ? chatData.controlPeticiones
+            : parseInt(chatData.controlPeticiones, 10) || 0;
+
+        // todo: Parametros de la sentencia
+        const params = [
             pasoArbol,
-            chatData.controlApi || '-',
-            chatData.controlPeticiones || 0,
-            typeof chatData.resultadoApi === 'string' ? chatData.resultadoApi : JSON.stringify(chatData.resultadoApi || {}),
-            chatData.nombres || '-',
-            chatData.apellidos || '-',
-            chatData.numeroCedula || '-',
-            chatData.paisResidencia || '-',
-            chatData.ciudadResidencia || '-',
-            chatData.indicativoPais || '-',
-            chatData.numeroCelular || '-',
-            chatData.correoElectronico || '-',
-            chatData.autorizacionDatosPersonales || 'No',
-            chatData.adjuntos || 'No',
-            chatData.rutaAdjuntos || '-',
-            chatData.descripcion || '-',
-            chatData.estadoRegistro || 'Activo',
-            chatData.responsable || 'Chat Web ETB - IDARTES',
+            chatData.controlApi,
+            controlPeticionesNumber,
+            resultadoApiString,
+            chatData.nombresApellidos,
+            chatData.genero,
+            chatData.correoElectronico,
+            chatData.telefono,
+            chatData.localidad,
+            chatData.enQuePodemosAyudarle,
+            chatData.rangoEdad,
+            chatData.autorizacionTratamientoDatos,
+            chatData.descripcion,
+            chatData.estadoRegistro,
+            chatData.responsable,
             idChat
         ];
 
         // todo: Ejecutar la sentencia
-        try {
-            const [rows] = await connMySQL.query(query, params);
-            return rows[0];
-        } catch (updateError) {
-            // Si falla por columnas inexistentes, intentar solo con columnas básicas
-            if (updateError.message && updateError.message.includes('Unknown column')) {
-                logger.warn({
-                    contexto: 'model',
-                    recurso: 'chat.actualizar',
-                    codigoRespuesta: 500,
-                    errorMensaje: updateError.message,
-                    parametros: { idChat, pasoArbol },
-                    accion: 'Intentando actualización con columnas básicas'
-                }, 'Columnas de formulario no existen, actualizando solo columnas básicas');
-
-                // Query solo con columnas básicas que siempre existen
-                query = `
-                    UPDATE
-                        tbl_chat
-                    SET
-                        cht_arbol = ?,
-                        cht_control_api = ?,
-                        cht_control_peticiones = ?,
-                        cht_resultado_api = ?,
-                        cht_descripcion = ?,
-                        cht_registro = ?,
-                        cht_responsable = ?
-                    WHERE
-                        cht_id = ?;
-                `;
-
-                params = [
-                    pasoArbol,
-                    chatData.controlApi || '-',
-                    chatData.controlPeticiones || 0,
-                    typeof chatData.resultadoApi === 'string' ? chatData.resultadoApi : JSON.stringify(chatData.resultadoApi || {}),
-                    chatData.descripcion || '-',
-                    chatData.estadoRegistro || 'Activo',
-                    chatData.responsable || 'Chat Web ETB - IDARTES',
-                    idChat
-                ];
-
-                const [rows] = await connMySQL.query(query, params);
-                return rows[0];
-            } else {
-                // Si es otro tipo de error, lanzarlo
-                throw updateError;
-            }
-        }
+        const [result] = await connMySQL.query(query, params);
+        return result && result.affectedRows > 0;
     } catch (error) {
         // todo: Capturar el error
         logger.error({
@@ -724,8 +676,18 @@ const listarChatsAbiertosAntiguos = async (tiempoLimiteHoras, fechaActual) => {
                 cht_remitente AS REMITENTE,
                 cht_fecha AS FECHA_REGISTRO,
                 cht_arbol AS ARBOL,
-                '-' AS NOMBRES,
-                '-' AS APELLIDOS,
+                cht_nombres_apellidos AS NOMBRES_APELLIDOS,
+                cht_genero AS GENERO,
+                cht_correo_electronico AS CORREO_ELECTRONICO,
+                cht_telefono AS TELEFONO,
+                cht_localidad AS LOCALIDAD,
+                cht_en_que_podemos_ayudarle AS EN_QUE_PODEMOS_AYUDARLE,
+                cht_rango_edad AS RANGO_EDAD,
+                cht_autorizacion_tratamiento_datos AS AUTORIZACION_TRATAMIENTO_DATOS,
+                cht_descripcion AS DESCRIPCION,
+                cht_registro AS REGISTRO,
+                cht_actualizacion AS FECHA_ACTUALIZACION,
+                cht_responsable AS RESPONSABLE,
                 TIMESTAMPDIFF(HOUR, cht_fecha, ?) AS HORAS_TRANSCURRIDAS
             FROM
                 tbl_chat
@@ -814,7 +776,7 @@ const cerrarChatPorId = async (idChat, estadoChat, estadoGestion, arbol, control
 module.exports = {
     crear,
     verificarDuplicado,
-    formularioInicial,
+    // formularioInicial,
     filtrar,
     filtrarEnlaces,
     error,

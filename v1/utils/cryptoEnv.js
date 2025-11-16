@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                     HERRAMIENTA DE ENCRIPTACIÓN VARIABLES DE ENTORNO
 // ! ================================================================================================================================================
-// @Autor: Ramón Dario Rozo Torres
-// @Última Modificación: Ramón Dario Rozo Torres
+// @Autor: Ramón Dario Rozo Torres (30 de Julio de 2024)
+// @Última Modificación: Ramón Dario Rozo Torres (30 de Julio de 2024)
 // @version 1.0.0
 // frontend/v1/utils/cryptoEnv.js
 
