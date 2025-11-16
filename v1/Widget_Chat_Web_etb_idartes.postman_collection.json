@@ -1,0 +1,100 @@
+{
+	"info": {
+		"_postman_id": "d0f778d3-1a12-4e23-8582-6fb837787680",
+		"name": "widget-chat-web-etb-idartes",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "18922285"
+	},
+	"item": [
+		{
+			"name": "Crear Soul Chat",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"idChat\": 218,\r\n  \"remitente\": \"zpq01l6sz2n\",\r\n  \"estado\": \"Enviado\",\r\n  \"tipo\": \"Texto\",\r\n  \"contenido\": \"Mensaje de prueba simulando soul chat - saludo y solicito nombres y apellidos.\",\r\n  \"enlaces\": \"-\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5006/widget/mensaje/crearSoulChat",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5006",
+					"path": [
+						"widget",
+						"mensaje",
+						"crearSoulChat"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Encuesta Soul Chat",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"idChat\": 218,\r\n  \"remitente\": \"zpq01l6sz2n\",\r\n  \"estado\": \"Enviado\",\r\n  \"pasoWidgetArbol\": \"Paso Encuesta\",\r\n  \"tipo\": \"Texto\",\r\n  \"contenido\": \"Mensaje de prueba simulando soul chat - solicitando encuesta.\",\r\n  \"enlaces\": \"-\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5006/widget/mensaje/encuestaSoulChat",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5006",
+					"path": [
+						"widget",
+						"mensaje",
+						"encuestaSoulChat"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Cerrar Soul Chat",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"idChat\": 6,\r\n  \"remitente\": \"4pamha43gxf\",\r\n  \"estadoChat\": \"Recibido\",\r\n  \"estadoGestion\": \"Cerrado\",\r\n  \"arbol\": \"Despedida\",\r\n  \"controlApi\": \"Success\",\r\n  \"descripcion\": \"Simulando cierre por soul chat desde postman\",\r\n  \"estadoRegistro\": \"Activo\",\r\n  \"responsable\": \"Chat Web MinTic\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5002/widget/chat/cerrarSoulChat",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5002",
+					"path": [
+						"widget",
+						"chat",
+						"cerrarSoulChat"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

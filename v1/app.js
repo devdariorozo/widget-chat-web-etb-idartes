@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                          LEVANTAR SERVIDOR EXPRESS
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres (24 de Enero de 2025)
-// @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
+// @author Ramón Dario Rozo Torres
+// @lastModified Ramón Dario Rozo Torres
 // @version 1.0.0
 // v1/app.js
 
@@ -120,7 +120,7 @@ app.use(express.static(path.join(__dirname, 'uploads')));
 
 // ! MIDDLEWARES
 // * MIDDLEWARE MORGAN PARA REGISTRAR SOLICITUDES HTTP
-// app.use(morgan('■ Thomas Greg y Sons :localdate → :method → :status • :url → :response-time ms'));
+// app.use(morgan('■ ETB IDARTES :localdate → :method → :status • :url → :response-time ms'));
 // * MIDDLEWARE PINO-HTTP PARA REGISTRAR SOLICITUDES HTTP
 app.use(httpLogger);
 

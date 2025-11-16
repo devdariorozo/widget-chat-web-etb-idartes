@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                             VALIDADOR DE MENSAJE
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres (24 de Enero de 2025)
-// @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
+// @author Ramón Dario Rozo Torres
+// @lastModified Ramón Dario Rozo Torres
 // @version 1.0.0
 // v1/validators/widget/mensaje.validator.js
 
@@ -26,6 +26,46 @@ const crear = [
 
 // * CREAR MENSJAJE DESDE SOUL CHAT
 const crearSoulChat = [
+    // todo: Vallidar campo 'idChat'
+    body('idChat')
+        .trim()
+        .notEmpty().withMessage('El campo "idChat" no puede estar vacío...')
+        .isInt().withMessage('El campo "idChat" debe ser un número entero...'),
+
+    // todo: Validar campo 'remitente'
+    body('remitente')
+        .trim()
+        .notEmpty().withMessage('El campo "remitente" no puede estar vacío...'),
+
+    // todo: Validar campo 'estado'
+    body('estado')
+        .trim()
+        .notEmpty().withMessage('El campo "estado" no puede estar vacío...')
+        .isIn(['Enviado']).withMessage('El campo "estado" debe ser "Enviado"'),
+
+    // todo: Validar campo 'tipo'
+    body('tipo')
+        .trim()
+        .notEmpty().withMessage('El campo "tipo" no puede estar vacío...'),
+
+    // todo: Validar campo 'contenido'
+    body('contenido')
+        .trim()
+        .notEmpty().withMessage('El campo "contenido" no puede estar vacío...'),
+
+    // todo: Validar campo 'enlaces'
+    body('enlaces')
+        .trim()
+        .custom(value => {
+            if (value === '-') {
+                return true;
+            }
+            return value.length > 0;
+        }).withMessage('El campo "enlaces" debe ser un guión (-) o contener un valor válido...'),    
+];
+
+// * CREAR MENSJAJE DESDE SOUL CHAT - PASO WIDGET ARBOL ENCUESTA
+const encuestaSoulChat = [
     // todo: Vallidar campo 'idChat'
     body('idChat')
         .trim()
@@ -138,6 +178,7 @@ const limpiarMensajesInactividad = [
 module.exports = { 
     crear,
     crearSoulChat,
+    encuestaSoulChat,
     listarNoLeido,
     leer,
     adjuntarArchivos,

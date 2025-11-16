@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                      MIDDLEWARE RATE LIMITING
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres (24 de Enero de 2025)
-// @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
+// @author Ramón Dario Rozo Torres
+// @lastModified Ramón Dario Rozo Torres
 // @version 1.0.0
 // v1/middlewares/rateLimiter.js
 
@@ -678,9 +678,170 @@ const crearMensajeSoulChatLimiter = (req, res, next) => {
     }
 };
 
+// * RATE LIMITING ESPECÍFICO PARA CREAR MENSAJE DESDE SOUL CHAT - PASO WIDGET ARBOL ENCUESTA
+const crearMensajeSoulChatEncuestaLimiter = (req, res, next) => {
+    
+    try {
+        const ip = req.ip;
+        const now = Date.now();
+        const blockTimeMs = BASE_WINDOW_MS; // Tiempo de bloqueo en ms
+        const maxRequests = BASE_MAX; // Máximo de peticiones
+        
+        // Crear clave única para esta IP Y ENDPOINT ESPECÍFICO
+        const endpoint = req.path.split('/').pop();
+        const key = `crearMensajeSoulChatEncuesta_${ip}_${endpoint}`;
+        
+        // Inicializar el store global si no existe
+        if (!global.rateLimitStore) {
+            global.rateLimitStore = new Map();
+        }
+        
+        // Obtener datos existentes o crear nuevos
+        let userData = global.rateLimitStore.get(key);
+        
+        if (!userData) {
+            // Primera vez para esta IP en este endpoint
+            userData = {
+                count: 0,
+                blocked: false,
+                blockStartTime: null
+            };
+            logger.info({
+                contexto: 'middleware',
+                recurso: 'rateLimiter.crearMensajeSoulChatEncuestaLimiter',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                ip,
+                endpoint,
+                accion: 'nuevo_usuario'
+            }, 'Nuevo usuario en rate limiter crear mensaje soul chat encuesta');
+            
+            global.rateLimitStore.set(key, userData);
+        }
+        
+        // VERIFICAR SI ESTÁ BLOQUEADO
+        if (userData.blocked && userData.blockStartTime) {
+            const timeSinceBlock = now - userData.blockStartTime;
+            
+            if (timeSinceBlock >= blockTimeMs) {
+                // ¡BLOQUEO COMPLETADO! REINICIAR CONTADOR
+                logger.info({
+                    contexto: 'middleware',
+                    recurso: 'rateLimiter.crearMensajeSoulChatEncuestaLimiter',
+                    origen: getOrigen(req),
+                    destino: getDestino(req),
+                    contextoRecurso: getContextoRecurso(req),
+                    ip,
+                    endpoint,
+                    tiempoBloqueadoSegundos: Math.round(timeSinceBlock / 1000),
+                    accion: 'bloqueo_completado'
+                }, 'Bloqueo completado - contador reiniciado');
+                
+                userData.count = 0;
+                userData.blocked = false;
+                userData.blockStartTime = null;
+                
+                global.rateLimitStore.set(key, userData);
+                
+            } else {
+                // AÚN ESTÁ BLOQUEADO - CALCULAR TIEMPO RESTANTE
+                const timeRemaining = blockTimeMs - timeSinceBlock;
+                logger.warn({
+                    contexto: 'middleware',
+                    recurso: 'rateLimiter.crearMensajeSoulChatEncuestaLimiter',
+                    origen: getOrigen(req),
+                    destino: getDestino(req),
+                    contextoRecurso: getContextoRecurso(req),
+                    codigoRespuesta: 429,
+                    rta: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
+                    ip,
+                    endpoint,
+                    tiempoRestanteSegundos: Math.round(timeRemaining / 1000),
+                    retryAfter: LIMITE_MINUTOS
+                }, 'IP aún bloqueada en rate limiter crear mensaje soul chat encuesta');
+                
+                return res.status(429).json({
+                    status: 429,
+                    message: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
+                    retryAfter: LIMITE_MINUTOS
+                });
+            }
+        }
+        
+        // SI NO ESTÁ BLOQUEADO, INCREMENTAR CONTADOR Y VERIFICAR LÍMITE
+        if (!userData.blocked) {
+            userData.count++;
+            
+            // SI SE ALCANZÓ EL LÍMITE, BLOQUEAR
+            if (userData.count >= maxRequests) {
+                userData.blocked = true;
+                userData.blockStartTime = now;
+                
+                logger.warn({
+                    contexto: 'middleware',
+                    recurso: 'rateLimiter.crearMensajeSoulChatEncuestaLimiter',
+                    origen: getOrigen(req),
+                    destino: getDestino(req),
+                    contextoRecurso: getContextoRecurso(req),
+                    codigoRespuesta: 429,
+                    rta: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
+                    ip,
+                    endpoint,
+                    peticiones: userData.count,
+                    maxPeticiones: maxRequests,
+                    bloqueadoPorMinutos: LIMITE_MINUTOS
+                }, 'Límite alcanzado - IP bloqueada');
+                
+                global.rateLimitStore.set(key, userData);
+                
+                return res.status(429).json({
+                    status: 429,
+                    message: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
+                    retryAfter: LIMITE_MINUTOS
+                });
+            }
+            
+            global.rateLimitStore.set(key, userData);
+            
+        } else {
+            // ESTE CASO NO DEBERÍA OCURRIR, PERO POR SEGURIDAD
+            logger.warn({
+                contexto: 'middleware',
+                recurso: 'rateLimiter.crearMensajeSoulChatEncuestaLimiter',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 429,
+                rta: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
+                ip,
+                endpoint,
+                accion: 'estado_inconsistente'
+            }, 'Estado inconsistente en rate limiter');
+            return res.status(429).json({
+                status: 429,
+                message: 'Demasiados mensajes enviados. Intenta nuevamente más tarde.',
+                retryAfter: LIMITE_MINUTOS
+            });
+        }
+        
+        next();
+    } catch (error) {
+        logger.error({
+            contexto: 'middleware',
+            recurso: 'rateLimiter.crearMensajeSoulChatEncuestaLimiter',
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack
+        }, 'Error en crearMensajeSoulChatEncuestaLimiter');
+        next();
+    }
+};
+
 module.exports = {
     crearChatLimiter,
     formLimiter,
     crearMensajeLimiter,
     crearMensajeSoulChatLimiter,
+    crearMensajeSoulChatEncuestaLimiter,
 };

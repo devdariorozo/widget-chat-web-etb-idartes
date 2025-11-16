@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                             ENRUTADOR DE MENSAJE
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres (24 de Enero de 2025)
-// @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
+// @author Ramón Dario Rozo Torres
+// @lastModified Ramón Dario Rozo Torres
 // @version 1.0.0
 // v1/routes/widget/mensaje.routes.js
 
@@ -13,7 +13,7 @@ const validator = require('../../validators/widget/mensaje.validator.js');
 const controller = require('../../controllers/widget/mensaje.controller.js');
 const multer = require('multer');
 const path = require('path');
-const { crearMensajeLimiter, crearMensajeSoulChatLimiter } = require('../../middlewares/rateLimiter.js');
+const { crearMensajeLimiter, crearMensajeSoulChatLimiter, crearMensajeSoulChatEncuestaLimiter } = require('../../middlewares/rateLimiter.js');
 
 // Configuración de multer para manejar archivos
 const storage = multer.diskStorage({
@@ -33,6 +33,9 @@ router.post('/crear', crearMensajeLimiter, validator.crear, controller.crear);
 
 // TODO: CREAR MENSAJE DESDE SOUL CHAT
 router.post('/crearSoulChat', crearMensajeSoulChatLimiter, validator.crearSoulChat, controller.crearSoulChat);
+
+// TODO: CREAR MENSAJE DESDE SOUL CHAT - PASO WIDGET ARBOL ENCUESTA
+router.post('/encuestaSoulChat', crearMensajeSoulChatEncuestaLimiter, validator.encuestaSoulChat, controller.encuestaSoulChat);
 
 // TODO: LISTAR MENSAJE NO LEÍDOS
 router.get('/listarNoLeido', validator.listarNoLeido, controller.listarNoLeido);

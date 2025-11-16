@@ -1,14 +1,14 @@
-# WidgetWEB_Agendamiento_Pymes_ETB
+# widget-chat-web-etb-idartes
 
-**Autor:** Ramón Dario Rozo Torres 24 de Enero de 2025
-**Última Modificación:** Ramón Dario Rozo Torres 26 de Junio de 2025
+**Autor:** Ramón Dario Rozo Torres
+**Última Modificación:** Ramón Dario Rozo Torres
 **Versión:** 1.0.0
 
 ## Descripción
 
-Widget chat web para la empresa ThomasGreg Sons.
+Widget chat web para la empresa ETB IDARTES.
 
-## 📦 Información Técnica
+## 📦 Información Técnica (Proyecto v1)
 
 | Tecnología             | Versión         | Descripción                                        |
 |------------------------|-----------------|----------------------------------------------------|
@@ -17,20 +17,187 @@ Widget chat web para la empresa ThomasGreg Sons.
 | **express-handlebars** | ^8.0.1          | Motor de plantillas para vistas                    |
 | **mysql2**             | ^3.11.0         | Cliente MySQL para Node.js (con soporte promesas)  |
 | **dotenv**             | ^16.4.5         | Manejo de variables de entorno                     |
-| **morgan**             | ^1.10.0         | Logger de peticiones HTTP                          |
 | **moment**             | ^2.30.1         | Manejo de fechas y horas                           |
 | **axios**              | ^1.7.9          | Cliente HTTP para Node.js                          |
 | **express-fileupload** | ^1.5.1          | Middleware para subir archivos                     |
-| **jsonwebtoken**       | ^9.0.2          | Autenticación y manejo de JWT                      |
 | **multer**             | ^1.4.5-lts.1    | Middleware para manejo de archivos                 |
 | **cors**               | ^2.8.5          | Middleware para habilitar CORS                     |
 | **express-validator**  | ^7.1.0          | Validación de datos en Express                     |
 | **Materialize**        | (CDN)           | Framework CSS para UI                              |
 | **Docker**             | 24+             | Contenerización de la aplicación                   |
 | **docker-compose**     | 1.29+           | Orquestación de contenedores                       |
+| **AWS S3**             | SDK v3          | Almacenamiento de archivos y logs                  |
+| **Pino / Pino-pretty** | 10.x / 13.x     | Logger estructurado y formateo legible             |
 
+---
 
+## 🚀 Proyecto v1 – Ejecución rápida
 
+- **Desarrollo local**
+  ```bash
+  cd v1
+  npm install
+  npm run dev
+  ```
+  - Levanta `app.js` con **nodemon** (hot reload).
+  - Usa las variables de `v1/.env`.
+
+- **Ambiente QA / pruebas**
+  ```bash
+  cd v1
+  npm run qa
+  ```
+  - Ejecuta `node app.js` con la configuración de `.env` para QA.
+
+- **Ambiente producción**
+  ```bash
+  cd v1
+  npm run pro
+  ```
+  - Ejecuta `node app.js` en modo servidor tradicional (sin nodemon).
+
+- **Modo Docker (app + MySQL local)**
+  ```bash
+  cd v1
+  npm run docker:up      # Construir y levantar
+  npm run docker:logs    # Ver logs
+  npm run docker:down    # Detener
+  ```
+  - La app corre en contenedor, pero se conecta a **MySQL local** (fuera de Docker), usando la configuración de `.env`.
+
+---
+
+## 🧾 Scripts npm principales (v1)
+
+- **`npm run dev`**  
+  - `nodemon app.js`  
+  - Uso: desarrollo, recarga automática ante cambios.
+
+- **`npm run qa`**  
+  - `node app.js`  
+  - Uso: ambiente QA / pruebas manuales.
+
+- **`npm run pro`**  
+  - `node app.js`  
+  - Uso: producción (monolito o despliegue en servidor).
+
+- **`npm run test`**  
+  - Ejecuta `testing/testSoulChat.js`.  
+  - Uso: probar integración con **Soul Chat** / logger / configuración.
+
+- **Docker**
+  - `npm run docker:view` → `docker compose ps` (ver contenedores).
+  - `npm run docker:up` → `docker compose up --build` (construir y levantar la app).
+  - `npm run docker:logs` → `docker compose logs -f` (seguir logs).
+  - `npm run docker:down` → `docker compose down` (detener y limpiar contenedores de la app).
+
+---
+
+## ⚙️ Configuración de entorno (`v1/.env`)
+
+- **Ubicación**: `v1/.env` (se recomienda partir de `v1/.env.example`).
+- **Claves importantes** (nombres orientativos, los reales están en `.env.example`):
+  - **Conexión MySQL**
+    - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_DATABASE`
+  - **Contexto del proyecto**
+    - `PROJECT_TIPO` (ej: `widget-chat-web`)
+    - `PROJECT_CLIENT` (ej: `etb-idartes`)
+    - `PROJECT_ENV` (ej: `DEV`, `QA`, `PRO`)
+  - **Logger**
+    - `LOG_LEVEL` (`info`, `debug`, `error`, etc.)
+  - **Servicios externos**
+    - Variables de conexión para **Soul Chat**, S3, etc.
+
+> **Importante:**  
+> El archivo `.env` siempre debe estar en la carpeta `v1`.  
+> En Docker, `DB_HOST` debe ser normalmente `host.docker.internal` para hablar con MySQL local.
+
+---
+
+## 🧾 Logging (Pino + archivos + S3)
+
+El logger se encuentra en `v1/logger/index.js` y usa **pino**.
+
+- **Configuración base**
+  - Nivel de log: `LOG_LEVEL` (por defecto `info`).
+  - Campos base:
+    - `servicio`: `${PROJECT_TIPO}-${PROJECT_CLIENT}`
+    - `ambiente`: `PROJECT_ENV` (`DEV`, `QA`, `PRO`)
+
+- **En desarrollo / QA** (`PROJECT_ENV` distinto de `PRO`)  
+  - Usa **pino-pretty**.  
+  - Logs legibles a color por consola (stdout).
+
+- **En producción** (`PROJECT_ENV === 'PRO'`)
+  - Escribe logs a archivo con **rotación diaria** en:
+    - `v1/uploads/logs/<servicio>-<ENV>-YYYY-MM-DD.log`
+  - También envía logs a **stdout** (para agregadores tipo Grafana).
+
+- **Subida a S3 (rotación externa)**  
+  - Un scheduler y el servicio `serviceS3Aws.service.js` se encargan de subir periódicamente los archivos de log a **AWS S3**, según la configuración de `.env`.  
+  - Permite tener logs locales y réplica en S3 para auditoría / monitoreo.
+
+---
+
+## 🗂 Estructura principal del proyecto v1
+
+- **`app.js`**  
+  - Punto de entrada Express, configura middlewares, rutas y vistas (handlebars).
+
+- **`controllers/`**
+  - `controllers/widget/chat.controller.js`: creación / cierre de chats, monitor, filtros.
+  - `controllers/widget/mensaje.controller.js`: recepción de mensajes del widget, integración con árbol y Soul Chat.
+
+- **`models/`**
+  - `models/widget/chat.model.js`: operaciones sobre `tbl_chat` (crear, actualizar, cerrar, monitor, encuesta).
+  - `models/widget/mensaje.model.js`: operaciones sobre `tbl_mensaje`.
+  - `models/widget/arbolChatBot.model.js`: árbol de atención y encuesta, integración con Soul Chat.
+
+- **`routes/`**
+  - Rutas Express para `/widget/chat` y endpoints relacionados (crear chat, enviar mensaje, monitor, etc.).
+
+- **`seeds/`**
+  - `seeds/dataEstatica.js`: textos del árbol, mensajes y configuración estática del flujo.
+
+- **`migrations/`**
+  - SQL para `tbl_chat`, `tbl_historico_chat`, triggers y demás tablas del widget.
+
+- **`assets/`**
+  - JS/CSS del monitor y recursos de front.
+
+- **`widget/`**
+  - `widget/chatWeb.js` y HTML de integración del widget con sitios externos (DEV / QA / PRO).
+
+---
+
+## 🔁 Flujo de alto nivel (v1)
+
+1. **Usuario abre el widget**
+   - Se consume el endpoint para crear chat (`chat.controller.js → crear`), se crea registro en `tbl_chat` y se envían:
+     - Mensaje de saludo.
+     - Mensaje solicitando *Nombres y Apellidos* (primer paso del árbol).
+
+2. **Usuario envía un mensaje**
+   - `mensaje.controller.js → crear`:
+     - Guarda el mensaje en `tbl_mensaje`.
+     - Llama a `arbolChatBot.arbolChatBot(remitente, contenido)`:
+       - Evalúa el paso actual del árbol (saludo, datos, paso asesor, encuesta, cierre, etc.).
+       - Actualiza `tbl_chat` con el nuevo paso y datos capturados.
+       - Crea respuestas en `tbl_mensaje` según el flujo configurado en `dataEstatica.js`.
+
+3. **Paso a asesor / Soul Chat**
+   - Cuando corresponde, el árbol envía los datos consolidados del cliente a **Soul Chat** mediante `serviceSoulChat.service.js`.
+
+4. **Encuesta de satisfacción**
+   - Al finalizar la atención, el árbol dispara la encuesta:
+     - Calificación de servicio, amabilidad, tiempo, calidad, conocimiento y solución.
+     - Comentario final (cierra el chat y envía mensaje de despedida).
+
+5. **Monitor y logs**
+   - El módulo de monitor (`chat.controller.js → monitor`) permite consultar chats con filtros.
+   - Los logs en archivo / S3 permiten trazabilidad técnica y auditoría.
+
+---
 
 ## 🐳 Modo Docker (App + MySQL Local)
 
@@ -549,16 +716,15 @@ Mantiene permisos correctos en cada nuevo archivo
 
 ```bash
     1.  Ambiente de pruebas
-            https://demothomasgregysons.rpagroupcos.com
-
+            https://widget-chat-web-etb-idartes-dev.rpagroupcos.com
         Monitor
-            https://demothomasgregysons.rpagroupcos.com/widget/chat/monitor
+            https://???/widget/chat/monitor
 
     2.  Ambiente de produccion
-            https://thomasgregysons.rpagroupcos.com
+            https://???
 
         Monitor    
-            https://thomasgregysons.rpagroupcos.com/widget/chat/monitor
+            https://???/widget/chat/monitor
 
 ```
 
@@ -576,6 +742,8 @@ Mantiene permisos correctos en cada nuevo archivo
 ```
 
 ## Contribuyendo
+
+Repositorio: https://dev.azure.com/MontecheloPipelines/SquadMiosV2/_git/WidgetWeb_IDEARTES
 
 Si deseas contribuir al proyecto, por favor sigue los siguientes pasos:
 

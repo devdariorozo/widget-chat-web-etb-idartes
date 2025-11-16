@@ -1,5 +1,5 @@
 {
-  "name": "widget-chat-web-thomas-gregysons",
+  "name": "widget-chat-web-etb-idartes",
   "version": "1.0.0",
   "description": "Construido con node-express(v16.20.2) mysql2(v3.11.0) y jwt(v9.0.0), motor de plantillas handlebars() materialize()",
   "main": "app.js",
@@ -21,11 +21,8 @@
     "widget",
     "chat",
     "web",
-    "thomas",
-    "gregysons",
-    "idc",
-    "exterior",
-    "chatbot"
+    "etb",
+    "idartes"
   ],
   "author": "Ramón Darío Rozo Torres",
   "license": "ISC",

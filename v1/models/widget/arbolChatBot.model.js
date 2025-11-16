@@ -29,6 +29,13 @@ let chatData = {
     enQuePodemosAyudarle: '-',
     rangoEdad: '-',
     autorizacionTratamientoDatos: '-',
+    calificarServicio: '-',
+    calificarAmabilidad: '-',
+    calificarTiempo: '-',
+    calificarCalidad: '-',
+    calificarConocimiento: '-',
+    calificarSolucion: '-',
+    comentario: '-',
     descripcion: '-',
     estadoRegistro: dataEstatica.configuracion.estadoRegistro.activo,
     responsable: dataEstatica.configuracion.responsable,
@@ -62,6 +69,13 @@ const arbolChatBot = async (remitente, contenido) => {
     chatData.enQuePodemosAyudarle = chat[0].EN_QUE_PODEMOS_AYUDARLE || defaultData;
     chatData.rangoEdad = chat[0].RANGO_EDAD || defaultData;
     chatData.autorizacionTratamientoDatos = chat[0].AUTORIZACION_TRATAMIENTO_DATOS || defaultData;
+    chatData.calificarServicio = chat[0].CALIFICAR_SERVICIO || defaultData;
+    chatData.calificarAmabilidad = chat[0].CALIFICAR_AMABILIDAD || defaultData;
+    chatData.calificarTiempo = chat[0].CALIFICAR_TIEMPO || defaultData;
+    chatData.calificarCalidad = chat[0].CALIFICAR_CALIDAD || defaultData;
+    chatData.calificarConocimiento = chat[0].CALIFICAR_CONOCIMIENTO || defaultData;
+    chatData.calificarSolucion = chat[0].CALIFICAR_SOLUCION || defaultData;
+    chatData.comentario = chat[0].COMENTARIO || defaultData;
     chatData.descripcion = chat[0].DESCRIPCION || defaultData;
     chatData.estadoRegistro = chat[0].REGISTRO || defaultData;
     chatData.responsable = chat[0].RESPONSABLE || defaultData;
@@ -127,6 +141,49 @@ const arbolChatBot = async (remitente, contenido) => {
             if (arbolChat === 'Solicitar Paso Asesor' || arbolChat === 'Alerta No Entiendo - Solicitar Paso Asesor') {
                 // ? Procesar Paso Asesor
                 return await procesarPasoAsesorSoulChat(idChat, remitente, contenido);
+            }
+
+            // TODO: CONTINUAR CONTROL O MANEJO DE ARBOL ENCUESTA QUE SE INICIA EN EL controlador de mensajes CON EL ENDPOINT /encuestaSoulChat
+            // todo: Paso Calificar Servicio Arbol
+            if (arbolChat === 'Solicitar Calificar Servicio' || arbolChat === 'Alerta No Entiendo - Solicitar Calificar Servicio') {
+                // ? Procesar Paso Calificar Servicio
+                return await procesarCalificarServicio(idChat, remitente, contenido);
+            }
+
+            // todo: Paso Calificar Amabilidad Arbol
+            if (arbolChat === 'Solicitar Calificar Amabilidad' || arbolChat === 'Alerta No Entiendo - Solicitar Calificar Amabilidad') {
+                // ? Procesar Paso Calificar Amabilidad
+                return await procesarCalificarAmabilidad(idChat, remitente, contenido);
+            }
+
+            // todo: Paso Calificar Tiempo Arbol
+            if (arbolChat === 'Solicitar Calificar Tiempo' || arbolChat === 'Alerta No Entiendo - Solicitar Calificar Tiempo') {
+                // ? Procesar Paso Calificar Tiempo
+                return await procesarCalificarTiempo(idChat, remitente, contenido);
+            }
+
+            // todo: Paso Calificar Calidad Arbol
+            if (arbolChat === 'Solicitar Calificar Calidad' || arbolChat === 'Alerta No Entiendo - Solicitar Calificar Calidad') {
+                // ? Procesar Paso Calificar Calidad
+                return await procesarCalificarCalidad(idChat, remitente, contenido);
+            }
+
+            // todo: Paso Calificar Conocimiento Arbol
+            if (arbolChat === 'Solicitar Calificar Conocimiento' || arbolChat === 'Alerta No Entiendo - Solicitar Calificar Conocimiento') {
+                // ? Procesar Paso Calificar Conocimiento
+                return await procesarCalificarConocimiento(idChat, remitente, contenido);
+            }
+
+            // todo: Paso Calificar Solucion Arbol
+            if (arbolChat === 'Solicitar Calificar Solucion' || arbolChat === 'Alerta No Entiendo - Solicitar Calificar Solucion') {
+                // ? Procesar Paso Calificar Solucion
+                return await procesarCalificarSolucion(idChat, remitente, contenido);
+            }
+
+            // todo: Paso Escuchar Comentario Arbol
+            if (arbolChat === 'Escuchar Comentario' || arbolChat === 'Alerta No Entiendo - Escuchar Comentario') {
+                // ? Procesar Paso Escuchar Comentario
+                return await procesarEscucharComentario(idChat, remitente, contenido);
             }
 
             return true;
@@ -584,39 +641,51 @@ const solicitarPasoAsesor = async (idChat, remitente, contenido) => {
 const procesarPasoAsesorSoulChat = async (idChat, remitente, contenido) => {
     
     try {
+        // Determinar si ya se envió (y fue aceptado) el START a Soul Chat.
+        // Se marca mediante chatData.resultadoApi persistiéndose como JSON con { soulChatStart: 'ok' }.
+        const resultadoApiParsed = typeof chatData.resultadoApi === 'object' ? chatData.resultadoApi : null;
+        const startAceptado = !!(resultadoApiParsed && resultadoApiParsed.soulChatStart === 'ok') || chatData.resultadoApi === 'Message recived!';
+
+        // Definir si el mensaje actual debe ser START (datos del cliente) o ATTENDING (contenido del usuario)
+        const esMensajeInicial = !startAceptado;
+
+        // Construcción del mensaje legible para Soul Chat
+        const mensajeDatosCliente = [
+            'Cliente solicita su ayuda, estos son los datos del cliente:',
+            `• Nombres y Apellidos: ${chatData.nombresApellidos}`,
+            `• Género: ${chatData.genero}`,
+            `• Correo Electrónico: ${chatData.correoElectronico}`,
+            `• Teléfono: ${chatData.telefono}`,
+            `• Localidad: ${chatData.localidad}`,
+            `• En qué podemos ayudarle: ${chatData.enQuePodemosAyudarle}`,
+            `• Rango de Edad: ${chatData.rangoEdad}`,
+            `• Autorización Tratamiento de Datos: ${chatData.autorizacionTratamientoDatos}`
+        ].join('\n');
+
+        const mensajeAEnviar = esMensajeInicial ? mensajeDatosCliente : (typeof contenido === 'string' ? contenido : `${contenido}`);
+
         const estructuraMensaje = {
             provider: "web",
             canal: 3,
             idChat: idChat,
-            remitente: remitente,  // Este es el valor del remitente
-            estado: "START",  // Estado del mensaje, por ejemplo, "START" O "ATTENDING" O "END"
-            // Mensaje legible con saltos de línea para Soul Chat
-            mensaje: [
-                'Cliente solicita su ayuda, estos son los datos del cliente:',
-                `• Nombres y Apellidos: ${chatData.nombresApellidos}`,
-                `• Género: ${chatData.genero}`,
-                `• Correo Electrónico: ${chatData.correoElectronico}`,
-                `• Teléfono: ${chatData.telefono}`,
-                `• Localidad: ${chatData.localidad}`,
-                `• En qué podemos ayudarle: ${chatData.enQuePodemosAyudarle}`,
-                `• Rango de Edad: ${chatData.rangoEdad}`,
-                `• Autorización Tratamiento de Datos: ${chatData.autorizacionTratamientoDatos}`
-            ].join('\n'),
-            type: "TEXT",  // Tipo de mensaje, por ejemplo, "TEXT" o "MEDIA" o "VOICE"
-            // Pasamos los datos del formulario para que la AI Soul los tenga en cuenta
-            nombres: chatData.nombresApellidos, // nombre del cliente
-            genero: chatData.genero, // genero del cliente
-            correoElectronico: chatData.correoElectronico, // correo electronico del cliente
-            telefono: chatData.telefono, // telefono del cliente
-            localidad: chatData.localidad, // localidad del cliente
-            enQuePodemosAyudarle: chatData.enQuePodemosAyudarle, // en que podemos ayudarle del cliente
-            rangoEdad: chatData.rangoEdad, // rango de edad del cliente
-            autorizacionTratamientoDatos: chatData.autorizacionTratamientoDatos, // autorizacion de tratamiento de datos del cliente
-            responsable: dataEstatica.configuracion.responsable // responsable del cliente
+            remitente: remitente,
+            estado: esMensajeInicial ? "START" : "ATTENDING",
+            mensaje: mensajeAEnviar,
+            type: "TEXT",
+            // Contexto de formulario para la AI
+            nombres: chatData.nombresApellidos,
+            genero: chatData.genero,
+            correoElectronico: chatData.correoElectronico,
+            telefono: chatData.telefono,
+            localidad: chatData.localidad,
+            enQuePodemosAyudarle: chatData.enQuePodemosAyudarle,
+            rangoEdad: chatData.rangoEdad,
+            autorizacionTratamientoDatos: chatData.autorizacionTratamientoDatos,
+            responsable: dataEstatica.configuracion.responsable
         };
         
         // Control de intentos
-        if (chatData.controlPeticiones <= 2) {
+        if (chatData.controlPeticiones <= 5) {
             
             // ? Consumir servicio de Soul Chat
             const response = await serviceSoulChat.procesarMensajeAISoul(estructuraMensaje);
@@ -627,9 +696,22 @@ const procesarPasoAsesorSoulChat = async (idChat, remitente, contenido) => {
                 // Variables
                 const solicitarPasoAsesorArbol = dataEstatica.arbol.solicitarPasoAsesor;
                 chatData.controlApi = dataEstatica.configuracion.controlApi.success;
-                chatData.descripcion = 'Soul Chat ha recibido el mensaje, se encuentra procesando la respuesta.';
+                chatData.descripcion = esMensajeInicial
+                    ? 'Soul Chat ha recibido los datos del cliente (START).'
+                    : 'Soul Chat ha recibido el mensaje del cliente.';
 
                 // Actualizar el chat
+                // Persistimos un flag de inicio exitoso para diferenciar los siguientes mensajes
+                try {
+                    const persisted = {
+                        soulChatStart: esMensajeInicial ? 'ok' : (startAceptado ? 'ok' : 'pending'),
+                        response: response.data
+                    };
+                    chatData.resultadoApi = persisted;
+                } catch (e) {
+                    // Si no se puede envolver, dejamos el data crudo
+                    chatData.resultadoApi = response.data;
+                }
                 const updateResult = await modelChat.actualizar(idChat, solicitarPasoAsesorArbol, chatData);
                 return updateResult || true; // Asegurar que siempre retorne algo válido
             } else {
@@ -682,10 +764,426 @@ const procesarPasoAsesorSoulChat = async (idChat, remitente, contenido) => {
         const errorResult = await errorAPI(api, procesoApi, error, idChat, remitente);
 
         // Si al incrementar el contador se superó el límite, cerrar inmediatamente
-        if (chatData.controlPeticiones > 2) {
+        if (chatData.controlPeticiones > 5) {
             return await cerrarNovedadTecnicaLimiteIntentos(idChat, remitente);
         }
         return errorResult || false;
+    }
+};
+
+// todo: Solicitar Calificar Servicio Arbol
+const solicitarCalificarServicio = async (idChat, remitente) => {
+    try {
+        const solicitarCalificarServicioArbol = dataEstatica.arbol.solicitarCalificarServicio;
+        chatData.descripcion = 'Se solicita calificar el servicio.';
+        await modelChat.actualizar(idChat, solicitarCalificarServicioArbol, chatData);
+        return await crearMensaje(
+            idChat,
+            remitente,
+            dataEstatica.configuracion.estadoMensaje.enviado,
+            dataEstatica.configuracion.tipoMensaje.texto,
+            dataEstatica.mensajes.solicitarCalificarServicio,
+            chatData.descripcion
+        );
+    } catch (error) {
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion solicitarCalificarServicio';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → solicitarCalificarServicio: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Procesar Paso Calificar Servicio Arbol
+const procesarCalificarServicio = async (idChat, remitente, contenido) => {
+    try {
+        // Normalizar contenido
+        const opcion = typeof contenido === 'string' ? contenido.trim() : '';
+
+        // Mapear opción a valor descriptivo
+        const mapaCalificacion = {
+            '1': 'Malo',
+            '2': 'Regular',
+            '3': 'Ni bueno ni malo',
+            '4': 'Bueno',
+            '5': 'Excelente'
+        };
+
+        if (mapaCalificacion[opcion]) {
+            chatData.calificarServicio = mapaCalificacion[opcion];
+
+            // Pasar al siguiente paso de la encuesta
+            return await solicitarCalificarAmabilidad(idChat, remitente);
+        } else {
+            const pasoArbol = 'Alerta No Entiendo - Solicitar Calificar Servicio';
+            const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
+            ⚠️ <i>Por favor seleccione una opción válida (1 a 5) para continuar.</i></p>`;
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                // Mostrar nuevamente el mensaje de solicitud
+                return await solicitarCalificarServicio(idChat, remitente);
+            }
+            return false;
+        }
+    } catch (error) {
+        // ? Error api
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion procesarCalificarServicio';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → procesarCalificarServicio: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Solicitar Calificar Amabilidad Arbol
+const solicitarCalificarAmabilidad = async (idChat, remitente) => {
+    try {
+        const solicitarCalificarAmabilidadArbol = dataEstatica.arbol.solicitarCalificarAmabilidad;
+        chatData.descripcion = 'Se solicita calificar la amabilidad.';
+        await modelChat.actualizar(idChat, solicitarCalificarAmabilidadArbol, chatData);
+        return await crearMensaje(
+            idChat,
+            remitente,
+            dataEstatica.configuracion.estadoMensaje.enviado,
+            dataEstatica.configuracion.tipoMensaje.texto,
+            dataEstatica.mensajes.solicitarCalificarAmabilidad,
+            chatData.descripcion
+        );
+    } catch (error) {
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion solicitarCalificarAmabilidad';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → solicitarCalificarAmabilidad: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Procesar Calificar Amabilidad Arbol
+const procesarCalificarAmabilidad = async (idChat, remitente, contenido) => {
+    try {
+        const opcion = typeof contenido === 'string' ? contenido.trim() : '';
+        const mapaCalificacion = {
+            '1': 'Mala',
+            '2': 'Regular',
+            '3': 'Ni buena ni mala',
+            '4': 'Buena',
+            '5': 'Excelente'
+        };
+
+        if (mapaCalificacion[opcion]) {
+            chatData.calificarAmabilidad = mapaCalificacion[opcion];
+            return await solicitarCalificarTiempo(idChat, remitente);
+        } else {
+            const pasoArbol = 'Alerta No Entiendo - Solicitar Calificar Amabilidad';
+            const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
+            ⚠️ <i>Por favor seleccione una opción válida (1 a 5) para continuar.</i></p>`;
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                return await solicitarCalificarAmabilidad(idChat, remitente);
+            }
+            return false;
+        }
+    } catch (error) {
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion procesarCalificarAmabilidad';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → procesarCalificarAmabilidad: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Solicitar Calificar Tiempo Arbol
+const solicitarCalificarTiempo = async (idChat, remitente) => {
+    try {
+        const solicitarCalificarTiempoArbol = dataEstatica.arbol.solicitarCalificarTiempo;
+        chatData.descripcion = 'Se solicita calificar el tiempo de respuesta.';
+        await modelChat.actualizar(idChat, solicitarCalificarTiempoArbol, chatData);
+        return await crearMensaje(
+            idChat,
+            remitente,
+            dataEstatica.configuracion.estadoMensaje.enviado,
+            dataEstatica.configuracion.tipoMensaje.texto,
+            dataEstatica.mensajes.solicitarCalificarTiempo,
+            chatData.descripcion
+        );
+    } catch (error) {
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion solicitarCalificarTiempo';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → solicitarCalificarTiempo: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Procesar Calificar Tiempo Arbol
+const procesarCalificarTiempo = async (idChat, remitente, contenido) => {
+    try {
+        const opcion = typeof contenido === 'string' ? contenido.trim() : '';
+        const mapaCalificacion = {
+            '1': 'Malo',
+            '2': 'Regular',
+            '3': 'Ni bueno ni malo',
+            '4': 'Bueno',
+            '5': 'Excelente'
+        };
+
+        if (mapaCalificacion[opcion]) {
+            chatData.calificarTiempo = mapaCalificacion[opcion];
+            return await solicitarCalificarCalidad(idChat, remitente);
+        } else {
+            const pasoArbol = 'Alerta No Entiendo - Solicitar Calificar Tiempo';
+            const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
+            ⚠️ <i>Por favor seleccione una opción válida (1 a 5) para continuar.</i></p>`;
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                return await solicitarCalificarTiempo(idChat, remitente);
+            }
+            return false;
+        }
+    } catch (error) {
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion procesarCalificarTiempo';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → procesarCalificarTiempo: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Solicitar Calificar Calidad Arbol
+const solicitarCalificarCalidad = async (idChat, remitente) => {
+    try {
+        const solicitarCalificarCalidadArbol = dataEstatica.arbol.solicitarCalificarCalidad;
+        chatData.descripcion = 'Se solicita calificar la calidad de la información.';
+        await modelChat.actualizar(idChat, solicitarCalificarCalidadArbol, chatData);
+        return await crearMensaje(
+            idChat,
+            remitente,
+            dataEstatica.configuracion.estadoMensaje.enviado,
+            dataEstatica.configuracion.tipoMensaje.texto,
+            dataEstatica.mensajes.solicitarCalificarCalidad,
+            chatData.descripcion
+        );
+    } catch (error) {
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion solicitarCalificarCalidad';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → solicitarCalificarCalidad: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Procesar Calificar Calidad Arbol
+const procesarCalificarCalidad = async (idChat, remitente, contenido) => {
+    try {
+        const opcion = typeof contenido === 'string' ? contenido.trim() : '';
+        const mapaCalificacion = {
+            '1': 'Mala',
+            '2': 'Regular',
+            '3': 'Ni buena ni mala',
+            '4': 'Buena',
+            '5': 'Excelente'
+        };
+
+        if (mapaCalificacion[opcion]) {
+            chatData.calificarCalidad = mapaCalificacion[opcion];
+            return await solicitarCalificarConocimiento(idChat, remitente);
+        } else {
+            const pasoArbol = 'Alerta No Entiendo - Solicitar Calificar Calidad';
+            const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
+            ⚠️ <i>Por favor seleccione una opción válida (1 a 5) para continuar.</i></p>`;
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                return await solicitarCalificarCalidad(idChat, remitente);
+            }
+            return false;
+        }
+    } catch (error) {
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion procesarCalificarCalidad';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → procesarCalificarCalidad: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Solicitar Calificar Conocimiento Arbol
+const solicitarCalificarConocimiento = async (idChat, remitente) => {
+    try {
+        const solicitarCalificarConocimientoArbol = dataEstatica.arbol.solicitarCalificarConocimiento;
+        chatData.descripcion = 'Se solicita calificar el conocimiento del funcionario.';
+        await modelChat.actualizar(idChat, solicitarCalificarConocimientoArbol, chatData);
+        return await crearMensaje(
+            idChat,
+            remitente,
+            dataEstatica.configuracion.estadoMensaje.enviado,
+            dataEstatica.configuracion.tipoMensaje.texto,
+            dataEstatica.mensajes.solicitarCalificarConocimiento,
+            chatData.descripcion
+        );
+    } catch (error) {
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion solicitarCalificarConocimiento';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → solicitarCalificarConocimiento: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Procesar Calificar Conocimiento Arbol
+const procesarCalificarConocimiento = async (idChat, remitente, contenido) => {
+    try {
+        const opcion = typeof contenido === 'string' ? contenido.trim() : '';
+        const mapaCalificacion = {
+            '1': 'Mala',
+            '2': 'Regular',
+            '3': 'Ni buena ni mala',
+            '4': 'Buena',
+            '5': 'Excelente'
+        };
+
+        if (mapaCalificacion[opcion]) {
+            chatData.calificarConocimiento = mapaCalificacion[opcion];
+            return await solicitarCalificarSolucion(idChat, remitente);
+        } else {
+            const pasoArbol = 'Alerta No Entiendo - Solicitar Calificar Conocimiento';
+            const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
+            ⚠️ <i>Por favor seleccione una opción válida (1 a 5) para continuar.</i></p>`;
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                return await solicitarCalificarConocimiento(idChat, remitente);
+            }
+            return false;
+        }
+    } catch (error) {
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion procesarCalificarConocimiento';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → procesarCalificarConocimiento: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Solicitar Calificar Solucion Arbol
+const solicitarCalificarSolucion = async (idChat, remitente) => {
+    try {
+        const solicitarCalificarSolucionArbol = dataEstatica.arbol.solicitarCalificarSolucion;
+        chatData.descripcion = 'Se solicita indicar si la solicitud fue solucionada.';
+        await modelChat.actualizar(idChat, solicitarCalificarSolucionArbol, chatData);
+        return await crearMensaje(
+            idChat,
+            remitente,
+            dataEstatica.configuracion.estadoMensaje.enviado,
+            dataEstatica.configuracion.tipoMensaje.texto,
+            dataEstatica.mensajes.solicitarCalificarSolucion,
+            chatData.descripcion
+        );
+    } catch (error) {
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion solicitarCalificarSolucion';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → solicitarCalificarSolucion: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Procesar Calificar Solucion Arbol
+const procesarCalificarSolucion = async (idChat, remitente, contenido) => {
+    try {
+        const opcion = typeof contenido === 'string' ? contenido.trim() : '';
+        if (opcion === '1') {
+            chatData.calificarSolucion = 'Si';
+        } else if (opcion === '2') {
+            chatData.calificarSolucion = 'No';
+        } else {
+            const pasoArbol = 'Alerta No Entiendo - Solicitar Calificar Solucion';
+            const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
+            ⚠️ <i>Por favor seleccione una opción válida (1 o 2) para continuar.</i></p>`;
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                return await solicitarCalificarSolucion(idChat, remitente);
+            }
+            return false;
+        }
+
+        // Si la opción es válida, solicitar comentario
+        return await solicitarEscucharComentario(idChat, remitente);
+    } catch (error) {
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion procesarCalificarSolucion';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → procesarCalificarSolucion: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Solicitar Comentario Arbol
+const solicitarEscucharComentario = async (idChat, remitente) => {
+    try {
+        const escucharComentarioArbol = dataEstatica.arbol.escucharComentario;
+        chatData.descripcion = 'Se solicita comentario de la atención recibida.';
+        await modelChat.actualizar(idChat, escucharComentarioArbol, chatData);
+        return await crearMensaje(
+            idChat,
+            remitente,
+            dataEstatica.configuracion.estadoMensaje.enviado,
+            dataEstatica.configuracion.tipoMensaje.texto,
+            dataEstatica.mensajes.escucharComentario,
+            chatData.descripcion
+        );
+    } catch (error) {
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion solicitarEscucharComentario';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → solicitarEscucharComentario: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
+    }
+};
+
+// todo: Procesar Comentario Arbol (cierre de chat)
+const procesarEscucharComentario = async (idChat, remitente, contenido) => {
+    try {
+        const texto = typeof contenido === 'string' ? contenido.trim() : '';
+
+        // Validar mínimo 3 caracteres y máximo 1000 caracteres (coherente con la tabla)
+        if (texto.length >= 3 && texto.length <= 1000) {
+            // Capitalizar primera palabra, resto se mantiene
+            const palabras = texto.split(/\s+/);
+            let comentarioFormateado = texto;
+            if (palabras.length > 0) {
+                const primera = palabras[0].charAt(0).toUpperCase() + palabras[0].slice(1).toLowerCase();
+                const resto = palabras.slice(1).join(' ');
+                comentarioFormateado = resto.length > 0 ? `${primera} ${resto}` : primera;
+            }
+
+            chatData.comentario = comentarioFormateado;
+            chatData.descripcion = 'Encuesta de satisfacción finalizada. Se cierra el chat.';
+
+            // Actualizar el chat con los datos finales de la encuesta
+            await modelChat.actualizar(idChat, dataEstatica.arbol.escucharComentario, chatData);
+
+            // Cerrar el chat
+            await modelChat.cerrar(
+                remitente,
+                dataEstatica.configuracion.estadoChat.recibido,
+                dataEstatica.configuracion.estadoGestion.cerrado,
+                dataEstatica.arbol.despedida,
+                dataEstatica.configuracion.controlApi.success,
+                chatData.descripcion,
+                dataEstatica.configuracion.estadoRegistro.activo,
+                dataEstatica.configuracion.responsable
+            );
+
+            // Enviar mensaje de despedida (Fin Chat)
+            return await crearMensaje(
+                idChat,
+                remitente,
+                dataEstatica.configuracion.estadoMensaje.enviado,
+                dataEstatica.configuracion.tipoMensaje.finChat,
+                dataEstatica.mensajes.despedida,
+                chatData.descripcion
+            );
+        } else {
+            const pasoArbol = 'Alerta No Entiendo - Escuchar Comentario';
+            const alertaNoEntiendo = `<p class="alertaNoEntiendoArbol">❓ <b>No entiendo su respuesta.</b><br/><br/>
+            ⚠️ <i>Por favor ingrese un comentario válido (mínimo 3, máximo 1000 caracteres).</i></p>`;
+            const resultado = await manejarNoEntiendo(idChat, remitente, pasoArbol, alertaNoEntiendo);
+            if (resultado) {
+                return await solicitarEscucharComentario(idChat, remitente);
+            }
+            return false;
+        }
+    } catch (error) {
+        const api = dataEstatica.configuracion.responsable;
+        const procesoApi = 'Funcion procesarEscucharComentario';
+        console.log('❌ Error en v1/models/widget/arbolChatBot.model.js → procesarEscucharComentario: ', error);
+        return await errorAPI(api, procesoApi, error, idChat, remitente);
     }
 };
 

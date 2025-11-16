@@ -37,6 +37,14 @@ const arbol = {
     solicitarRangoEdad: 'Solicitar Rango Edad',
     solicitarAutorizacionTratamientoDatos: 'Solicitar Autorizacion Tratamiento Datos',
     solicitarPasoAsesor: 'Solicitar Paso Asesor',
+    solicitoInicioEncuesta: 'Solicito Inicio Encuesta',
+    solicitarCalificarServicio: 'Solicitar Calificar Servicio',
+    solicitarCalificarAmabilidad: 'Solicitar Calificar Amabilidad',
+    solicitarCalificarTiempo: 'Solicitar Calificar Tiempo',
+    solicitarCalificarCalidad: 'Solicitar Calificar Calidad',
+    solicitarCalificarConocimiento: 'Solicitar Calificar Conocimiento',
+    solicitarCalificarSolucion: 'Solicitar Calificar Solucion',
+    escucharComentario: 'Escuchar Comentario',
     alertaNoEntiendo: 'Alerta No Entiendo',
     clienteDesiste: 'Cliente Desiste',
     errorApi: 'Error API',
@@ -121,6 +129,87 @@ const solicitarAutorizacionTratamientoDatos = `  <p class="solicitarAutorizacion
 const solicitarPasoAsesor = `  <p class="solicitarPasoAsesorArbol">👉 <b>Paso Asesor.</b><br/><br/>
                                 <i>En este momento le estaremos asignando un asesor para atenderle.</i>
                             </p>`;
+
+// TODO: MENSAJE SOLICITANDO ENCUESTA
+const solicitoInicioEncuesta = `  <p class="solicitoInicioEncuestaArbol">👉 <b>Encuesta.</b><br/><br/>
+                                <i>A continuación te invitamos a responder una breve encuesta 😉</i>
+                            </p>`;
+
+// TODO: MENSAJE SOLICITANDO CALIFICAR SERVICIO
+const solicitarCalificarServicio = `  <p class="solicitarCalificarServicioArbol">👉 <b>¿Cómo valora nuestro servicio?</b><br/><br/>
+
+                                <b>1.</b> Malo<br/>
+                                <b>2.</b> Regular<br/>
+                                <b>3.</b> Ni bueno ni malo<br/>
+                                <b>4.</b> Bueno<br/>
+                                <b>5.</b> Excelente<br/><br/>
+                                
+                                <i>Por favor, seleccione una opción para continuar.</i>
+                            </p>`;
+
+// TODO: MENSAJE SOLICITANDO CALIFICAR AMABILIDAD
+const solicitarCalificarAmabilidad = `  <p class="solicitarCalificarAmabilidadArbol">👉 <b>¿Cómo valora nuestra amabilidad de la respuesta?</b><br/><br/>
+
+                                <b>1.</b> Mala<br/>
+                                <b>2.</b> Regular<br/>
+                                <b>3.</b> Ni buena ni mala<br/>
+                                <b>4.</b> Buena<br/>
+                                <b>5.</b> Excelente<br/><br/>
+                                
+                                <i>Por favor, seleccione una opción para continuar.</i>
+                            </p>`;
+
+// TODO: MENSAJE SOLICITANDO CALIFICAR TIEMPO
+const solicitarCalificarTiempo = `  <p class="solicitarCalificarTiempoArbol">👉 <b>¿Cómo valora nuestro tiempo en recibir respuesta a su solicitud?</b><br/><br/>
+
+                                <b>1.</b> Malo<br/>
+                                <b>2.</b> Regular<br/>
+                                <b>3.</b> Ni bueno ni malo<br/>
+                                <b>4.</b> Buena<br/>
+                                <b>5.</b> Excelente<br/><br/>
+                                
+                                <i>Por favor, seleccione una opción para continuar.</i>
+                            </p>`;
+
+// TODO: MENSAJE SOLICITANDO CALIFICAR CALIDAD
+const solicitarCalificarCalidad = `  <p class="solicitarCalificarCalidadArbol">👉 <b>¿Cómo valora nuestra calidad de la información recibida?</b><br/><br/>
+
+                                <b>1.</b> Mala<br/>
+                                <b>2.</b> Regular<br/>
+                                <b>3.</b> Ni buena ni mala<br/>
+                                <b>4.</b> Buena<br/>
+                                <b>5.</b> Excelente<br/><br/>
+                                
+                                <i>Por favor, seleccione una opción para continuar.</i>
+                            </p>`;
+
+// TODO: MENSAJE SOLICITANDO CALIFICAR CONOCIMIENTO
+const solicitarCalificarConocimiento = `  <p class="solicitarCalificarConocimientoArbol">👉 <b>¿Cómo valora nuestro conocimiento del tema por parte de la o el funcionario?</b><br/><br/>
+
+                                <b>1.</b> Malo<br/>
+                                <b>2.</b> Regular<br/>
+                                <b>3.</b> Ni bueno ni malo<br/>
+                                <b>4.</b> Buena<br/>
+                                <b>5.</b> Excelente<br/><br/>
+                                
+                                <i>Por favor, seleccione una opción para continuar.</i>
+                            </p>`;
+
+// TODO: MENSAJE SOLICITANDO CALIFICAR SOLUCION
+const solicitarCalificarSolucion = `  <p class="solicitarCalificarSolucionArbol">👉 <b>¿Su solicitud fue solucionada?</b><br/><br/>
+
+                                <b>1.</b> Sí<br/>
+                                <b>2.</b> No<br/><br/>
+                                
+                                <i>Por favor, seleccione una opción para continuar.</i>
+                            </p>`;
+                            
+// TODO: MENSAJE ESCUCHAR COMENTARIO
+const escucharComentario = `  <p class="escucharComentarioArbol">👉 <b>¿Tiene algún comentario de la atención recibida que nos ayude a la mejora de nuestro servicio?</b><br/><br/>
+                                <i>Por favor, ingrese sus comentarios o sugerencias.</i>
+                            </p>`;  
+
+
 
 // // TODO: MENSAJE SOLICITANDO CONDICION DE ADJUNTOS
 // const condicionAdjuntos = `<p class="condicionAdjuntosArbol">📝 <b>Adjuntar documentos:</b> <br/><br/>
@@ -224,6 +313,14 @@ module.exports = {
         solicitarRangoEdad,
         solicitarAutorizacionTratamientoDatos,
         solicitarPasoAsesor,
+        solicitoInicioEncuesta,
+        solicitarCalificarServicio,
+        solicitarCalificarAmabilidad,
+        solicitarCalificarTiempo,
+        solicitarCalificarCalidad,
+        solicitarCalificarConocimiento,
+        solicitarCalificarSolucion,
+        escucharComentario,
         alertaNoEntiendo,
         clienteDesiste,
         alertaErrorAPI,

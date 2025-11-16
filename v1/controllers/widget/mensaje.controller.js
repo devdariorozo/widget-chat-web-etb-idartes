@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                      CONTROLADORES PARA MENSAJE
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres (24 de Enero de 2025)
-// @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
+// @author Ramón Dario Rozo Torres
+// @lastModified Ramón Dario Rozo Torres
 // @version 1.0.0
 // v1/controllers/widget/mensaje.controller.js
 
@@ -229,6 +229,129 @@ const crearSoulChat = async (req, res) => {
             errorMensaje: error.message,
             errorStack: error.stack
         }, 'Error en v1/controllers/widget/mensaje.controller.js → crearSoulChat');
+        res.status(500).json({
+            status: 500,
+            type: 'error',
+            title: 'Widget Chat Web ETB - IDARTES',
+            message: 'No se pudo crear el mensaje, por favor intenta de nuevo o comunícate con nosotros.',
+            error: error.message
+        });
+    }
+};
+
+// * CREAR MENSJAJE DESDE SOUL CHAT - PASO WIDGET ARBOL ENCUESTA
+const encuestaSoulChat = async (req, res) => {
+    try {
+        logger.info({
+            contexto: 'controller',
+            recurso: 'mensaje.encuestaSoulChat',
+            origen: getOrigen(req),
+            destino: getDestino(req),
+            contextoRecurso: getContextoRecurso(req),
+            body: req.body
+        }, 'Controller mensaje.controller.js → encuestaSoulChat');
+        // todo: Validar los datos
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            logger.warn({
+                contexto: 'controller',
+                recurso: 'mensaje.encuestaSoulChat',
+                origen: getOrigen(req),
+                destino: getDestino(req),
+                contextoRecurso: getContextoRecurso(req),
+                codigoRespuesta: 400,
+                rta: errors.array()[0].msg,
+                erroresValidacion: errors.array()
+            }, 'Error de validación en mensaje.encuestaSoulChat');
+            return res.status(400).json({
+                status: 400,
+                type: 'warning',
+                title: 'Widget Chat Web ETB - IDARTES',
+                message: errors.array()[0].msg
+            });
+        }
+
+        // todo: Obtener los datos de la petición
+        const {
+            idChat,
+            remitente,
+            estado,
+            tipo,
+            contenido,
+            enlaces
+        } = req.body;
+
+        // todo: Data por defecto
+        const solicitoInicioEncuestaArbol = dataEstatica.arbol.solicitoInicioEncuesta;
+        const mensajeSolicitoInicioEncuesta = dataEstatica.mensajes.solicitoInicioEncuesta;
+        const lectura = dataEstatica.configuracion.lecturaMensaje.noLeido;
+        const descripcion = 'Se crea el mensaje solicitado por soul chat - Se solicita inicio de encuesta.';
+        const registro = dataEstatica.configuracion.estadoRegistro.activo;
+        const responsable = dataEstatica.configuracion.responsable;
+
+        // todo: Actualizar el chat
+        const updateChat = await modelChat.encuestaSoulChat(idChat, solicitoInicioEncuestaArbol, descripcion);
+        if (updateChat) {
+
+            // todo: Crear el registro - Solicitando inicio de encuesta
+            const resultMensajeSolicitoInicioEncuesta = await model.encuestaSoulChat(idChat, remitente, estado, tipo, mensajeSolicitoInicioEncuesta, enlaces, lectura, descripcion, registro, responsable);
+            
+            // todo: Si el mensaje solicitando inicio de encuesta se creó correctamente, se solicita el mensaje solicitando calificar servicio
+            if (resultMensajeSolicitoInicioEncuesta) {
+
+                // todo: Data por defecto
+                const solicitarCalificarServicioArbol = dataEstatica.arbol.solicitarCalificarServicio;
+                const descripcion = 'Se solicita calificar servicio.';
+
+                // todo: Actualizar el chat
+                const updateChatSolicitarCalificarServicio = await modelChat.encuestaSoulChat(idChat, solicitarCalificarServicioArbol, descripcion);
+                if (updateChatSolicitarCalificarServicio) {
+                                        
+                    // todo: Data por defecto
+                    const mensajeSolicitarCalificarServicio = dataEstatica.mensajes.solicitarCalificarServicio;
+                    const lectura = dataEstatica.configuracion.lecturaMensaje.noLeido;
+                    const descripcion = 'Se crea el mensaje solicitando calificar servicio.';
+                    const registro = dataEstatica.configuracion.estadoRegistro.activo;
+                    const responsable = dataEstatica.configuracion.responsable;
+
+                    // todo: Crear el registro - Solicitando Calificar Servicio
+                    const resultMensajeSolicitarCalificarServicio = await model.encuestaSoulChat(idChat, remitente, estado, tipo, mensajeSolicitarCalificarServicio, enlaces, lectura, descripcion, registro, responsable);
+
+                    // todo: Si el mensaje solicitando calificar servicio se creó correctamente, se envía la respuesta
+                    if (resultMensajeSolicitarCalificarServicio) {
+                        // todo: Enviar respuesta
+                        logger.info({
+                            contexto: 'controller',
+                            recurso: 'mensaje.encuestaSoulChat',
+                            origen: getOrigen(req),
+                            destino: getDestino(req),
+                            contextoRecurso: getContextoRecurso(req),
+                            codigoRespuesta: 200,
+                            rta: 'El mensaje se ha creado correctamente en el sistema.',
+                            idChat,
+                            remitente
+                        }, 'Mensaje Soul Chat - paso a widget árbol encuesta - creado exitosamente');
+                        return res.json({
+                            status: 200,
+                            type: 'success',
+                            title: 'Widget Chat Web ETB - IDARTES',
+                            message: 'El mensaje se ha creado correctamente en el sistema.',
+                        });
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        logger.error({
+            contexto: 'controller',
+            recurso: 'mensaje.encuestaSoulChat',
+            origen: getOrigen(req),
+            destino: getDestino(req),
+            contextoRecurso: getContextoRecurso(req),
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack
+        }, 'Error en v1/controllers/widget/mensaje.controller.js → encuestaSoulChat');
         res.status(500).json({
             status: 500,
             type: 'error',
@@ -831,6 +954,7 @@ const vigilaInactividadChat = async (req, res) => {
 module.exports = {
     crear,
     crearSoulChat,
+    encuestaSoulChat,
     listarNoLeido,
     leer,
     adjuntarArchivos,

@@ -40,7 +40,7 @@ if (isProduction) {
         // Función para obtener el nombre del archivo de log basado en la fecha actual
         const obtenerNombreArchivoLog = () => {
             const fecha = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-            const servicioNombre = `${process.env.PROJECT_TIPO || 'widget'}-${process.env.PROJECT_CLIENT || 'thomasgregysons'}`.toLowerCase().replace(/\s+/g, '-');
+            const servicioNombre = `${process.env.PROJECT_TIPO || 'widget'}-${process.env.PROJECT_CLIENT || 'etb-idartes'}`.toLowerCase().replace(/\s+/g, '-');
             return `${servicioNombre}-${process.env.PROJECT_ENV || 'PRO'}-${fecha}.log`;
         };
         

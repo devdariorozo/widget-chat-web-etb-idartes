@@ -22,7 +22,7 @@ const s3Client = new S3Client({
     }
 });
 
-const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME || 'bucket-logs-wigetthomas';
+const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME || 'bucket-logs-wigetetb-idartes';
 
 // ! OBTENER RUTA DEL DIRECTORIO DE LOGS
 const obtenerDirectorioLogs = () => {

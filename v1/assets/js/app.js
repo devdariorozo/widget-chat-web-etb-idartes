@@ -50,7 +50,7 @@ async function controlNotificaciones(type, title, message) {
     controlNotificacionesHTML = `
         <div id="card-alert" class="card-alert card" style="border: none; display: flex; flex-direction: column; align-items: center; position: relative; overflow: hidden;">
             <div style="flex-shrink: 0; display: flex; width: 100%; align-items: center;">
-                <img id="logo_sistemaNotificaciones" src="/images/imagen-corporativa/logo_sistema.png" alt="logo_sistema.png" class="responsive-img valign profile-image" style="margin-right: 8px;">
+                <img id="logo_sistemaNotificaciones" src="/images/imagen-corporativa/logo_sistema_sm.png" alt="logo_sistema_sm.png" class="responsive-img valign profile-image" style="margin-right: 8px;">
                 <div class="card-content ${settings.cardColor}" style="flex-grow: 1; padding: 5px;">
                     <span id="notificaciones-titulo" class="card-title" style="display: flex; align-items: center;">
                         <i class="material-icons">${settings.icon}</i> ${title}

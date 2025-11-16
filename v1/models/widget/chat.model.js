@@ -1,8 +1,8 @@
                                                                                                                                                                                                                 // ! ================================================================================================================================================
 // !                                                      MODELOS PARA CHAT
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres (24 de Enero de 2025)
-// @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
+// @author Ramón Dario Rozo Torres
+// @lastModified Ramón Dario Rozo Torres
 // @version 1.0.0
 // v1/models/widget/chat.model.js
 
@@ -129,6 +129,13 @@ const filtrar = async (idChatWeb) => {
                 cht_en_que_podemos_ayudarle AS EN_QUE_PODEMOS_AYUDARLE,
                 cht_rango_edad AS RANGO_EDAD,
                 cht_autorizacion_tratamiento_datos AS AUTORIZACION_TRATAMIENTO_DATOS,
+                cht_calificar_servicio AS CALIFICAR_SERVICIO,
+                cht_calificar_amabilidad AS CALIFICAR_AMABILIDAD,
+                cht_calificar_tiempo AS CALIFICAR_TIEMPO,
+                cht_calificar_calidad AS CALIFICAR_CALIDAD,
+                cht_calificar_conocimiento AS CALIFICAR_CONOCIMIENTO,
+                cht_calificar_solucion AS CALIFICAR_SOLUCION,
+                cht_comentario AS COMENTARIO,
                 cht_descripcion AS DESCRIPCION,
                 cht_registro AS REGISTRO,
                 cht_actualizacion AS FECHA_ACTUALIZACION,
@@ -352,6 +359,13 @@ const monitor = async (fechaInicial, fechaFinal, opcionControlApi, numeroLimite,
                 cht_en_que_podemos_ayudarle AS EN_QUE_PODEMOS_AYUDARLE,
                 cht_rango_edad AS RANGO_EDAD,
                 cht_autorizacion_tratamiento_datos AS AUTORIZACION_TRATAMIENTO_DATOS,
+                cht_calificar_servicio AS CALIFICAR_SERVICIO,
+                cht_calificar_amabilidad AS CALIFICAR_AMABILIDAD,
+                cht_calificar_tiempo AS CALIFICAR_TIEMPO,
+                cht_calificar_calidad AS CALIFICAR_CALIDAD,
+                cht_calificar_conocimiento AS CALIFICAR_CONOCIMIENTO,
+                cht_calificar_solucion AS CALIFICAR_SOLUCION,
+                cht_comentario AS COMENTARIOS,
                 cht_descripcion AS DESCRIPCION,
                 cht_registro AS REGISTRO,
                 cht_actualizacion AS FECHA_ACTUALIZACION,
@@ -492,6 +506,13 @@ const actualizar = async (idChat, pasoArbol, chatData) => {
                 cht_en_que_podemos_ayudarle = ?,
                 cht_rango_edad = ?,
                 cht_autorizacion_tratamiento_datos = ?,
+                cht_calificar_servicio = ?,
+                cht_calificar_amabilidad = ?,
+                cht_calificar_tiempo = ?,
+                cht_calificar_calidad = ?,
+                cht_calificar_conocimiento = ?,
+                cht_calificar_solucion = ?,
+                cht_comentario = ?,
                 cht_descripcion = ?,
                 cht_registro = ?,
                 cht_responsable = ?
@@ -509,23 +530,33 @@ const actualizar = async (idChat, pasoArbol, chatData) => {
             ? chatData.controlPeticiones
             : parseInt(chatData.controlPeticiones, 10) || 0;
 
+        // todo: Asegurar valores por defecto para campos de texto (evitar NULL)
+        const safeString = (value) => (value === undefined || value === null ? '-' : value);
+
         // todo: Parametros de la sentencia
         const params = [
             pasoArbol,
-            chatData.controlApi,
+            safeString(chatData.controlApi),
             controlPeticionesNumber,
             resultadoApiString,
-            chatData.nombresApellidos,
-            chatData.genero,
-            chatData.correoElectronico,
-            chatData.telefono,
-            chatData.localidad,
-            chatData.enQuePodemosAyudarle,
-            chatData.rangoEdad,
-            chatData.autorizacionTratamientoDatos,
-            chatData.descripcion,
-            chatData.estadoRegistro,
-            chatData.responsable,
+            safeString(chatData.nombresApellidos),
+            safeString(chatData.genero),
+            safeString(chatData.correoElectronico),
+            safeString(chatData.telefono),
+            safeString(chatData.localidad),
+            safeString(chatData.enQuePodemosAyudarle),
+            safeString(chatData.rangoEdad),
+            safeString(chatData.autorizacionTratamientoDatos),
+            safeString(chatData.calificarServicio),
+            safeString(chatData.calificarAmabilidad),
+            safeString(chatData.calificarTiempo),
+            safeString(chatData.calificarCalidad),
+            safeString(chatData.calificarConocimiento),
+            safeString(chatData.calificarSolucion),
+            safeString(chatData.comentario),
+            safeString(chatData.descripcion),
+            safeString(chatData.estadoRegistro),
+            safeString(chatData.responsable),
             idChat
         ];
 
@@ -542,6 +573,51 @@ const actualizar = async (idChat, pasoArbol, chatData) => {
             errorStack: error.stack,
             parametros: { idChat, pasoArbol }
         }, 'Error en v1/models/widget/chat.model.js → actualizar');
+        return false;
+    } finally {
+        // todo: Liberar conexión al pool
+        if (connMySQL) connMySQL.release();
+    }
+};
+
+// * ACTUALIZAR - ENCUESTA SOUL CHAT
+const encuestaSoulChat = async (idChat, pasoArbol, descripcion) => {
+    let connMySQL;
+    try {
+        // todo: Obtener conexión del pool
+        connMySQL = await pool.getConnection();
+
+        // todo: Sentencia SQL
+        const query = `
+            UPDATE
+                tbl_chat
+            SET
+                cht_arbol = ?,
+                cht_descripcion = ?
+            WHERE
+                cht_id = ?;
+        `;
+
+        // todo: Parametros de la sentencia
+        const params = [
+            pasoArbol,
+            descripcion,
+            idChat
+        ];
+
+        // todo: Ejecutar la sentencia
+        const [result] = await connMySQL.query(query, params);
+        return result && result.affectedRows > 0;
+    } catch (error) {
+        // todo: Capturar el error
+        logger.error({
+            contexto: 'model',
+            recurso: 'chat.encuestaSoulChat',
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack,
+            parametros: { idChat, pasoArbol, descripcion }
+        }, 'Error en v1/models/widget/chat.model.js → encuestaSoulChat');
         return false;
     } finally {
         // todo: Liberar conexión al pool
@@ -784,6 +860,7 @@ module.exports = {
     monitor,
     listarArchivosAdjuntos,
     actualizar,
+    encuestaSoulChat,
     cerrar,
     cerrarChatAI,
     listarChatsAbiertosAntiguos,

@@ -1,8 +1,8 @@
 // ! ================================================================================================================================================
 // !                                                      MODELOS PARA MENSAJE
 // ! ================================================================================================================================================
-// @author Ramón Dario Rozo Torres (24 de Enero de 2025)
-// @lastModified Ramón Dario Rozo Torres (24 de Enero de 2025)
+// @author Ramón Dario Rozo Torres
+// @lastModified Ramón Dario Rozo Torres
 // @version 1.0.0
 // v1/models/widget/mensaje.model.js
 
@@ -154,6 +154,50 @@ const crearSoulChat = async (idChat, remitente, estado, tipo, contenido, enlaces
             errorStack: error.stack,
             parametros: { idChat, remitente, estado, tipo }
         }, 'Error en v1/models/widget/mensaje.model.js → crearSoulChat');
+        return false;
+    } finally {
+        // todo: Liberar conexión al pool
+        if (connMySQL) connMySQL.release();
+    }
+};
+
+// * CREAR MENSAJE DESDE SOUL CHAT - PASO WIDGET ARBOL ENCUESTA
+const encuestaSoulChat = async (idChat, remitente, estado, tipo, contenido, enlaces, lectura, descripcion, registro, responsable) => {
+    let connMySQL;
+    try {
+        // todo: Obtener conexión del pool
+        connMySQL = await pool.getConnection();
+
+        // todo: Sentencia SQL
+        const query = `
+            INSERT INTO
+                tbl_mensaje
+            SET
+                msg_fk_id_chat = ?,
+                msg_remitente = ?,
+                msg_estado = ?,
+                msg_tipo = ?,
+                msg_contenido = ?,
+                msg_enlaces = ?,
+                msg_lectura = ?,
+                msg_descripcion = ?,
+                msg_registro = ?,
+                msg_responsable = ?;
+        `;
+
+        // todo: Ejecutar la sentencia y retornar respuesta
+        const [result] = await connMySQL.query(query, [idChat, remitente, estado, tipo, contenido, enlaces, lectura, descripcion, registro, responsable]);
+        return result;
+    } catch (error) {
+        // todo: Capturar el error
+        logger.error({
+            contexto: 'model',
+            recurso: 'mensaje.encuestaSoulChat',
+            codigoRespuesta: 500,
+            errorMensaje: error.message,
+            errorStack: error.stack,
+            parametros: { idChat, remitente, estado, tipo }
+        }, 'Error en v1/models/widget/mensaje.model.js → encuestaSoulChat');
         return false;
     } finally {
         // todo: Liberar conexión al pool
@@ -403,6 +447,7 @@ const filtrarUltimoMensajeEnviado = async (idChatWeb, estadoMensaje, tipoMensaje
 module.exports = {
     crear,
     crearSoulChat,
+    encuestaSoulChat,
     listarNoLeido,
     leer,
     listarConversacion,

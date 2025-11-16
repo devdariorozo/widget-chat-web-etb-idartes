@@ -107,25 +107,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             { data: "CONTROL_API" }, //7
             { data: "CONTROL_PETICIONES" }, //8
             { data: "RESULTADO_API" }, //9
-            { data: "NOMBRES" }, //10
-            { data: "APELLIDOS" }, //11
-            { data: "NUMERO_CEDULA" }, //12
-            { data: "PAIS_RESIDENCIA" }, //13
-            { data: "CIUDAD_RESIDENCIA" }, //14
-            { data: "INDICATIVO_PAIS" }, //15
-            { data: "NUMERO_CELULAR" }, //16
-            { data: "CORREO_ELECTRONICO" }, //17
-            { data: "AUTORIZACION_DATOS_PERSONALES" }, //18
-            { data: "ADJUNTOS" }, //19
-            { data: "RUTA_ADJUNTOS" }, //20
-            { data: "DESCRIPCION" }, //21
-            { data: "REGISTRO" }, //22
-            { data: "FECHA_ACTUALIZACION" }, //23
-            { data: "RESPONSABLE" } //24
+            { data: "NOMBRES_APELLIDOS" }, //10
+            { data: "GENERO" }, //11
+            { data: "CORREO_ELECTRONICO" }, //12
+            { data: "TELEFONO" }, //13
+            { data: "LOCALIDAD" }, //14
+            { data: "EN_QUE_PODEMOS_AYUDARLE" }, //15
+            { data: "RANGO_EDAD" }, //16
+            { data: "AUTORIZACION_TRATAMIENTO_DATOS" }, //17
+            { data: "CALIFICAR_SERVICIO" }, //18
+            { data: "CALIFICAR_AMABILIDAD" }, //19
+            { data: "CALIFICAR_TIEMPO" }, //20
+            { data: "CALIFICAR_CALIDAD" }, //21
+            { data: "CALIFICAR_CONOCIMIENTO" }, //22
+            { data: "CALIFICAR_SOLUCION" }, //23
+            { data: "COMENTARIOS" }, //24
+            { data: "DESCRIPCION" }, //25
+            { data: "REGISTRO" }, //26
+            { data: "FECHA_ACTUALIZACION" }, //27
+            { data: "RESPONSABLE" } //28
         ],
         columnDefs: [
             {
-                targets: [2, 3, 4, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], // Condiciono las columnas apiladas
+                targets: [2, 3, 4, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 27,], // Condiciono las columnas apiladas
                 className: 'none'
             },
         ],
@@ -134,7 +138,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             {
                 extend: 'copyHtml5',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28],
                     modifier: {
                         page: 'all'  // Exportar todos los registros
                     }
@@ -144,24 +148,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             {
                 extend: 'excelHtml5',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28],
                     modifier: {
                         page: 'all' // Exportar todos los registros
                     }
                 },
-                filename: 'Reporte Widget Thomas Greg y Sons',
+                filename: 'Reporte Widget Etb Idartes',
                 charset: 'utf-8'
             },
             {
                 extend: 'csvHtml5',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28],
                     modifier: {
                         page: 'all' // Exportar todos los registros
                     }
                 },
                 bom: true,
-                filename: 'Reporte Widget Thomas Greg y Sons',
+                filename: 'Reporte Widget Etb Idartes',
                 charset: 'utf-8'
             },
             {
@@ -171,13 +175,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 fieldBoundary: '',
                 extension: '.txt',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28],
                     modifier: {
                         page: 'all' // Exportar todos los registros
                     }
                 },
                 bom: true,
-                filename: 'Reporte Widget Thomas Greg y Sons',
+                filename: 'Reporte Widget Etb Idartes',
                 charset: 'utf-8'
             }
         ],
