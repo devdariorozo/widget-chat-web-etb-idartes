@@ -662,7 +662,13 @@ const procesarPasoAsesorSoulChat = async (idChat, remitente, contenido) => {
             `• Autorización Tratamiento de Datos: ${chatData.autorizacionTratamientoDatos}`
         ].join('\n');
 
-        const mensajeAEnviar = esMensajeInicial ? mensajeDatosCliente : (typeof contenido === 'string' ? contenido : `${contenido}`);
+        // Función para capitalizar la primera letra del contenido
+        const capitalizarPrimeraLetra = (str) => {
+            if (!str || typeof str !== 'string') return str;
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        };
+
+        const mensajeAEnviar = esMensajeInicial ? mensajeDatosCliente : capitalizarPrimeraLetra(typeof contenido === 'string' ? contenido : `${contenido}`);
 
         const estructuraMensaje = {
             provider: "web",

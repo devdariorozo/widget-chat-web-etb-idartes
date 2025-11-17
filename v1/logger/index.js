@@ -2,7 +2,7 @@ const pino = require('pino');
 const fs = require('fs');
 const path = require('path');
 
-const isProduction = process.env.PROJECT_ENV === 'PRO';
+const uploadLogsToS3 = process.env.UPLOAD_LOGS_TO_S3 === 'true';
 
 const baseOptions = {
     level: process.env.LOG_LEVEL || 'info',
@@ -13,11 +13,12 @@ const baseOptions = {
     timestamp: pino.stdTimeFunctions.isoTime
 };
 
-// Configuración de transport según el ambiente
+// Configuración de transport según UPLOAD_LOGS_TO_S3
 let transport;
 
-if (isProduction) {
-    // En producción: escribir logs a archivo en v1/uploads/logs/
+if (uploadLogsToS3) {
+    // Si UPLOAD_LOGS_TO_S3=true: escribir logs a archivo en v1/uploads/logs/
+    // Los archivos serán subidos a S3 por el scheduler configurado
     const logsDir = path.join(__dirname, '../uploads/logs');
     
     try {
@@ -40,7 +41,7 @@ if (isProduction) {
         // Función para obtener el nombre del archivo de log basado en la fecha actual
         const obtenerNombreArchivoLog = () => {
             const fecha = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-            const servicioNombre = `${process.env.PROJECT_TIPO || 'widget'}-${process.env.PROJECT_CLIENT || 'etb-idartes'}`.toLowerCase().replace(/\s+/g, '-');
+            const servicioNombre = `${process.env.PROJECT_TIPO || 'widget'}-${process.env.PROJECT_CLIENT || 'thomasgregysons'}`.toLowerCase().replace(/\s+/g, '-');
             return `${servicioNombre}-${process.env.PROJECT_ENV || 'PRO'}-${fecha}.log`;
         };
         
@@ -135,7 +136,7 @@ if (isProduction) {
         module.exports = loggerInstance;
     }
 } else {
-    // En desarrollo/QA: formato legible con pino-pretty
+    // Si UPLOAD_LOGS_TO_S3 no es true: usar formato legible con pino-pretty
     transport = pino.transport({
         target: 'pino-pretty',
         options: {
