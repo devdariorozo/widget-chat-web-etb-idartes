@@ -7,8 +7,8 @@
   <title>IDARTES</title>
 
   <!-- Favicon -->
-  <link rel="apple-touch-icon" href="???/images/imagen-corporativa/favicon.png">
-  <link rel="shortcut icon" type="image/x-icon" href="???/images/imagen-corporativa/favicon.png">
+  <link rel="apple-touch-icon" href="https://widgetchatwebetbidartes.mysoul.software/images/imagen-corporativa/favicon.png">
+  <link rel="shortcut icon" type="image/x-icon" href="https://widgetchatwebetbidartes.mysoul.software/images/imagen-corporativa/favicon.png">
 
   <!--Import Google Icon Font-->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -23,7 +23,7 @@
     }
 
     body {
-      background-image: url('???/images/imagen-corporativa/fondo.png');
+      background-image: url('https://widgetchatwebetbidartes.mysoul.software/images/imagen-corporativa/fondo.png');
       /* Llama a la imagen de fondo */
       background-repeat: no-repeat;
       /* No repetir la imagen */
@@ -242,7 +242,7 @@
     // ========================================================================
     
     // Definición de constantes para las URLs
-    const URL_BASE = "???";
+    const URL_BASE = "https://widgetchatwebetbidartes.mysoul.software";
     const URL_CSS = `${URL_BASE}/chatWeb.css`;
     const URL_JS = `${URL_BASE}/chatWeb.js`;
 
@@ -435,7 +435,7 @@
       // Escuchar mensajes del iframe para detectar cierre de chat
       window.addEventListener('message', function(event) {
         // Permitir mensajes desde el origen correcto o desde file:// (para desarrollo local)
-        if (event.origin === '???' || 
+        if (event.origin === 'https://widgetchatwebetbidartes.mysoul.software' || 
             event.origin === 'null' || 
             event.origin === 'file://' ||
             event.origin.startsWith('file://')) {
@@ -563,7 +563,7 @@
               
               // Determinar el targetOrigin para postMessage
               // Usar el origen del iframe si está disponible, o '*' como fallback
-              let targetOrigin = '???';
+              let targetOrigin = 'https://widgetchatwebetbidartes.mysoul.software';
               try {
                 // Intentar obtener el origin del iframe si es posible
                 const iframeOrigin = iframe.contentWindow.location.origin;

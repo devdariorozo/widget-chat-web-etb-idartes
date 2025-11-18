@@ -14,7 +14,8 @@ Datos de acceso a la base de datos de la aplicación widget-chat-web-etb-idarted
 
 
     2.  AMBIENTE DE PRODUCCION
-
+        URL:
+        https://widgetchatwebetbidartes.mysoul.software
 
 
 

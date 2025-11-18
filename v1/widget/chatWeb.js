@@ -7,7 +7,7 @@
 // v1/widget/chatWeb.js
 
 // ! VARIABLES GLOBALES
-// const APP_URL = 'https://idcexteriorchatbot.mysoul.software'; // Producción
+// const APP_URL = 'https://widgetchatwebetbidartes.mysoul.software'; // Producción
 // const APP_URL = 'https://???.mysoul.software'; // 715 QA
 const APP_URL = 'http://localhost:5006'; // Desarrollo
 let chatWeb = '';
