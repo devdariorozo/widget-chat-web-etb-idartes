@@ -210,7 +210,6 @@
       
       // Interceptar la petición de crear chat
       if (url && url.includes('/widget/chat/crear')) {
-        console.log(" Interceptando petición de crear chat:", url);
         
         // Intentar extraer el idChatWeb del body
         if (options && options.body) {
@@ -218,7 +217,6 @@
             const body = JSON.parse(options.body);
             if (body.idChatWeb) {
               window.capturedIdChatWeb = body.idChatWeb;
-              console.log(" idChatWeb capturado:", window.capturedIdChatWeb);
               
               // Notificar que tenemos el ID
               window.dispatchEvent(new CustomEvent('idChatWebCapturado', { 
@@ -234,8 +232,6 @@
       // Ejecutar el fetch original y retornar la promesa
       return originalFetch.apply(this, args);
     };
-    
-    console.log("🔧 Interceptor de fetch configurado");
 
     // ========================================================================
     // CARGA DEL WIDGET
@@ -383,7 +379,6 @@
         clearTimeout(timeoutId);
       });
       timeoutsPendientes.clear();
-      console.log("🧹 Todos los timeouts pendientes han sido limpiados");
     }
     
     // Función para agregar timeout con tracking
@@ -398,11 +393,9 @@
     
     // Función principal para configurar la comunicación con el iframe
     function configurarComunicacionIframe() {
-      console.log("🔧 Configurando sistema de comunicación con iframe");
       
       // Escuchar el evento de captura de idChatWeb
       window.addEventListener('idChatWebCapturado', function(event) {
-        console.log("📨 Evento idChatWebCapturado recibido:", event.detail.idChatWeb);
         
         // Limpiar todos los timeouts anteriores para evitar mensajes con IDs antiguos
         limpiarTimeouts();
@@ -417,15 +410,12 @@
         agregarTimeout(() => {
           const iframe = document.getElementById('iframeChatWeb');
           if (iframe) {
-            console.log("✅ Iframe encontrado después de capturar ID");
             // Verificar que el ID no haya cambiado antes de enviar
             if (idChatWebActual === event.detail.idChatWeb) {
               enviarMensajeAlIframe(iframe, event.detail.idChatWeb);
             } else {
-              console.log("⚠️ ID cambió, no se enviará mensaje con ID antiguo");
             }
           } else {
-            console.log("⏳ Iframe aún no existe, esperando...");
             // Observar para cuando se cree
             observarCreacionIframe(event.detail.idChatWeb);
           }
@@ -441,7 +431,6 @@
             event.origin.startsWith('file://')) {
           // Detectar cuando se cierra el chat desde chatWeb.js
           if (event.data && event.data.type === 'chatCerrado') {
-            console.log("🚪 Chat cerrado detectado desde chatWeb.js, limpiando estado...");
             
             // Limpiar todos los timeouts pendientes
             limpiarTimeouts();
@@ -452,7 +441,6 @@
             // Limpiar la variable global de idChatWeb capturado
             window.capturedIdChatWeb = null;
             
-            console.log("✅ Estado limpiado - idChatWeb reseteado");
           }
         }
       }, false);
@@ -460,7 +448,6 @@
       // También observar cambios en el DOM para detectar el iframe
       observarCreacionIframe();
       
-      console.log("✅ Sistema de comunicación configurado");
     }
     
     // Función para observar la creación del iframe
@@ -472,16 +459,13 @@
             if (node.id === 'iframeChatWeb' || (node.querySelector && node.querySelector('#iframeChatWeb'))) {
               const iframe = document.getElementById('iframeChatWeb');
               if (iframe) {
-                console.log("✅ Iframe detectado por observer");
                 
                 // Usar el ID capturado o intentar obtenerlo
                 const idChat = idChatWebConocido || window.capturedIdChatWeb || '';
                 
                 if (idChat) {
-                  console.log("✅ Usando idChatWeb:", idChat);
                   enviarMensajeAlIframe(iframe, idChat);
                 } else {
-                  console.log("⚠️ idChatWeb no disponible aún, enviando mensaje sin ID");
                   enviarMensajeAlIframe(iframe, '');
                 }
                 
@@ -500,13 +484,11 @@
           childList: true,
           subtree: true
         });
-        console.log("👀 Observer activo para detectar iframe");
       }
 
       // Verificar si el iframe ya existe
       const iframeExistente = document.getElementById('iframeChatWeb');
       if (iframeExistente) {
-        console.log("Iframe ya existe");
         const idChat = idChatWebConocido || idChatWebActual || window.capturedIdChatWeb || '';
         if (idChat) {
           // Actualizar el ID actual si se está usando un ID conocido
@@ -521,22 +503,14 @@
     
       // Función para enviar mensaje al iframe
       function enviarMensajeAlIframe(iframe, idChatWeb) {
-        console.log("Preparando envío de mensaje al iframe");
-        console.log("   - idChatWeb:", idChatWeb);
-        console.log("   - idChatWebActual:", idChatWebActual);
         
         // Validar que el idChatWeb no esté vacío antes de enviar
         if (!idChatWeb || idChatWeb === '') {
-          console.log("⚠️ idChatWeb vacío, no se enviará mensaje al iframe");
           return;
         }
         
         // Verificar que el ID coincida con el actual (evitar enviar IDs antiguos)
         if (idChatWebActual && idChatWeb !== idChatWebActual) {
-          console.log("⚠️ ID no coincide con el actual, no se enviará mensaje:", {
-            recibido: idChatWeb,
-            actual: idChatWebActual
-          });
           return;
         }
         
@@ -544,7 +518,6 @@
         const enviar = function() {
           // Verificar nuevamente que el ID sigue siendo válido antes de enviar
           if (idChatWebActual && idChatWeb !== idChatWebActual) {
-            console.log("⚠️ ID cambió antes de enviar, cancelando envío");
             return;
           }
           
@@ -552,7 +525,6 @@
             try {
               // Verificar que el iframe esté cargado y no sea about:blank
               if (iframe.src === 'about:blank' || !iframe.src.includes('widget/chat/web')) {
-                console.log("⏳ Iframe aún no está listo, esperando...");
                 return;
               }
               
@@ -583,7 +555,6 @@
                 targetOrigin
               );
               
-              console.log("✅ Mensaje enviado al iframe:", mensaje, "con origin:", targetOrigin);
             } catch (e) {
               console.error("❌ Error al enviar mensaje al iframe:", e);
               // Si falla con origen específico, intentar con '*'
@@ -592,7 +563,6 @@
                   { chatWeb: 'Crear', idWidgetChatWeb: idChatWeb }, 
                   '*'
                 );
-                console.log("✅ Mensaje enviado al iframe con '*' como fallback");
               } catch (e2) {
                 console.error("❌ Error al enviar mensaje incluso con '*':", e2);
               }
@@ -604,7 +574,6 @@
         
         // Enviar cuando el iframe cargue
         const onLoadHandler = function() {
-          console.log("Iframe cargado completamente");
           agregarTimeout(enviar, 300);
         };
         
@@ -639,11 +608,7 @@
   </script>
 
   <!-- Script de debugging -->
-  <script>
-    console.log(" IDC Exterior - Sistema de Widget Mejorado");
-    console.log(" Origen:", window.location.origin);
-    console.log(" URL:", window.location.href);
-    
+  <script>    
     // Detectar errores globales
     window.addEventListener('error', function(e) {
       if (e.target !== window) {
