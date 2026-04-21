@@ -1,0 +1,30 @@
+trigger:
+  batch: true
+  paths:
+    include:
+      - v1/**
+pr:
+  branches:
+    include:
+      - master
+pool:
+  name: 'AZmontechelo'
+
+variables:
+- group: AWSBuildVariables
+- group: DockerBuildVariables
+
+resources:
+  repositories:
+    - repository : eks_manifiestos
+      endpoint: montechelocloud_sc
+      type: git
+      name: Devops_cloud/eks_manifiestos
+      ref: refs/heads/main
+
+extends:
+  template: "pipelines_templates/widgets-ideartes.yml@eks_manifiestos"
+  parameters:
+    APP_NAME: 'ideartes_widget'
+    BRANCH: 'master'
+    EKS_BRANCH: 'service-template-whatsapp-prod'
