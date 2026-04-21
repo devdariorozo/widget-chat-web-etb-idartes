@@ -1,0 +1,18 @@
+# VARIABLES DE ENTORNO
+.env
+
+# MODULOS - LIBRERIAS
+/node_modules
+/package-lock.json
+
+# CARPETA UPLOADS - solo estructura vacía en git
+/uploads/*
+!/uploads/.gitkeep
+!/uploads/logs/
+!/uploads/files/
+/uploads/logs/*
+!/uploads/logs/.gitkeep
+/uploads/files/*
+!/uploads/files/.gitkeep
+
+
