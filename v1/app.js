@@ -392,10 +392,22 @@ app.listen(PORT, () => {
         subidaLogsS3Scheduler.iniciarScheduler();
         logger.info({ contexto: 'schedulers', nombre: 'subidaLogsS3' }, 'Scheduler iniciado correctamente');
     } catch (error) {
-        logger.error({ 
-            contexto: 'schedulers', 
+        logger.error({
+            contexto: 'schedulers',
             nombre: 'subidaLogsS3',
-            errorMensaje: error.message 
+            errorMensaje: error.message
+        }, 'Error al iniciar scheduler');
+    }
+
+    try {
+        const limpiezaAdjuntosScheduler = require('./schedulers/limpiezaAdjuntos.scheduler.js');
+        limpiezaAdjuntosScheduler.iniciarScheduler();
+        logger.info({ contexto: 'schedulers', nombre: 'limpiezaAdjuntos' }, 'Scheduler iniciado correctamente');
+    } catch (error) {
+        logger.error({
+            contexto: 'schedulers',
+            nombre: 'limpiezaAdjuntos',
+            errorMensaje: error.message
         }, 'Error al iniciar scheduler');
     }
 });
