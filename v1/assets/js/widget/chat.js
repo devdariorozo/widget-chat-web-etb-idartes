@@ -38,35 +38,6 @@ let ultimoMensajeEnviado = null; // Último mensaje enviado (para prevenir dupli
 let ultimoTimestampEnvio = 0; // Timestamp del último envío (para prevenir duplicados)
 let modoAsesor = false; // Flag para indicar si el chat está en modo asesor
 
-// ! CACHÉ DE ADJUNTOS EN LOCALSTORAGE (ciclo de vida ligado a la sesión del chat)
-const ADJ_CACHE_PREFIX = 'wc_adj_';
-
-function adjCacheInit() {
-    Object.keys(localStorage)
-        .filter(k => k.startsWith(ADJ_CACHE_PREFIX))
-        .forEach(k => localStorage.removeItem(k));
-    try { localStorage.setItem(ADJ_CACHE_PREFIX + idChatWeb, JSON.stringify({})); } catch(e) {}
-}
-
-function adjCacheClear() {
-    try { localStorage.removeItem(ADJ_CACHE_PREFIX + idChatWeb); } catch(e) {}
-}
-
-function adjCacheGet(url) {
-    try {
-        const data = JSON.parse(localStorage.getItem(ADJ_CACHE_PREFIX + idChatWeb) || '{}');
-        return Object.prototype.hasOwnProperty.call(data, url) ? data[url] : null;
-    } catch(e) { return null; }
-}
-
-function adjCacheSet(url, ok) {
-    try {
-        const data = JSON.parse(localStorage.getItem(ADJ_CACHE_PREFIX + idChatWeb) || '{}');
-        data[url] = ok;
-        localStorage.setItem(ADJ_CACHE_PREFIX + idChatWeb, JSON.stringify(data));
-    } catch(e) {}
-}
-
 // ! EVENTOS DE ACTIVIDAD
 // Eventos que se disparan frecuentemente (necesitan debounce)
 const eventosFrecuentes = [
@@ -1251,10 +1222,9 @@ if (!observadorFormulario._isObserving) {
 async function obtenerInfoWidgetChatWeb() {
     return new Promise((resolve) => {
         window.addEventListener("message", async (event) => {
-            chatWeb = event.data.chatWeb; // Asegúrate de que chatWeb esté definido
-            idChatWeb = event.data.idWidgetChatWeb; // Asegúrate de que idWidgetChatWeb esté definido
-            adjCacheInit();
-            resolve(); // Resuelve la promesa cuando se recibe el mensaje
+            chatWeb = event.data.chatWeb;
+            idChatWeb = event.data.idWidgetChatWeb;
+            resolve();
         });
     });
 }
@@ -1290,7 +1260,6 @@ function marcarChatComoFinalizado() {
     detenerVigilanciaInactividad();
     detenerRefrescoMensajes();
     detenerWatchdogFormulario();
-    adjCacheClear();
 }
 
 // * LIMPIAR Y ENFOCAR TEXTAREA
@@ -3218,15 +3187,7 @@ function normalizarLinksAdjuntos(elemento) {
         const nombre = decodeURIComponent(href.split('/').pop().split('?')[0]);
         const ext    = nombre.split('.').pop().toLowerCase();
 
-        // 4. Consultar caché antes de tocar el DOM
-        const cachedOk = adjCacheGet(href);
-        if (cachedOk === false) {
-            // Archivo ya verificado como no disponible → mostrar tarjeta de error sin fetch
-            if (link.parentNode) link.parentNode.replaceChild(_adjuntoNoDisponible(nombre), link);
-            return;
-        }
-
-        // 5. Render optimista: insertar la tarjeta inmediatamente
+        // 4. Construir tarjeta según extensión
         let tarjeta;
         if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
             tarjeta = _adjuntoTarjetaImagen(href, nombre);
@@ -3240,11 +3201,6 @@ function normalizarLinksAdjuntos(elemento) {
 
         if (tarjeta && link.parentNode) {
             link.parentNode.replaceChild(tarjeta, link);
-        }
-
-        // 6. Si no está en caché aún → verificar disponibilidad en background
-        if (cachedOk === null && tarjeta) {
-            _adjuntoVerificar(href, nombre, tarjeta);
         }
     });
 }
@@ -3314,34 +3270,6 @@ function _adjuntoLightbox(url, nombre) {
     });
 }
 
-// ── Verificación de disponibilidad en background ──────────────────────────
-// Lanza un fetch HEAD silencioso; si el servidor responde 4xx/5xx reemplaza
-// la tarjeta en el DOM por la versión "no disponible" y actualiza la caché.
-async function _adjuntoVerificar(url, nombre, tarjeta) {
-    try {
-        const r = await fetch(url, { method: 'HEAD' });
-        adjCacheSet(url, r.ok);
-        if (!r.ok && tarjeta && tarjeta.parentNode) {
-            tarjeta.parentNode.replaceChild(_adjuntoNoDisponible(nombre), tarjeta);
-        }
-    } catch(e) {
-        // Error de red — no cachear; la tarjeta permanece visible
-    }
-}
-
-// ── Tarjeta: archivo no disponible ───────────────────────────────────────
-function _adjuntoNoDisponible(nombre) {
-    const card = document.createElement('div');
-    card.className = 'adjunto-card adjunto-card-no-disponible';
-    card.innerHTML = `
-        <div class="adjunto-icono adjunto-icono-no-disponible">
-            <i class="fas fa-file-slash"></i>
-        </div>
-        <span class="adjunto-nombre" title="${nombre}">${nombre}</span>
-        <span class="adjunto-no-disponible-label">Archivo no disponible</span>
-    `;
-    return card;
-}
 
 async function marcarMensajesNoLeidosComoLeidos() {
     try {
@@ -3798,9 +3726,5 @@ function configurarDelegacionEventosOpciones() {
         console.log('[Opciones] Delegación de eventos configurada para opciones clickeables');
     }
 }
-
-// ! CICLO DE VIDA — limpiar caché de adjuntos al cerrar o recargar la ventana
-window.addEventListener('beforeunload', adjCacheClear);
-window.addEventListener('pagehide',     adjCacheClear);
 
 
