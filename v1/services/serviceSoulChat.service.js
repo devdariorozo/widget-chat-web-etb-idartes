@@ -40,6 +40,15 @@ const procesarMensajeAISoul = async (estructuraMensaje) => {
         }
 
         const response = await axios.post(url, estructuraMensaje, config);
+        
+        // Manejo y control logger
+        logger.info({
+            contexto: 'service',
+            recurso: 'serviceSoulChat.procesarMensajeAISoul',
+            codigoRespuesta: response.status,
+            respuesta: response.data
+        }, 'Mensaje AI Soul procesado exitosamente');
+
         return response;
     } catch (error) {
         const esFormData = estructuraMensaje && typeof estructuraMensaje.getHeaders === 'function';

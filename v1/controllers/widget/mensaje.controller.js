@@ -331,7 +331,8 @@ const crearSoulChat = async (req, res) => {
                 const nombreArchivo = normalizarNombre(file.originalname);
 
                 const filePath = path.join(sendDir, nombreArchivo);
-                fs.renameSync(file.path, filePath);
+                fs.copyFileSync(file.path, filePath);
+                fs.unlinkSync(file.path);
 
                 return `/files/${nombreCarpetaChat}/send/${nombreArchivo}`;
             }).join('|');
@@ -898,7 +899,8 @@ const adjuntarArchivos = async (req, res) => {
                 const nombreArchivo = normalizarNombre(file.originalname);
 
                 const filePath = path.join(receivedDir, nombreArchivo);
-                fs.renameSync(file.path, filePath);
+                fs.copyFileSync(file.path, filePath);
+                fs.unlinkSync(file.path);
 
                 return `/files/${nombreCarpetaChat}/received/${nombreArchivo}`;
             }).join('|');
@@ -1171,7 +1173,8 @@ const adjuntarArchivosSoulChat = async (req, res) => {
             const nombreArchivo = normalizarNombre(file.originalname);
 
             const filePath = path.join(chatDir, nombreArchivo);
-            fs.renameSync(file.path, filePath);
+            fs.copyFileSync(file.path, filePath);
+            fs.unlinkSync(file.path);
 
             return `/${idChatWeb}/${nombreArchivo}`;
         }).join('|');
